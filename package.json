@@ -1,0 +1,13 @@
+{
+  "name": "attackgraph-platform",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @attackgraph/backend",
+    "dev:frontend": "npm run dev -w @attackgraph/frontend",
+    "build": "npm run build -w @attackgraph/backend && npm run build -w @attackgraph/frontend"
+  }
+}
