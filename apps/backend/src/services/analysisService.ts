@@ -1,5 +1,14 @@
 import crypto from "node:crypto";
-import type { AttackPath, AssetEdge, AssetNode, Priority, ThreatPoint } from "../types/domain.js";
+import type {
+  AttackComplexityLevel,
+  AttackPath,
+  AttackSourceType,
+  AssetEdge,
+  AssetNode,
+  EntryLikelihoodLevel,
+  Priority,
+  ThreatPoint
+} from "../types/domain.js";
 
 interface AnalysisInput {
   analysisBatchId: string;
@@ -10,6 +19,47 @@ interface AnalysisInput {
   edges: AssetEdge[];
   threats: ThreatPoint[];
 }
+
+interface CandidatePath {
+  pathId: string;
+  analysisBatchId: string;
+  hopCount: number;
+  rawScore: number;
+  generatedBy: string;
+  generatedAt: string;
+  startsFromThreatId: string;
+  hits: Array<{ hop: number; assetId: string }>;
+  traverses: Array<{ hop: number; edgeId: string; assetId: string }>;
+  entryLikelihoodLevel: EntryLikelihoodLevel;
+  attackComplexityLevel: AttackComplexityLevel;
+  sourceType: AttackSourceType;
+  entryLikelihoodValue: number;
+  attackSuccessFactor: number;
+  sourceWeight: number;
+  expertModifier: number;
+  expertAdjustmentNote?: string;
+}
+
+const entryLikelihoodMap: Record<EntryLikelihoodLevel, number> = {
+  High: 0.7,
+  Medium: 0.5,
+  Low: 0.3
+};
+
+const attackComplexityMap: Record<AttackComplexityLevel, number> = {
+  Low: 1.0,
+  Medium: 0.7,
+  High: 0.4
+};
+
+const sourceWeightMap: Record<AttackSourceType, number> = {
+  internal: 0.9,
+  external: 0.7,
+  "third-party": 0.5
+};
+
+const lowPriorityThreshold = 0.15;
+const scoreConfigVersion = "heuristic-v2-2026-03-04";
 
 export class AnalysisService {
   run(input: AnalysisInput): AttackPath[] {
@@ -34,7 +84,7 @@ export class AnalysisService {
     const assetsById = new Map(input.assets.map((asset) => [asset.assetId, asset]));
     const scopeSet = input.scopeAssetIds ? new Set(input.scopeAssetIds) : null;
     const dedupe = new Set<string>();
-    const paths: AttackPath[] = [];
+    const candidates: CandidatePath[] = [];
 
     for (const threat of input.threats) {
       if (scopeSet && !scopeSet.has(threat.assetId)) {
@@ -67,21 +117,20 @@ export class AnalysisService {
           if (!targetAsset) {
             continue;
           }
-          const { score, priority, explanations } = this.scorePath({
-            threatSeverity: threat.severityBase,
-            hopCount: nextHops,
-            trustBoundaryCrossings: traverses.filter((t) => t.edgeId.includes("#rev")).length,
-            targetCriticality: targetAsset.criticality,
-            relationTypes: outgoing.map((e) => e.relationType)
-          });
+          const entryLikelihoodLevel = this.resolveEntryLikelihoodLevel(threat);
+          const attackComplexityLevel = this.resolveAttackComplexityLevel(threat);
+          const sourceType = this.resolveSourceType(threat);
+          const entryLikelihoodValue = entryLikelihoodMap[entryLikelihoodLevel];
+          const attackSuccessFactor = attackComplexityMap[attackComplexityLevel];
+          const sourceWeight = sourceWeightMap[sourceType];
+          const expertModifier = this.normalizeExpertModifier(threat.expertModifier);
+          const rawScore = entryLikelihoodValue * attackSuccessFactor * sourceWeight * expertModifier;
 
-          paths.push({
+          candidates.push({
             pathId: crypto.randomUUID(),
             analysisBatchId: input.analysisBatchId,
             hopCount: nextHops,
-            score,
-            priority,
-            explanations,
+            rawScore,
             generatedBy: input.generatedBy,
             generatedAt: new Date().toISOString(),
             startsFromThreatId: threat.threatId,
@@ -89,7 +138,15 @@ export class AnalysisService {
               { hop: 0, assetId: threat.assetId },
               { hop: nextHops, assetId: targetAsset.assetId }
             ],
-            traverses
+            traverses,
+            entryLikelihoodLevel,
+            attackComplexityLevel,
+            sourceType,
+            entryLikelihoodValue,
+            attackSuccessFactor,
+            sourceWeight,
+            expertModifier,
+            expertAdjustmentNote: threat.expertAdjustmentNote
           });
 
           queue.push({
@@ -101,36 +158,95 @@ export class AnalysisService {
       }
     }
 
+    const maxRawScore = Math.max(...candidates.map((item) => item.rawScore), 0);
+    const paths: AttackPath[] = candidates.map((item) => {
+      const normalizedScore = maxRawScore > 0 ? item.rawScore / maxRawScore : 0;
+      const isLowPriority = normalizedScore < lowPriorityThreshold;
+      const { score, priority } = this.rankPath(normalizedScore, isLowPriority);
+
+      return {
+        pathId: item.pathId,
+        analysisBatchId: item.analysisBatchId,
+        hopCount: item.hopCount,
+        rawScore: Number(item.rawScore.toFixed(6)),
+        normalizedScore: Number(normalizedScore.toFixed(6)),
+        isLowPriority,
+        scoreConfigVersion,
+        score,
+        priority,
+        explanations: [
+          `entry_likelihood_value(${item.entryLikelihoodLevel})=${item.entryLikelihoodValue}`,
+          `attack_success_factor(${item.attackComplexityLevel})=${item.attackSuccessFactor}`,
+          `source_weight(${item.sourceType})=${item.sourceWeight}`,
+          `expert_modifier=${item.expertModifier}${item.expertAdjustmentNote ? `, note=${item.expertAdjustmentNote}` : ""}`,
+          `raw_score=${item.rawScore.toFixed(6)}, normalized_score=${normalizedScore.toFixed(6)}`,
+          isLowPriority
+            ? `normalized_score < ${lowPriorityThreshold}，标记为低优先级，默认不进入进一步缓解分析`
+            : `normalized_score >= ${lowPriorityThreshold}，进入后续缓解分析队列`
+        ],
+        generatedBy: item.generatedBy,
+        generatedAt: item.generatedAt,
+        startsFromThreatId: item.startsFromThreatId,
+        hits: item.hits,
+        traverses: item.traverses
+      };
+    });
+
     return paths.sort((a, b) => b.score - a.score);
   }
 
-  private scorePath(input: {
-    threatSeverity: number;
-    hopCount: number;
-    trustBoundaryCrossings: number;
-    targetCriticality: number;
-    relationTypes: string[];
-  }): { score: number; priority: Priority; explanations: string[] } {
-    const threatComponent = input.threatSeverity * 20;
-    const hopPenalty = Math.max(0, (input.hopCount - 1) * 5);
-    const trustComponent = input.trustBoundaryCrossings * 8;
-    const criticalityComponent = input.targetCriticality * 10;
-    const relationComponent = input.relationTypes.some((type) => /control|manage/i.test(type)) ? 12 : 5;
+  private normalizeExpertModifier(value: number | undefined): number {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return 1.0;
+    }
+    return Math.max(0.5, Math.min(1.5, value));
+  }
 
-    const raw = threatComponent + trustComponent + criticalityComponent + relationComponent - hopPenalty;
-    const score = Math.max(0, Math.min(100, raw));
-    const priority: Priority = score >= 80 ? "P1" : score >= 60 ? "P2" : "P3";
+  private resolveEntryLikelihoodLevel(threat: ThreatPoint): EntryLikelihoodLevel {
+    if (threat.entryLikelihoodLevel) {
+      return threat.entryLikelihoodLevel;
+    }
+    if (threat.severityBase >= 4) {
+      return "High";
+    }
+    if (threat.severityBase <= 2) {
+      return "Low";
+    }
+    return "Medium";
+  }
 
-    return {
-      score,
-      priority,
-      explanations: [
-        `威胁基线严重度贡献 ${threatComponent}`,
-        `路径长度折减 ${hopPenalty}`,
-        `信任边界穿越贡献 ${trustComponent}`,
-        `目标资产关键性贡献 ${criticalityComponent}`,
-        `关系类型权重贡献 ${relationComponent}`
-      ]
-    };
+  private resolveAttackComplexityLevel(threat: ThreatPoint): AttackComplexityLevel {
+    if (threat.attackComplexityLevel) {
+      return threat.attackComplexityLevel;
+    }
+    if (/rce|credentialaccess|credentialattack/i.test(threat.category)) {
+      return "Medium";
+    }
+    if (/misconfiguration/i.test(threat.category)) {
+      return "Low";
+    }
+    return "High";
+  }
+
+  private resolveSourceType(threat: ThreatPoint): AttackSourceType {
+    if (threat.sourceType) {
+      return threat.sourceType;
+    }
+    if (/公网|external|internet/i.test(`${threat.name} ${threat.preconditionText ?? ""}`)) {
+      return "external";
+    }
+    if (/third|第三方|供应商/i.test(`${threat.name} ${threat.preconditionText ?? ""}`)) {
+      return "third-party";
+    }
+    return "internal";
+  }
+
+  private rankPath(normalizedScore: number, isLowPriority: boolean): { score: number; priority: Priority } {
+    const score = Math.max(0, Math.min(100, Math.round(normalizedScore * 100)));
+    if (isLowPriority) {
+      return { score, priority: "P3" };
+    }
+    const priority: Priority = normalizedScore >= 0.66 ? "P1" : normalizedScore >= 0.33 ? "P2" : "P3";
+    return { score, priority };
   }
 }

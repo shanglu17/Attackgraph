@@ -1,4 +1,4 @@
-# Attackgraph 平台 MVP
+# Attackgraph 平台
 
 基于 `docs/system-architecture.md` 的可运行最小实现，包含：
 
@@ -34,10 +34,24 @@ npm run dev
 npm run dev:frontend
 ```
 
+5. 一键初始化示例数据（另开终端）
+
+```bash
+npm run seed:sample
+```
+
+初始化后可在前端点击“刷新图数据”，或直接使用前端的“一键初始化示例数据”按钮。
+
 ## 默认配置
 
 - Neo4j URI: `bolt://localhost:7687`
 - Neo4j User: `neo4j`
-- Neo4j Password: `password123`
+- Neo4j Password: `YB52013140402hh`
 - Backend: `http://localhost:4000`
 - Frontend: `http://localhost:5173`
+
+## 示例数据接口
+
+- `POST /admin/seed/sample`
+
+用于重置并写入一套演示资产图（AssetNode / AssetEdge / ThreatPoint），便于快速演示路径推演与审查流程。

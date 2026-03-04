@@ -46,6 +46,22 @@ export async function runAnalysis(): Promise<{ count: number; paths: AttackPath[
   return response.json();
 }
 
+export async function seedSampleData(): Promise<{
+  seeded: boolean;
+  commitId: string;
+  newVersion: string;
+  counts: { assets: number; edges: number; threats: number };
+}> {
+  const response = await fetch(`${baseUrl}/admin/seed/sample`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-id": "frontend-seed" }
+  });
+  if (!response.ok) {
+    throw new Error("示例数据初始化失败");
+  }
+  return response.json();
+}
+
 export async function persistPaths(paths: AttackPath[]): Promise<{ persisted: number }> {
   const response = await fetch(`${baseUrl}/analysis/attack-paths/persist`, {
     method: "POST",

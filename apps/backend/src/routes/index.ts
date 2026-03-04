@@ -13,6 +13,16 @@ router.get("/health", async (_req, res) => {
   res.json({ ok: true });
 });
 
+router.post("/admin/seed/sample", async (req, res, next) => {
+  try {
+    const userId = String(req.headers["x-user-id"] ?? "admin-seed");
+    const result = await graphRepo.seedSampleData(userId);
+    res.json({ seeded: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/imports/excel/single-sheet/preview", (req, res) => {
   const preview = importService.preview(req.body?.rows ?? []);
   res.json(preview);

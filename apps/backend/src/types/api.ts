@@ -24,7 +24,12 @@ export const threatPointSchema = z.object({
   category: z.string().min(1),
   severityBase: z.number().int().min(1).max(5),
   preconditionText: z.string().optional(),
-  assetId: z.string().min(1)
+  assetId: z.string().min(1),
+  entryLikelihoodLevel: z.enum(["High", "Medium", "Low"]).optional(),
+  attackComplexityLevel: z.enum(["Low", "Medium", "High"]).optional(),
+  sourceType: z.enum(["internal", "external", "third-party"]).optional(),
+  expertModifier: z.number().min(0.5).max(1.5).optional(),
+  expertAdjustmentNote: z.string().optional()
 });
 
 const changeSetSchema = <T extends z.ZodTypeAny>(schema: T) =>
@@ -54,6 +59,10 @@ export const persistPathsSchema = z.object({
       pathId: z.string().min(1),
       analysisBatchId: z.string().min(1),
       hopCount: z.number().int().min(1),
+      rawScore: z.number().min(0),
+      normalizedScore: z.number().min(0),
+      isLowPriority: z.boolean(),
+      scoreConfigVersion: z.string().min(1),
       score: z.number().min(0),
       priority: z.enum(["P1", "P2", "P3"]),
       explanations: z.array(z.string()),

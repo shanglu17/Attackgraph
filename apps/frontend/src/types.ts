@@ -29,11 +29,18 @@ export interface AttackPath {
   pathId: string;
   analysisBatchId: string;
   hopCount: number;
+  rawScore: number;
+  normalizedScore: number;
+  isLowPriority: boolean;
+  scoreConfigVersion: string;
   score: number;
   priority: "P1" | "P2" | "P3";
   explanations: string[];
   generatedBy: string;
   generatedAt: string;
+  startsFromThreatId: string;
+  hits: Array<{ hop: number; assetId: string }>;
+  traverses: Array<{ hop: number; edgeId: string; assetId: string }>;
 }
 
 export interface GraphData {

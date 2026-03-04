@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "npm run dev -w @attackgraph/backend",
     "dev:frontend": "npm run dev -w @attackgraph/frontend",
-    "build": "npm run build -w @attackgraph/backend && npm run build -w @attackgraph/frontend"
+    "build": "npm run build -w @attackgraph/backend && npm run build -w @attackgraph/frontend",
+    "seed:sample": "npm run seed:sample -w @attackgraph/backend"
   }
 }

@@ -1,4 +1,7 @@
 export type Priority = "P1" | "P2" | "P3";
+export type EntryLikelihoodLevel = "High" | "Medium" | "Low";
+export type AttackComplexityLevel = "Low" | "Medium" | "High";
+export type AttackSourceType = "internal" | "external" | "third-party";
 
 export interface AssetNode {
   assetId: string;
@@ -25,12 +28,21 @@ export interface ThreatPoint {
   severityBase: number;
   preconditionText?: string;
   assetId: string;
+  entryLikelihoodLevel?: EntryLikelihoodLevel;
+  attackComplexityLevel?: AttackComplexityLevel;
+  sourceType?: AttackSourceType;
+  expertModifier?: number;
+  expertAdjustmentNote?: string;
 }
 
 export interface AttackPath {
   pathId: string;
   analysisBatchId: string;
   hopCount: number;
+  rawScore: number;
+  normalizedScore: number;
+  isLowPriority: boolean;
+  scoreConfigVersion: string;
   score: number;
   priority: Priority;
   explanations: string[];
