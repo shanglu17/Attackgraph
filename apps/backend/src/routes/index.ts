@@ -2,7 +2,13 @@ import { Router } from "express";
 import { GraphRepository } from "../repositories/graphRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
 import { ImportService } from "../services/importService.js";
-import { graphChangeSetSchema, persistPathsSchema, runAnalysisSchema } from "../types/api.js";
+import {
+  do326aLinkSchema,
+  do326aReviewSchema,
+  graphChangeSetSchema,
+  persistPathsSchema,
+  runAnalysisSchema
+} from "../types/api.js";
 
 const router = Router();
 const graphRepo = new GraphRepository();
@@ -29,7 +35,7 @@ router.post("/imports/excel/single-sheet/preview", (req, res) => {
 });
 
 router.post("/imports/excel/single-sheet/commit", async (_req, res) => {
-  res.status(501).json({ message: "MVP 阶段暂以 ChangeSet 提交为主，导入提交可映射到 /graph/changeset/commit" });
+  res.status(501).json({ message: "MVP 阶段暂不提供导入写入，请使用 /graph/changeset/commit" });
 });
 
 router.get("/graph", async (_req, res, next) => {
@@ -76,17 +82,19 @@ router.post("/analysis/attack-paths/run", async (req, res, next) => {
   try {
     const parsed = runAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "参数不合法", errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((i) => i.message) });
     }
+
     const graph = await graphRepo.getGraph();
     const paths = analysisService.run({
-      analysisBatchId: parsed.data.analysisBatchId,
-      maxHops: parsed.data.maxHops,
-      generatedBy: parsed.data.generatedBy,
-      scopeAssetIds: parsed.data.scopeAssetIds,
-      assets: graph.assets,
-      edges: graph.edges,
-      threats: graph.threats
+      analysis_batch_id: parsed.data.analysis_batch_id,
+      max_hops: parsed.data.max_hops,
+      generated_by: parsed.data.generated_by,
+      scope_asset_ids: parsed.data.scope_asset_ids,
+      dps_hop_decay: parsed.data.dps_hop_decay,
+      asset_nodes: graph.asset_nodes,
+      asset_edges: graph.asset_edges,
+      threat_points: graph.threat_points
     });
     return res.json({ count: paths.length, paths });
   } catch (error) {
@@ -98,7 +106,7 @@ router.post("/analysis/attack-paths/persist", async (req, res, next) => {
   try {
     const parsed = persistPathsSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "参数不合法", errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((i) => i.message) });
     }
     const count = await graphRepo.persistAttackPaths(parsed.data.paths);
     return res.json({ persisted: count });
@@ -109,9 +117,51 @@ router.post("/analysis/attack-paths/persist", async (req, res, next) => {
 
 router.get("/analysis/attack-paths", async (req, res, next) => {
   try {
-    const analysisBatchId = req.query.analysisBatchId ? String(req.query.analysisBatchId) : undefined;
+    const analysisBatchId = req.query.analysis_batch_id ? String(req.query.analysis_batch_id) : undefined;
     const paths = await graphRepo.getAttackPaths(analysisBatchId);
     return res.json({ count: paths.length, paths });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/compliance/do326a-links", async (_req, res, next) => {
+  try {
+    const links = await graphRepo.getDo326ALinks();
+    return res.json({ count: links.length, links });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/compliance/do326a-links", async (req, res, next) => {
+  try {
+    const parsed = do326aLinkSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ created: false, errors: parsed.error.issues.map((i) => i.message) });
+    }
+    const link = await graphRepo.upsertDo326ALink(parsed.data);
+    return res.status(201).json({ created: true, link });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.patch("/compliance/do326a-links/:link_id/review", async (req, res, next) => {
+  try {
+    const parsed = do326aReviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ updated: false, errors: parsed.error.issues.map((i) => i.message) });
+    }
+    const updated = await graphRepo.reviewDo326ALink(
+      String(req.params.link_id),
+      parsed.data.review_status,
+      parsed.data.reviewer
+    );
+    if (!updated) {
+      return res.status(404).json({ updated: false, message: "link not found" });
+    }
+    return res.json({ updated: true, link: updated });
   } catch (error) {
     return next(error);
   }

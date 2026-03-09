@@ -1,12 +1,27 @@
-import type { AttackPath, GraphChangeSet, GraphData } from "./types";
+import type { AttackPath, DO326ALink, GraphChangeSet, GraphData, ReviewStatus } from "./types";
 
 const baseUrl = "http://localhost:4000";
 
+async function ensureOk(response: Response, fallbackMessage: string): Promise<void> {
+  if (!response.ok) {
+    let detail = fallbackMessage;
+    try {
+      const payload = (await response.json()) as { message?: string; errors?: string[] };
+      if (payload?.message) {
+        detail = payload.message;
+      } else if (payload?.errors?.length) {
+        detail = payload.errors.join("; ");
+      }
+    } catch {
+      // ignore JSON parse failure
+    }
+    throw new Error(detail);
+  }
+}
+
 export async function getGraph(): Promise<GraphData> {
   const response = await fetch(`${baseUrl}/graph`);
-  if (!response.ok) {
-    throw new Error("加载图数据失败");
-  }
+  await ensureOk(response, "Failed to load graph");
   return response.json();
 }
 
@@ -16,49 +31,55 @@ export async function validateChangeSet(changeSet: GraphChangeSet): Promise<{ va
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changeSet)
   });
+  await ensureOk(response, "Failed to validate changeset");
   return response.json();
 }
 
 export async function commitChangeSet(
   changeSet: GraphChangeSet
-): Promise<{ committed: boolean; commitId?: string; newVersion?: string; errors?: string[] }> {
+): Promise<{ committed: boolean; commit_id?: string; new_version?: string; errors?: string[] }> {
   const response = await fetch(`${baseUrl}/graph/changeset/commit`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
     body: JSON.stringify(changeSet)
   });
+  await ensureOk(response, "Failed to commit changeset");
   return response.json();
 }
 
-export async function runAnalysis(): Promise<{ count: number; paths: AttackPath[] }> {
+export async function runAnalysis(payload?: {
+  analysis_batch_id?: string;
+  max_hops?: number;
+  generated_by?: string;
+  scope_asset_ids?: string[];
+  dps_hop_decay?: number;
+}): Promise<{ count: number; paths: AttackPath[] }> {
   const response = await fetch(`${baseUrl}/analysis/attack-paths/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      analysisBatchId: `batch-${Date.now()}`,
-      maxHops: 3,
-      generatedBy: "frontend-user"
+      analysis_batch_id: payload?.analysis_batch_id ?? `batch-${Date.now()}`,
+      max_hops: payload?.max_hops ?? 3,
+      generated_by: payload?.generated_by ?? "frontend-user",
+      scope_asset_ids: payload?.scope_asset_ids,
+      dps_hop_decay: payload?.dps_hop_decay
     })
   });
-  if (!response.ok) {
-    throw new Error("攻击路径推演失败");
-  }
+  await ensureOk(response, "Failed to run attack path analysis");
   return response.json();
 }
 
 export async function seedSampleData(): Promise<{
   seeded: boolean;
-  commitId: string;
-  newVersion: string;
-  counts: { assets: number; edges: number; threats: number };
+  commit_id: string;
+  new_version: string;
+  counts: { asset_nodes: number; asset_edges: number; threat_points: number; do326a_links: number };
 }> {
   const response = await fetch(`${baseUrl}/admin/seed/sample`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-user-id": "frontend-seed" }
   });
-  if (!response.ok) {
-    throw new Error("示例数据初始化失败");
-  }
+  await ensureOk(response, "Failed to seed sample data");
   return response.json();
 }
 
@@ -68,8 +89,36 @@ export async function persistPaths(paths: AttackPath[]): Promise<{ persisted: nu
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ paths })
   });
-  if (!response.ok) {
-    throw new Error("路径持久化失败");
-  }
+  await ensureOk(response, "Failed to persist paths");
+  return response.json();
+}
+
+export async function getDo326aLinks(): Promise<{ count: number; links: DO326ALink[] }> {
+  const response = await fetch(`${baseUrl}/compliance/do326a-links`);
+  await ensureOk(response, "Failed to load DO326A links");
+  return response.json();
+}
+
+export async function createOrUpdateDo326aLink(link: DO326ALink): Promise<{ created: boolean; link: DO326ALink }> {
+  const response = await fetch(`${baseUrl}/compliance/do326a-links`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(link)
+  });
+  await ensureOk(response, "Failed to save DO326A link");
+  return response.json();
+}
+
+export async function reviewDo326aLink(
+  link_id: string,
+  review_status: ReviewStatus,
+  reviewer?: string
+): Promise<{ updated: boolean; link: DO326ALink }> {
+  const response = await fetch(`${baseUrl}/compliance/do326a-links/${link_id}/review`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ review_status, reviewer })
+  });
+  await ensureOk(response, "Failed to update review status");
   return response.json();
 }

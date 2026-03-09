@@ -1,0 +1,352 @@
+﻿轻量级语义结构构建技术设计方案
+一、设计目标
+本项目面向典型航空电子通信系统，针对现有建模方法适配性差、静态攻击链分析能力薄弱及适航条款难以对应的问题，提出构建轻量级建模语义结构，以支持静态资产关系表达、攻击路径推演与标准条款映射的基础建模需求。该结构强调要素简洁、语义清晰、人工可维护，适用于威胁建模初期的原型验证与可视化分析。
+二、设计原则
+聚焦关键要素：仅保留威胁建模中必要的核心语义（资产、关系、威胁点、攻击路径），明确语义边界，避免语义膨胀，满足静态建模所需。
+适配静态分析场景：强调系统拓扑结构与路径可达性建模能力，支持图结构基础上的静态攻击路径推演与多跳攻击链表达。
+支持标准条款映射：语义元素设计与DO-326A等适航安全标准术语保持一致，便于后续文本级对应和审查材料的生成。
+结构可读与人工可维护：模型采用有向图结构组织，清晰呈现资产-关系-威胁三层静态结构，支持节点级手工增改和图形化人工审查。
+三、语义结构组成
+元素类型
+语义项
+属性字段（示意）
+功能说明
+资产类
+AssetNode
+id, name, asset_type, subsystem, criticality, description, tags, status*, physical_location*, version*
+表示系统中的静态资产单元，如通信模块、数据链路等，包含硬件及逻辑资源。
+关系类
+AssetEdge
+source, target, protocol_type, trust_level, direction, bandwidth, connection_type*, security_mechanism*, latency*, description
+表示资产之间的物理或逻辑连接关系，描述通信或依赖路径。
+威胁类
+ThreatPoint
+id, attached_to, attack_type, trigger_condition, impact_scope, entry_likelihood, threat_source*, attack_complexity*, mitigation*, description
+表示攻击入口或威胁行为，静态挂载在资产节点上。
+路径类
+AttackPath
+path_id, entry_point, node_sequence, hop_count, threat_flow_type, impact_asset, is_critical_path, path_probability*, detection_difficulty*, remediation_priority*, description
+表示从威胁点到关键资产的静态攻击路径，支持多跳路径推演。
+映射类（可选）
+DO326A_Link
+clause_id, mapped_element, element_ref, mapping_reason, evidence, mapping_status*, mapping_version*
+语义元素与 DO-326A 条款的静态对应关系，用于合规映射说明。
+（本节字段中带 * 的为选填扩展属性，需在满足指定触发条件时填写并记录理由。）
+1. 资产类元素（AssetNode）
+字段规范（* 为选填字段，需在触发条件下填写）：
+字段
+是否必填
+填写时机
+取值/格式要求
+说明
+asset_id
+必填
+首次登记资产时填写，后续仅可通过变更单修改
+格式 `<域标识>-<资产标识>`，域标识∈{IS, IF, SYS, EXT}，资产标识为 2~12 位大写字母或数字；需在模型内唯一
+作为其他语义元素引用的主键，建议与配置管理编号对齐
+asset_name
+必填
+与 asset_id 同步维护，涉及命名变更需评审确认
+长度 2~48 字符，可含中文、英文与数字，首字符须为中文或字母，禁止仅使用缩写
+用于图形化视图展示，应能清晰描述资产功能
+asset_type
+必填
+初次建模时确定，变更需重新评估影响
+枚举 {Terminal, Interface, Link, Data}，须与 DO-326A 资产分类一致
+决定可用属性模板及风险评估准则
+criticality
+必填
+初次建模时评定，并在威胁评审或测试后更新
+枚举 {High, Medium, Low}；评定依据 DO-356A Threat Propagation 分析或专家会议纪要
+用于优先级排序及缓解措施资源分配
+security_domain*
+选填
+当资产跨越或位于安全边界时必须填写
+枚举 {Internal, External, DMZ, Shared}；扩展取值需在治理记录中备案
+支持跨域连线时的信任建模
+description*
+选填
+当资产功能复杂或命名不足以说明时填写
+最多 200 字符，描述主要功能、关键接口及安全假设
+辅助评审与维护，避免信息缺失
+data_classification*
+选填
+仅当 asset_type = Data 时填写
+枚举 {Public, Internal, Sensitive, Restricted}
+指导数据保护与访问控制策略
+2. 关系类元素（AssetEdge）
+语义角色： 描述资产之间的通信、依赖、物理连接或控制路径。是攻击链“可达性”建模的基础。
+建模提示： 一条边代表一次逻辑或物理连接，方向性决定威胁可否从 source 向 target 传播。
+字段规范（* 为选填字段，需在触发条件下填写）：
+字段
+是否必填
+填写时机
+取值/格式要求
+说明
+edge_id
+必填
+创建连接关系时填写
+格式 `E-<source_asset_id>-<target_asset_id>-<序号>`，序号为两位数字；在全模型唯一
+便于追踪关系变更与引用
+source_asset_id
+必填
+定义连线方向时填写
+必须引用已建模的 asset_id；来源节点需存在
+决定攻击可达性的起点
+target_asset_id
+必填
+定义连线方向时填写
+必须引用已建模的 asset_id；目标节点需存在
+决定攻击可达性的终点
+link_type
+必填
+连线建模时确认
+枚举 {Physical, Logical, DataFlow, Control}
+决定需补充的属性与安全控制类型
+protocol_or_medium*
+选填
+当 link_type 为 Logical 或 DataFlow 时必须填写
+使用标准接口/协议名称（如 802.3、ARINC429、USB2.0）；自定义协议需附版本号
+用于评估攻击介质与可利用工具
+direction
+必填
+连线建模时确认
+枚举 {Unidirectional, Bidirectional}
+影响攻击路径可达性与概率计算
+trust_level*
+选填
+当 source_asset_id 与 target_asset_id 的 security_domain 不同或存在额外信任假设时填写
+枚举 {Trusted, Semi-Trusted, Untrusted}
+用于路径优先级计算与审计说明
+3. 威胁点类元素（ThreatPoint）
+语义角色： 表示攻击者可利用的系统脆弱点或输入接口，是攻击路径的起始条件之一。
+建模提示： ThreatPoint 静态挂载于资产节点上，不产生路径，但可作为路径起点或中继点影响传播。
+字段规范（* 为选填字段，需在触发条件下填写）：
+字段
+是否必填
+填写时机
+取值/格式要求
+说明
+threatpoint_id
+必填
+首次识别威胁点时填写
+格式 `TP-<asset_id>-<序号>`，序号为两位数字；在全模型唯一
+与攻击路径 entry_point 建立唯一关联
+name
+必填
+威胁识别讨论后确定
+长度 4~64 字符，可结合接口或 STRIDE 名称，禁止使用含糊描述
+需明确攻击入口或脆弱点
+related_asset_id
+必填
+威胁点确认时填写
+必须引用存在的 asset_id，并与 threatpoint_id 中的资产保持一致
+确保威胁点挂载资产明确
+stride_category
+必填
+威胁分类时填写
+枚举 {Spoofing, Tampering, Repudiation, InformationDisclosure, DenialOfService, ElevationOfPrivilege}
+支撑标准化的威胁分类输出
+attack_vector
+必填
+威胁评审时确认
+枚举 {Network, Wireless, Physical, Maintenance, SupplyChain}
+指导后续防护措施选择
+preconditions*
+选填
+当威胁点触发需要特定环境或权限时填写
+以条目形式描述，最多 200 字符；多个条件用分号分隔
+用于评估成功概率和防护重点
+detection_status*
+选填
+当存在检测或缓解措施时填写
+枚举 {None, Monitoring, Mitigated}
+用于评审剩余风险与控制有效性
+cve_reference*
+选填
+当威胁点对应已知漏洞或通报时填写
+使用 CVE-YYYY-NNNN 或 CNVD 编号，多个编号以逗号分隔
+支持追踪情报来源与修复状态
+4. 攻击路径类元素（AttackPath）
+语义角色： 表示攻击从起点向目标资产传递的可能路径，是多跳静态分析的输出。
+建模提示： 路径可通过图遍历工具获得，也支持人工标注，用于静态展示和评审。
+字段规范（* 为选填字段，需在触发条件下填写）：
+字段
+是否必填
+填写时机
+取值/格式要求
+说明
+path_id
+必填
+首次登记攻击路径时填写
+格式 `AP-<四位序号>`，序号递增且唯一
+作为路径生命周期管理的唯一标识
+entry_point_id
+必填
+路径建模时确认
+必须引用已建模的 threatpoint_id
+标记路径的起始条件
+target_asset_id
+必填
+路径建模时确认
+必须引用已有 asset_id
+标记路径的静态目标
+hop_sequence
+必填
+路径分析完成后记录
+使用 `>` 分隔的 asset_id 序列，如 `TP1>IS-PMAT>IF-8023>SYS-FCU`；至少包含 2 个节点
+表示静态传播路径，用于验证可达性
+raw_score
+必填
+完成启发式评分计算后填写
+数值型，保留两位小数，范围 0~1；由 entry_likelihood_value × attack_success_factor × source_weight 计算
+作为 normalized_score 的基础
+normalized_score
+必填
+完成全局归一化后填写
+数值型，范围 0~1；由 raw_score / max(raw_scores) 计算
+用于优先级阈值判断
+priority_label
+必填
+normalized_score 计算后立即填写
+枚举 {High, Medium, Low}；规则：normalized_score ≥ 0.5 → High，0.15~0.5 → Medium，<0.15 → Low
+驱动响应计划与评审节奏
+expert_modifier*
+选填
+当专家评审需要调整 raw_score 时填写
+浮点型，默认 1.0，允许范围 0.5~1.5
+调整后需同步更新 raw_score 并备案
+expert_adjustment_note*
+选填
+仅当 expert_modifier ≠ 1.0 时填写
+至少 10 字符，记录调整理由及会议纪要编号
+满足治理要求，支撑审计追踪
+mitigation_reference*
+选填
+当路径进入缓解措施计划或已落实控制时填写
+引用控制编号或工单号，如 CTR-2024-015；多个条目用逗号分隔
+用于闭环管理与进度跟踪
+该启发式评分机制的目的是帮助团队对不同攻击路径进行优先级排序，通过一个定量化的评分工具来实现，而非预测攻击的确切成功概率。评分公式为：
+path_probability = entry_likelihood_value × attack_success_factor × source_weight
+其中，entry_likelihood_value表示攻击路径进入的可能性，与威胁点的等级相关，分为High（0.7）、Medium（0.5）、Low（0.3）；
+attack_success_factor表示威胁点的攻击复杂度，影响攻击的成功概率，分为Low（1.0）、Medium（0.7）、High（0.4）；
+source_weight表示攻击源的风险权重，取决于攻击源类型，分别为内部（0.9）、外部（0.7）和第三方（0.5）。这些数值并非真实世界中的攻击成功率，而是帮助团队对不同攻击路径进行相对比较和排序，从而指导优先级。
+启发式方法具有简单直观、快速得出结果的优势，不需要大量数据支持，同时具有较好的可解释性，每个因子和数值都能与现实中的场景直接对应。参数的灵活性也使得评分系统能够根据经验和具体场景进行调整，确保了评分的一致性，避免了各分析员基于直觉做出不同判断的风险。
+为了确保评分系统的准确性和可操作性，设定了以下治理要点：首先，新增 expert_modifier（默认值为1.0，取值范围0.5~1.5）和 expert_adjustment_note字段，所有人工调整需在评审会议纪要中备案；其次，在评分完成后，使用 max 归一化计算 normalized_score = raw_score / max(raw_scores)，确保不同模型评分的可比性；当 normalized_score < 0.15 时，路径被标记为“低优先级”，默认不进入进一步缓解分析。最后，评分参数由威胁建模负责人维护，任何调整均需引用证据（如测试结果、专家意见或事件复盘），并通过变更单更新评分配置版本。
+伪代码示意如下：
+# 计算路径评分
+score = entry_likelihood_value * attack_success_factor * source_weight
+# 如果需要人工调整，乘以 expert_modifier
+score *= expert_modifier  # 默认 1.0，人工调整在此乘以系数
+# 归一化处理，确保不同模型评分可比
+normalized_score = score / max(all_scores)
+# 如果归一化评分低于阈值，标记为低优先级
+if normalized_score < 0.15:
+    mark_as_low_priority(path_id)
+该机制的优势在于其轻量化与启发式方法的契合，使得在不需要大量数据的前提下能够快速得出结果，且具备较高的可解释性和灵活性。
+5. 条款映射类元素（DO326A_Link）【可选模块】
+语义角色： 建立建模语义项与适航标准条款之间的静态映射关系，服务后续报告与审计。
+建模提示： 每个语义项可与多个条款产生映射关系，形成结构化的合规性辅助材料。
+字段规范（* 为选填字段，需在触发条件下填写）：
+字段
+是否必填
+填写时机
+取值/格式要求
+说明
+link_id
+必填
+创建条款映射时填写
+格式 `DL-<三位序号>`；同一模型唯一
+用于追踪条款映射及审计
+standard_id
+必填
+创建映射时填写
+使用 DO-326A/DO-356A 条款编号，例如 DO-326A-3.2.1；多个编号以逗号分隔且需升序排列
+明确映射的条款来源
+clause_title
+必填
+创建映射时填写
+引用标准官方标题，禁止使用自定义简称
+确保条款表述一致
+semantic_element_id
+必填
+建立映射时填写
+引用关联的 asset_id / threatpoint_id / path_id；多个条目用逗号分隔并按类型分组
+建立条款与语义项的静态挂接
+linkage_type
+必填
+建立映射时填写
+枚举 {Requirement, Evidence, Mitigation}
+标记与条款关联的用途
+evidence_reference*
+选填
+当存在支撑文档、测试报告或审计记录时填写
+引用文档编号或链接，多个条目用分号分隔，禁止粘贴敏感正文
+提升条款映射的可验证性
+review_status
+必填
+条款映射创建后立即填写，并在审查过程中更新
+枚举 {Draft, Reviewed, Approved}
+记录条款映射的治理状态
+reviewer*
+选填
+当 review_status 为 Reviewed 或 Approved 时必须填写
+使用审查人姓名/工号组合（例如 张三/12345）
+支撑责任追踪与审计
+建模样例片段（简化图形）
+[GPS接收模块]───(ARINC 429)───>[飞行控制单元]
+     │
+[威胁点：伪造GPS信号]
+     ↓
+[攻击路径：TP1 → GPS → 控制接口 → FCU]
+四、模型组织结构
+核心结构为资产图模型，以 AssetNode 为节点、AssetEdge 为边，构成系统拓扑图；
+每个资产节点可挂载 0-N 个 ThreatPoint，表示潜在攻击点；
+攻击路径 (AttackPath) 基于图遍历算法或手工输入获得，静态嵌入资产图；
+DO326A_Link 用于将模型元素与标准条款进行文本级挂接，增强建模合规性；
+图模型结构如下图所示（略），清晰表达系统结构与潜在攻击路径关系。
+五、实现形式与输出方式
+建模平台：采用轻量图数据库（如 Neo4j）进行语义建模与可视化；
+语义数据格式：支持 JSON / CSV 表达结构，便于跨平台处理与批量处理；
+图形展示样式：资产类型通过颜色/图标区分，攻击路径用箭线表示跳跃链路，威胁点以图标或标签挂载，确保图形直观可审查；
+输出形式：
+静态资产图（系统结构视图）；
+攻击链图（典型攻击路径多跳表达）；
+节点属性表（JSON/CSV 格式）；
+条款映射说明文档（标准-语义项对应表）；
+攻击路径推演算法示例（具体以实现为准）：
+路径推演算法基于图遍历技术（如Dijkstra算法）进行，主要考虑两个核心要素：路径的有效性和约束条件。
+路径有效性：路径推演首先通过图遍历计算出从源资产到目标资产的所有可能路径，每条路径表示从一个资产到另一个资产的传播链条。在图中，每条连接（边）具有方向性，限制了信息的传播方向，确保数据流只能沿着指定的路径传播。其次，每条路径的信任级别（trust_level）和加密机制（security_mechanism）会影响路径的有效性。如果路径经过低信任级别的连接（如trust_level为Low），或者路径上存在加密机制（如SSL/TLS），则该路径可能会被排除，无法继续传播。只有通过高信任连接且不受加密机制限制的路径才会被视为有效。
+约束条件：除了信任级别和加密机制外，还需要考虑路径的最大跳数（max_hops）。这一约束控制了路径的最大长度，确保推演过程中不会产生过长的路径，导致计算资源的浪费。在路径计算完成后，将根据这些约束条件筛选出符合条件的路径，避免无效的计算并提高效率。
+最终，算法将输出满足所有约束条件的有效路径。这些路径的评估结果将帮助安全团队识别潜在的风险路径并制定相应的缓解策略。
+六、与通用语义建模方法的对比优势
+比较维度
+STRIDE / ATT&CK 等通用方法
+本项目轻量级语义结构
+建模复杂度
+多层语义维度（威胁类别、防护状态、阶段流程）
+限定静态资产+路径+威胁点三要素
+学习与使用成本
+高，需理解抽象威胁模型
+低，面向工程人员友好
+合规条款适配性
+难以映射至特定适航术语
+与 DO-326A 语义项贴合设计
+可视化清晰度
+路径表达不直观，多依赖工具支持
+图结构清晰，路径一图表达
+静态路径推演能力
+弱，强调动态行为或攻击阶段
+强，支持图遍历与多跳攻击路径表达
+场景分析：
+场景介绍：
+中央的信息系统处于“信息系统安保边界”之内，是核心保护目标。有两个内部接入设备，分别是IS-PMAT和IS-P-RFB，前者通过802.3/802.11接入信息系统，后者通过802.11接入信息系统。有四个外部连接系统，客舱系统通过802.3与信息系统连接、地面支持系统通过USB与信息系统对接、蜂窝基站通过蜂窝通信接口与信息系统交互、机场 Wi-Fi通过 802.11 与信息系统相连。
+资产类：
+这里id的命名规则为<系统类型+资产标识>，其中IS表示内部设备，IF表示接口，SYS表示系统。资产类型为Terminal、Interface、Link、Data， 对应到DO-326A 提到的典型资产范围（保护目标）Systems、Interfaces / Entry Points、Communication Links、Data / Functions。Criticality主要基于安全影响和攻击链作用（对应DO-356A 的 Threat Propagation 分析）
+关系类元素
+威胁点：
+威胁类型暂定stride：
+攻击路径：
+建模图：
+以资产为节点，资产与资产之间的关系为边，再增加挂载在资产上的威胁点节点和挂载在危险点节点上的攻击路径节点
+每个节点包含上面表格的属性。
