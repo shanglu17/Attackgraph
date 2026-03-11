@@ -1,0 +1,643 @@
+                                                                                                                     Appendix D
+                                                                                                                            D-3
+D.2              Risk Management Example
+D.2.1            Example Context
+                 In this example, an update process of Air Management System (AMS) of the hypothetical
+                 aircraft shown in DO-326A / ED-202A partial architecture is analyzed. In this update, two
+                 controllers will replace the old AMS (Temperature Controller and Pressurization Controller
+                 in Figure D-4) and a GSE will be used for maintenance activities.
+                 The previous system was connected to the aircraft using ARINC 429 busses. It could be
+                 used in aircraft with different cabin configurations and needed to be configured by the
+                 operator’s maintenance personnel for replacement of damaged LRU. The new AMS system
+                 should maintain the same functionality and maintenance operational capabilities.
+                 Both controllers contain a microprocessor and Programmable Logic Device (PLD) that may
+                 be updated via the Ground Support Equipment (GSE) or Ethernet router connection. The
+                 new software and firmware update may be downloaded from a secure server provided by
+                 the aircraft manufacturer. The automatic update is optional and the manual update may be
+                 performed at a MRO or by the operator’s maintenance personnel. They are connected to
+                 other aircraft systems via ARINC 664 bus.
+
+
+
+
+                                            Figure D-4: Example Context
+D.2.2            Security Scope
+                 This section provides an example for security scope definition which is presented in section
+                 3.1. The Figure D-5 shows the Aircraft Security Scope for this example with aircraft
+                 interfaces passing the security perimeter, which is the line between security assets and
+                 security environment. The items inside the orange shading are inside the security perimeter,
+                 items not within the shaded boundary are part of the security environment. The Aircraft
+
+
+                 DO-356A                                                                    © 2018 RTCA, Inc.
+                     For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+        and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+         Appendix D
+         D-4
+         Security Scope is important information to identify attack paths to the new system that may
+         contain assets with Safety effects (see section 3.1.1 for definition of asset).
+         Figure D-6 depicts the AMS Security Scope with emphasis on its interfaces with aircraft
+         security using the same method. The continuous lines represent permanent connections of
+         AMS to aircraft while the dashed lines represent temporary connections.
+
+
+
+
+                                Figure D-5: Aircraft Security Scope
+
+
+
+
+         © 2018 RTCA, Inc.                                                                      DO-356A
+             For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                                       Appendix D
+                                                                                                                              D-5
+
+
+
+
+                                            Figure D-6: AMS Security Scope
+
+
+D.2.2.1            Assets
+                   This section presents an example of aircraft assets, which is presented in section 3.1.1.
+D.2.2.1.1          Aircraft Functions
+                   A search in the aircraft functions database will list functions where the AMS directly
+                   contributes to their implementation.
+                   In this example, these aircraft functions (AF) are:
+                   AF.1 Provide Cabin acclimatization
+                          a.    Heating
+                          b.    Cooling
+                          c.    Failure warning
+                   AF.2 Provide in flight information
+                          a.    External temperature
+                          b.    Cabin temperature
+                   AF.3 Provide Cabin pressurization
+                          a.    Keep internal pressure between 6.000 feet and sea level
+                          b.    Failure warning
+                   AF.4 Maintain aircraft structural integrity
+                   AF.5 Provide Aircraft Status information to pilot
+                   AF.6 Provide maintenance support for troubleshooting
+                   AF.7 Provide test support for manufacturing
+
+                   DO-356A                                                                    © 2018 RTCA, Inc.
+                       For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+          and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                 Appendix D
+                 D-6
+                 These functions should be traceable from previous system function allocation. From the
+                 system functional architecture, it should be possible to identify interfaces with other aircraft
+                 systems. In this example these interfaces were identified:
+                 1.    From entertainment system for updates (optional)
+                 2.    To avionic system for status and warnings
+                 3.    From avionic system for cockpit control
+                 4.    To bleed system for temperature and pressure control
+                 From the system architecture the following interfaces have been identified:
+                 1.    Avionic system ARINC 664 connection
+                 2.    Ethernet connection to “Ethernet router”
+                 3.    Ethernet connection between Temperature controller and Pressurization Controller
+                 4.    CAN connection to maintenance equipment
+                 From the item lifecycle data (PSAC and PHAC) it is possible to identify the following
+                 loadable items:
+                 1.    Software PN for Temperature controller
+                 2.    Firmware PN for Temperature controller
+                 3.    Configuration file for Temperature controller
+                 4.    Software PN for Pressurization controller
+                 5.    Firmware PN for Pressurization controller
+                 6.    Configuration files for Pressurization controller
+                 7.    ARINC 664 data messages to avionic system
+                 8.    ARINC 664 command messages from avionic system
+                 9.    CAN messages to GSE
+                 10. CAN messages from GSE
+                 11. FLS from Pressurization Controller to Temperature controller (loaded by automated
+                       process - optional)
+                 12. Health monitoring data on each AMS controller
+                 From AMS operation concept document, the GSE interface was identified.
+D.2.2.1.2        Change Impact Analysis
+                 This section presents an example of a change impact analysis.
+                 Note:        In the perspective of this example, only the relevant information will be listed.
+                 The replacement of the old AMS by the new AMS should have the following impact:
+                 1.    Replacement of ARINC 429 busses by ARINC 664
+                 2.    Creation of connection with Entertainment System Ethernet Switch for automatic
+                       FLS download
+                 3.    Maintenance procedure changing
+                 4.    Manufacturing procedure changing
+                 5.    Health monitoring functions included
+D.2.2.1.3        Survey Data
+                 This section presents an example of survey data, used to identify potential sources of
+                 vulnerabilities, which is presented in section 3.1.1.1.
+
+
+
+                 © 2018 RTCA, Inc.                                                                      DO-356A
+                     For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+        and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                                        Appendix D
+                                                                                                                               D-7
+                   Using the checklist from section 3.1.1.1, the system supplier provided the answers in
+                   Table D-1. From it was identified a new interface (SBC USB interface) that need to be
+                   considered even if not used during operation.
+                                                Table D-1: Security Survey
+
+                    Question                                                               Pressurization         Temperature
+                                                                                           Controller             Controller
+                    1. Does the element under analysis use field-                          Yes                    Yes
+                    loadable software or reprogrammable hardware
+                    (FLS)?
+                    2. Is the element under analysis configurable by the                   Yes                    Yes
+                    end user?
+                    3. Does the element under analysis use an                              No                     No
+                    aeronautical database?
+                    4. Does the element under analysis use an operating                    Yes                    Yes
+                    system?                                                                (proprietary)          (Linux)
+                    5. Does the element under analysis use network                         No                     No
+                    interfaces to shared media or resources?
+                    6. Does the element under analysis use wired                           No                     No
+                    network interfaces to access ground resources?
+                    7. Does the element under analysis use wireless                        No                     No
+                    network interfaces to access ground resources?
+                    8. Does the element under analysis provide                             No                     Yes (SBC
+                    interfaces to removable media and electronic                                                  provides USB
+                    devices like Electronic Flight Bags, external hard                                            but it is not
+                    disks, CD-ROMs or USB sticks?                                                                 used)
+                    9. Does the element under analysis provide                             Yes                    Yes
+                    interfaces to Ground Support Equipment?                                (CAN)                  (CAN)
+
+
+D.2.2.2            Security Perimeter
+                   This section provides an example of security perimeter, which is presented in section 3.1.2.
+                   Drawing a graph of the architectural elements, should facilitate the process of security scope
+                   definition. As this analysis considers a system update, the system security perimeter is
+                   defined by the following interfaces:
+                   SI.1 Physical interface to ARINC 664 switch
+                   SI.2 Logical interface to Avionic system
+                   SI.3 Logical interface to Bleed system
+                   SI.4 Physical interface to Maintenance GSE
+                   SI.5 Logical interface to Manufacturer network via GSE
+                   SI.6 Physical interface to Ethernet switch
+                   SI.7 Logical interface to Airline network
+                   SI.8 Logical interface to Manufacturer network
+
+
+                   DO-356A                                                                    © 2018 RTCA, Inc.
+                       For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+          and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+         Appendix D
+         D-8
+         SI.9 Physical USB connection not used during operation
+         Figure D-7 shows the graph of the architecture. The oval items are part of the system under
+         analysis, the rounded squares are aircraft systems and the rectangles are ground systems.
+         From the survey table and development plans (PSAC and PHAC) the following information
+         assets can be identified in the perimeter:
+                             Table D-2: Identified Information Assets
+
+          Asset ID        Asset
+          IA.1            Field loadable software
+          IA.2            Configuration files
+          IA.3            Firmware
+          IA.4            Data storage in Pressurization Controller (optional feature) for:
+          IA.4a           Digital certificates
+          IA.4b           Cryptographic key
+          IA.4c           Downloaded Software PN prior installation
+          IA.4d           Downloaded Firmware PN prior installation
+          IA.5            Data storage in each AMS LRUs for:
+          IA.5a           Configuration files
+          IA.5b           Logging files
+          IA.5c           Health monitoring
+          IA.6            ARINC 664 data messages exchanged with Avionic System
+          IA.7            CAN messages exchanged with GSE
+
+
+
+
+         © 2018 RTCA, Inc.                                                                      DO-356A
+             For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                             Appendix D
+                                                                                                                    D-9
+
+
+
+
+                               Figure D-7: AMS Security Perimeter
+         As stated in DO-326A / ED-202A, all elements inside the security perimeter are under the
+         development control and should be subject to change to enhance security. All other elements
+         outside the security perimeter cannot be modified or are difficultly changed.
+         Figure D-8 presents a hierarchical view of the identified assets. The green boxes are
+         functions and the other figure elements represent interfaces, data and resources.
+
+
+
+
+         DO-356A                                                                    © 2018 RTCA, Inc.
+             For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                   Appendix D
+                   D-10
+
+
+
+
+                                          Figure D-8: AMS Assets Hierarchy
+
+
+D.2.2.3            Security Environment
+                   This section provides an example of the security environment definition, which is presented
+                   in section 3.1.3.
+                   Using the graph of the architectural elements (Figure D-7) the following assumptions can
+                   be listed:
+                   1.     No attack originates from ARINC 664 switch due to its design
+                   2.     No attack can succeed through ARINC 664 switch due to its design
+                   3.     The MRO has no security training
+                   4.     The manufacturer server implements cryptography, authentication and access
+                          controls
+                   5.     The airline IT personnel are security aware but has no familiarity with aircraft
+                          security
+                   6.     The airline crew personnel have no security awareness
+                   7.     The airline allows personal usage of EFB by its employees
+                   8.     Airline maintenance personnel can update the LRU data items
+                   9.     The Pressurization controller can be updated via GSE or embedded Ethernet switch
+                   10. The Temperature controller can be updated via GSE or Pressurization controller
+
+
+
+
+                   © 2018 RTCA, Inc.                                                                      DO-356A
+                       For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+          and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                             Appendix D
+                                                                                                                  D-11
+         Based on Figure D-7, it is possible to identify the persons and organizations that interact
+         with the AMS;
+                a.     Avionic system via ARINC 664
+                b.     In-flight entertainment system via Ethernet switch
+                c.     Operator’s maintenance personnel via GSE
+                d.     MRO personnel via GSE
+         Analyzing only the AMS security environment, it is not possible to identify the external
+         population that can exercise the interface with the entertainment system because they are
+         behind the Ethernet switch. For the assessment completeness it is necessary, in this
+         particular case, to analyze the aircraft security scope to identify the population.
+         With this approach, it is possible to identify the following persons, organizations, and
+         external systems:
+                e.     Pilot via EFB in cockpit
+                f.     First officer via EFB in cockpit
+                g.     Operator’s maintenance personnel via QAR
+                h.     Operator’s personnel via CSD EFB
+                i.     Airline ground infra-structure via fileserver
+                j.     Airline ground infra-structure via wireless bridge
+                k.     Manufacturer infra-structure via wireless bridge
+         Using the Verizon Business 2009 Data Breach Investigations Supplemental Report [57] as
+         reference, the most common types of attack are considered:
+         1.     Keylogging and spyware: Malware specifically designed to covertly collect, monitor
+                and log the actions of a system user.
+         2.     Backdoor or command/control: Tools that provide remote access to or control of
+                infected systems, or both, and are designed to run covertly.
+         3.     SQL injection: An attack technique used to exploit how Web pages communicate
+                with back-end databases.
+         4.     Abuse of system access/privileges: Deliberate and malicious abuse of resources,
+                access or privileges granted to an individual by an organization.
+         5.     Unauthorized access via default credentials: Instances in which an attacker gains
+                access to a system or device protected by standard preset (widely known) user names
+                and passwords.
+         6.     Violation of acceptable use and other policies: Accidental or purposeful disregard of
+                acceptable use policies.
+         7.     Unauthorized access via weak or misconfigured access control lists (ACLs): When
+                ACLs are weak or misconfigured, attackers can access resources and perform actions
+                not intended by the victim.
+         8.     Packet sniffer: Monitors and captures data traversing a network.
+         9.     Unauthorized access via stolen credentials: Instances in which an attacker gains
+                access to a protected system or device using valid but stolen credentials.
+         10. Pretexting or social engineering: A social engineering technique in which the attacker
+                invents a scenario to persuade, manipulate, or trick the target into performing an
+                action or divulging information.
+         11. Authentication bypass: Circumvention of normal authentication mechanisms to gain
+                unauthorized access to a system
+
+
+         DO-356A                                                                    © 2018 RTCA, Inc.
+             For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+         Appendix D
+         D-12
+         12.   Physical theft of asset: Physically stealing an asset.
+         13.   Brute-force attack: An automated process of iterating through possible
+               username/password combinations until one is successful.
+         14. RAM scraper: A fairly new form of malware designed to capture data from volatile
+               memory (RAM) within a system.
+         15. Phishing (and endless “ishing” variations): A social engineering technique in which
+               an attacker uses fraudulent electronic communications (usually e-mail) to lure the
+               recipient into divulging information.
+         Note:        The Verizon Business 2009 Data Breach Investigations Supplemental Report
+                      identifies and ranks by frequency the top 15 types of attack based on evidence
+                      from incident investigations in 2009.
+                              Table D-3: Applicable Types of Attacks
+        Attack                    ARINC CAN Ethernet Pressurization Temperature GSE
+                                  664 bus bus bus    Controller     Controller
+        Keylogging and            No           No         No             No                     Yes                  Yes
+        spyware
+        Backdoor or     No                     No         No             No                     Yes                  No
+        command/control
+        SQL injection             No           No         No             No                     No                   Yes
+        Abuse of system           No           No         No             Yes                    Yes                  Yes
+        access /
+        privileges
+        Unauthorized       No                  No         No             No                     Yes                  Yes
+        access via default
+        credentials
+        Violation of              No           Yes        Yes            Yes                    Yes                  Yes
+        acceptable use
+        and other
+        policies
+        Unauthorized              No           Yes        Yes            No                     Yes                  Yes
+        access via weak
+        or misconfigured
+        access control
+        lists
+        Packet sniffer            Yes          Yes        Yes            No                     No                   Yes
+        Unauthorized              No           No         Yes            Yes                    Yes                  Yes
+        access via stolen
+        credentials
+        Pretexting or             No           No         Yes            Yes                    Yes                  Yes
+        social
+        engineering
+        Authentication            No           Yes        Yes            Yes                    Yes                  Yes
+        bypass
+
+
+         © 2018 RTCA, Inc.                                                                       DO-356A
+               For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                                       Appendix D
+                                                                                                                            D-13
+                  Attack                    ARINC CAN Ethernet Pressurization Temperature GSE
+                                            664 bus bus bus    Controller     Controller
+                  Physical theft of         No           No        No              Yes                    Yes                  Yes
+                  asset
+                  Brute-force               No           No        Yes             Yes                    Yes                  Yes
+                  attack
+                  RAM scraper               No           No        No              No                     Yes                  Yes
+                  Phishing                  No           No        No              No                     No                   No
+
+
+                   ISO / IEC 27005:2011 [47], Annex C will be used in this example to classify the applicable
+                   threat sources:
+                   1.     Computer criminal for destruction of information or unauthorized data alteration (e.g.
+                          FLS and configuration files)
+                   2.     Terrorist for destruction or blackmail (e.g.: tampered FLS)
+                   3.     Industrial espionage for competitive advantage
+                   4.     Insiders due to lack of security awareness, intelligence, lack of training, monetary
+                          gain or revenge
+                   The security measures implemented by the system manufacturer are the only ones being
+                   considered as existent.
+D.2.2.4            Defining Nested Assets
+                   Using the graph of the architectural elements (Figure D-7) it is possible to visualize that the
+                   AMS security environment is the aircraft security perimeter combined with the aircraft
+                   security environment. Using Figure D-8, the AMS system and its LRUs can be visualized
+                   as a nested asset of the aircraft. This concept is presented in section 5.3.
+D.2.3              Risk Assessment Method Framework
+                   This example will be considered as a Preliminary risk assessment performed with
+                   incomplete information about the AMS system. This topic is presented in section 3.2.
+D.2.3.1            Threat Condition Identification and Evaluation
+                   This section provides an example of threat condition identification and evaluation,
+                   presented in section 3.3.
+                   The inputs available for this activity are:
+                   Aircraft/System architecture: Figure D-6 and Figure D-7;
+                   Functional Hazard Assessment failure conditions with severity (in the same order as aircraft
+                   functions that were presented in “Aircraft functions” section)
+                   FC.1. Loss of acclimatized environment for crew and passengers – Minor
+                   FC.2. Loss of Temperature Information – No safety effect
+                   FC.3. Loss of pressurization for crew and passengers – Catastrophic
+                   FC.4. Loss of aircraft structural integrity – Catastrophic
+                   FC.5. Loss of AMS Status Information – Major
+                   FC.6. Loss of maintenance support capability – No safety effect
+                   FC.7. Loss of test support capability – No safety effect
+
+
+                   DO-356A                                                                    © 2018 RTCA, Inc.
+                       For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+          and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                       Appendix D
+                       D-14
+                       System security scope: from sections D.2.2.2 and D.2.2.3 of this example.
+
+
+                              Table D-4: Threat Condition Identification and Evaluation
+
+                                                                                Effect on
+             Attribute                                                                                                             Failure
+ TC    Asset  (CIA)                 Description         FP Aircraft Flight crew Occupant                           Severity        Cond.
+TC.1   AF.1 Loss of      Just repeats                         None        Unpleasant Unpleasant Minor                          FC.1
+            Availability FC.1                                             temperature temperature
+TC.2   ...       ...              FC.2 to FC.7                ...         ...               ...              ...               FC.2
+                                  repetition
+
+
+TC.3   SI.1      n/a              ARINC 664                   None        None              None             n/a               None
+                                  interface is
+                                  secure by
+                                  assumptions
+                                  AS.1 and AS.2
+TC.4   SI.2      n/a              ARINC 664                   None        None              None             n/a               None
+                                  data flow is
+                                  secure by
+                                  assumptions
+                                  AS.1 and AS.2
+TC.5   SI.3      Loss of          Misleading                  None        Loss of           Loss of          Catastrophic FC.3
+                 Integrity        commands to                             pressure          pressure
+                                  bleed due to                            control           control
+                                  pressurization
+                                  controller
+                                  corruption
+TC.6   SI.3      Loss of          Counterfeit                 None        Loss of           Loss of          Catastrophic FC.3
+                 Confident.       LRU                                     pressure          pressure
+                                  installation.                           control           control
+TC.7   SI.3      Loss of      On ground the                   None        Loss of           Loss of          No safety         FC.3
+                 Availability aircraft will                               pressure          pressure         impact
+                              not be                                      control           control
+                              dispatched.
+TC.8   SI.3      Loss of      On air if no                    None        Loss of           Loss of          Catastrophic FC.3
+                 Availability messages are                                pressure          pressure
+                              provided to                                 control           control
+                              crew.
+TC.9   ***       ***              Similar                     ***         ***               ***              ***               ***
+- TC                              analysis for
+14                                other listed
+                                  interfaces
+TC.15 IA.1 Loss of                Due to attack 8             None        None              None             No safety         FC.3
+           Confident.             or 12                                                                      impact
+
+
+                       © 2018 RTCA, Inc.                                                                      DO-356A
+                           For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+              and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                                         Appendix D
+                                                                                                                              D-15
+                                                                            Effect on
+             Attribute                                                                                                           Failure
+ TC    Asset  (CIA)               Description         FP Aircraft Flight crew Occupant                        Severity           Cond.
+TC.16 IA.1 Loss of              If integrity               None         None              None             No safety         FC.3
+           Integrity            checks detect                                                              impact
+TC.17 IA.1 Loss of              If integrity               None         Loss of           Loss of          Catastrophic FC.3
+           Integrity            check fails and                         pressure          pressure
+                                the aircraft                            control           control
+                                became
+                                airborne
+TC.18 IA.1 Loss of      If detected by                     None         None              None             No safety         FC.3
+           Availability aircraft                                                                           impact
+                        diagnosis prior
+                        take-off
+TC.19 IA.1 Loss of      If not detected                    None         Loss of           Loss of          Catastrophic FC.3
+           Availability by aircraft                                     pressure          pressure
+                        diagnosis prior                                 control           control
+                        take-off
+                     Legend:
+                     AF = Aircraft Function
+                     AS = Assumption
+                     CIA = Confidentiality, Integrity, Availability
+                     FC = Failure Condition
+                     IA = Information Asset
+                     FP = Flight phase
+                     SI = System Interface
+                     TC = Threat Condition
+                     *** = Analysis can be completed by reader
+  D.2.3.2            Threat Scenario Identification
+                     This example addresses the material presented in section 3.4 and subsections.
+  D.2.3.2.1          Identifying Threat Scenarios
+                     The inputs for this activity are:
+                     x      Security Environment
+                     x      Threat condition list from previous activity
+                     Considering the FHA failure conditions identified in section D.2.3.1 and the security
+                     perimeter depicted by Figure D-7 of section D.2.2.2, it was prioritized to evaluate the attack
+                     paths related to “FC.3 Loss of pressurization for crew and passengers – Catastrophic”. This
+                     threat scenario leads to the attack paths depicted in Figure D-9.
+
+
+
+
+                     DO-356A                                                                    © 2018 RTCA, Inc.
+                         For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+            and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+         Appendix D
+         D-16
+
+
+
+
+                                Figure D-9: One Stage Attack Paths
+         Due to assumptions 1 and 2 (in section D.2.2.3), the attack path through ARINC 664 switch
+         should be discarded or the assumption list modified.
+         Continuing the analysis with the persons and organizations identified in the same section,
+         it is possible to confirm that possible attackers with one stage scenario can reach:
+         a.      In-flight entertainment system via Ethernet switch
+         b.      Operator’s maintenance personnel via GSE
+         c.      MRO personnel via GSE
+         The Ethernet switch hides potential attackers that are using it to reach the target
+         (Pressurization controller that implements the function AF.3 “Provide Cabin
+         pressurization”). As this is a system update activity it is necessary to consider the guidance
+         of DO-326A / ED-202A Chapter 4.
+         At this point is it necessary to address the first design decision about the architecture:
+         a.      Remove the interface between Pressurization Controller and the Ethernet Switch
+                 reducing the system exposure and, consequently, the risk assessment effort
+         b.      Keep the interface and expand the analysis beyond Ethernet switch to completely
+                 identify the threat sources
+         Assuming that, due to business objectives, the designer opts to keep the interface, it is
+         necessary to expand the analysis to aircraft level as instructed by DO-326A / ED-202A.
+
+
+
+
+         © 2018 RTCA, Inc.                                                                      DO-356A
+             For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                                                                                                             Appendix D
+                                                                                                                  D-17
+
+
+
+
+                              Figure D-10: MultiStage Attack Paths
+         Considering the interface purpose (LRU data update), it is possible to define some security
+         requirements:
+         SR1 “The Pressurization Controller shall only accept data download via Ethernet when the
+         aircraft is on-ground and engine is off”.
+         SR2 “The pressurization Controller shall only accept external connections routed via
+         Wireless Bridge when the aircraft is on-ground and engine is off”.
+         SR3 “The AMS system LRUs shall only allow data exchange via Ethernet and CAN
+         interfaces when the aircraft is set to maintenance mode”.
+         These requirements are intended to reduce the window of opportunity by the threat sources
+         and reduce the number of attack paths.
+         Considering the section 3.4.1 contents and the attack path via the wireless interface, the
+         threat scenario is identified as:
+         x      Asset: AF.3 “Provide Cabin pressurization”
+         x      Target: Pressurization controller
+         x      Victims: Wireless bridge and Ethernet switch
+                            Table D-5: Threat Scenario Identification
+                    Threat           Attack                               Security           Threat
+           TS       Sources          Vector         Attack path           Measures          Conditions         Remarks
+          TS.1 Criminal, CAN                        Press Ctrl,         Maintenance TC.5,                     Considering
+               Terrorist, Interface                 Storage             mode (SR3) TC.6,                      threat
+               Insider                                                              TC.8,                     source with
+                                                                                    TC.17,                    direct
+                                                                                    TC.19                     access to
+                                                                                                              the
+                                                                                                              controller
+
+
+
+
+         DO-356A                                                                    © 2018 RTCA, Inc.
+             For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+                   Appendix D
+                   D-18
+                              Threat           Attack                               Security           Threat
+                     TS       Sources          Vector         Attack path           Measures          Conditions         Remarks
+                    TS.2 Criminal, CAN                        Maintenance Maintenance TC.5,                             Due to
+                         Terrorist, Interface                 GSE, Press   mode (SR3) TC.6,                             assumption
+                         Insider                              Ctrl storage            TC.8,                             3 “The
+                                                                                      TC.17,                            MRO has
+                                                                                      TC.19                             no security
+                                                                                                                        training”
+                    TS.3 Criminal, Wireless    Wireless                           Flight phase        TC.5,             Considering
+                         Terrorist, connection Bridge,                            (SR2),              TC.6,             the use of
+                         Insider               Ethernet                           Wireless            TC.8,             attacker’s
+                                               switch,                            bridge              TC.17,            hardware.
+                                               Press Ctrl                         access              TC.19
+                                               storage                            control
+                    TS.4 Criminal, Ethernet                   IFE,                Flight phase        TC.5,
+                         Terrorist, interface                 Ethernet            (SR1)               TC.6,
+                         Insider                              switch,                                 TC.8,
+                                                              Press Ctrl                              TC.17,
+                                                              storage                                 TC.19
+                   Legend:
+                   SR = Security Requirement
+                   TC = Threat Condition
+                   TS = Threat Scenario
+D.2.3.3            Security Measure Characterization
+                   This is an example of the security measure characterization topic, presented in section 3.5.
+                   Only the “Wireless bridge” is characterized here as an example:
+                   1.     Known vulnerabilities: the aircraft is delivered with a standard user name and
+                          password that is expected to be changed by the operator
+                   2.     Required effectiveness: effectiveness evaluation is performed in further steps
+                   3.     Interface and functional requirements: for example, the equipment shall provide
+                          wireless interface compliant to IEEE 802g
+                   4.     Description: Standard wireless access point with optional channel encrypting and
+                          access controls
+                   5.     Protect assets: AMS system including all functions and data within, as indicated in
+                          the discussion above
+                   6.     Type of effect: Preventive
+                   7.     Capability: The wireless bridge can provide password protection, interface
+                          hardening, hidden SSID, and other functions that provide some level of protection
+                   8.     Dependencies: operator security policy to enforce password definition after aircraft
+                          delivery or LRU replacement
+                   9.     Implementation status: on place
+                   10. Position in the architecture: Forms part of the security perimeter border
+
+
+
+
+                   © 2018 RTCA, Inc.                                                                      DO-356A
+                       For Personal Use by Caicn Yong, Shanghai Aircraft Airworthiness Certification Cent
+          and not for sale, transfer, or distribution to any other party. See Electronic License Agreement for more details.
+

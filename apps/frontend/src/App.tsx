@@ -317,7 +317,7 @@ export function App() {
         </div>
         <div className="header-actions">
           <button className="button primary" onClick={handleSeedSample} disabled={busy}>
-            Seed Sample
+            Seed DO-356A Example
           </button>
           <button className="button" onClick={handleLoadGraph} disabled={busy}>
             Refresh Graph

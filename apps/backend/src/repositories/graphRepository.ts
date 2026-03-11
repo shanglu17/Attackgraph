@@ -508,32 +508,128 @@ export class GraphRepository {
       asset_nodes: {
         add: [
           {
-            asset_id: "SYS-CIS",
-            asset_name: "Central Information System",
+            asset_id: "SYS-AMS",
+            asset_name: "Air Management System",
             asset_type: "Terminal",
             criticality: "High",
-            security_domain: "Internal"
+            security_domain: "Internal",
+            description: "DO-356A Appendix D example system"
           },
           {
-            asset_id: "IS-PMAT",
-            asset_name: "Internal Device PMAT",
+            asset_id: "SYS-PRCTRL",
+            asset_name: "Pressurization Controller",
+            asset_type: "Terminal",
+            criticality: "High",
+            security_domain: "Internal",
+            description: "Primary target for FC.3 catastrophic condition"
+          },
+          {
+            asset_id: "SYS-TMPCTRL",
+            asset_name: "Temperature Controller",
             asset_type: "Terminal",
             criticality: "Medium",
             security_domain: "Internal"
           },
           {
-            asset_id: "EXT-WIFI",
-            asset_name: "Airport Wi-Fi",
-            asset_type: "Terminal",
-            criticality: "Low",
-            security_domain: "External"
-          },
-          {
-            asset_id: "IF-80211",
-            asset_name: "Wireless Interface",
+            asset_id: "IF-CAN",
+            asset_name: "Maintenance CAN Interface",
             asset_type: "Interface",
             criticality: "Medium",
             security_domain: "Shared"
+          },
+          {
+            asset_id: "IF-ETHSW",
+            asset_name: "Ethernet Switch Interface",
+            asset_type: "Interface",
+            criticality: "Medium",
+            security_domain: "Shared"
+          },
+          {
+            asset_id: "IF-AR664",
+            asset_name: "ARINC 664 Interface",
+            asset_type: "Interface",
+            criticality: "Medium",
+            security_domain: "Shared"
+          },
+          {
+            asset_id: "IF-USB9",
+            asset_name: "USB Interface (Optional, not used in operation)",
+            asset_type: "Interface",
+            criticality: "Low",
+            security_domain: "Shared"
+          },
+          {
+            asset_id: "EXT-GSE",
+            asset_name: "Maintenance GSE",
+            asset_type: "Terminal",
+            criticality: "Medium",
+            security_domain: "External"
+          },
+          {
+            asset_id: "EXT-IFE",
+            asset_name: "In-flight Entertainment System",
+            asset_type: "Terminal",
+            criticality: "Medium",
+            security_domain: "External"
+          },
+          {
+            asset_id: "EXT-WBRIDGE",
+            asset_name: "Wireless Bridge",
+            asset_type: "Terminal",
+            criticality: "Medium",
+            security_domain: "External"
+          },
+          {
+            asset_id: "EXT-AVIONIC",
+            asset_name: "Avionic System",
+            asset_type: "Terminal",
+            criticality: "High",
+            security_domain: "External"
+          },
+          {
+            asset_id: "EXT-BLEED",
+            asset_name: "Bleed System",
+            asset_type: "Terminal",
+            criticality: "High",
+            security_domain: "External"
+          },
+          {
+            asset_id: "EXT-AIRNET",
+            asset_name: "Airline Network",
+            asset_type: "Terminal",
+            criticality: "Medium",
+            security_domain: "External"
+          },
+          {
+            asset_id: "EXT-MFGNET",
+            asset_name: "Manufacturer Network",
+            asset_type: "Terminal",
+            criticality: "Medium",
+            security_domain: "External"
+          },
+          {
+            asset_id: "SYS-FLSDATA",
+            asset_name: "Field Loadable Software",
+            asset_type: "Data",
+            criticality: "High",
+            security_domain: "Internal",
+            data_classification: "Sensitive"
+          },
+          {
+            asset_id: "SYS-CFGDATA",
+            asset_name: "Configuration Files",
+            asset_type: "Data",
+            criticality: "Medium",
+            security_domain: "Internal",
+            data_classification: "Internal"
+          },
+          {
+            asset_id: "SYS-FWDATA",
+            asset_name: "Controller Firmware",
+            asset_type: "Data",
+            criticality: "High",
+            security_domain: "Internal",
+            data_classification: "Sensitive"
           }
         ],
         update: [],
@@ -542,33 +638,136 @@ export class GraphRepository {
       asset_edges: {
         add: [
           {
-            edge_id: "E-EXT-WIFI-IF-80211-01",
-            source_asset_id: "EXT-WIFI",
-            target_asset_id: "IF-80211",
+            edge_id: "E-SYS-PRCTRL-IF-CAN-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "IF-CAN",
+            link_type: "Control",
+            protocol_or_medium: "CAN",
+            direction: "Bidirectional",
+            trust_level: "Semi-Trusted",
+            security_mechanism: "MaintenanceModeSR3"
+          },
+          {
+            edge_id: "E-IF-CAN-EXT-GSE-01",
+            source_asset_id: "IF-CAN",
+            target_asset_id: "EXT-GSE",
+            link_type: "Physical",
+            protocol_or_medium: "CAN",
+            direction: "Bidirectional",
+            trust_level: "Semi-Trusted"
+          },
+          {
+            edge_id: "E-SYS-PRCTRL-IF-ETHSW-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "IF-ETHSW",
+            link_type: "Logical",
+            protocol_or_medium: "Ethernet",
+            direction: "Bidirectional",
+            trust_level: "Semi-Trusted"
+          },
+          {
+            edge_id: "E-IF-ETHSW-EXT-IFE-01",
+            source_asset_id: "IF-ETHSW",
+            target_asset_id: "EXT-IFE",
             link_type: "DataFlow",
+            protocol_or_medium: "Ethernet",
+            direction: "Bidirectional",
+            trust_level: "Untrusted"
+          },
+          {
+            edge_id: "E-IF-ETHSW-EXT-WBRIDGE-01",
+            source_asset_id: "IF-ETHSW",
+            target_asset_id: "EXT-WBRIDGE",
+            link_type: "Logical",
+            protocol_or_medium: "Ethernet",
+            direction: "Bidirectional",
+            trust_level: "Untrusted"
+          },
+          {
+            edge_id: "E-EXT-WBRIDGE-EXT-AIRNET-01",
+            source_asset_id: "EXT-WBRIDGE",
+            target_asset_id: "EXT-AIRNET",
+            link_type: "Logical",
             protocol_or_medium: "802.11",
             direction: "Bidirectional",
             trust_level: "Untrusted"
           },
           {
-            edge_id: "E-IF-80211-SYS-CIS-01",
-            source_asset_id: "IF-80211",
-            target_asset_id: "SYS-CIS",
+            edge_id: "E-EXT-WBRIDGE-EXT-MFGNET-01",
+            source_asset_id: "EXT-WBRIDGE",
+            target_asset_id: "EXT-MFGNET",
             link_type: "Logical",
-            protocol_or_medium: "802.11",
+            protocol_or_medium: "TLSVPN",
             direction: "Bidirectional",
             trust_level: "Semi-Trusted",
-            security_mechanism: "WPA3"
+            security_mechanism: "TLS"
           },
           {
-            edge_id: "E-IS-PMAT-SYS-CIS-01",
-            source_asset_id: "IS-PMAT",
-            target_asset_id: "SYS-CIS",
+            edge_id: "E-SYS-PRCTRL-SYS-TMPCTRL-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "SYS-TMPCTRL",
             link_type: "Logical",
-            protocol_or_medium: "802.11",
+            protocol_or_medium: "Ethernet",
             direction: "Bidirectional",
             trust_level: "Trusted",
             security_mechanism: "TLS"
+          },
+          {
+            edge_id: "E-SYS-PRCTRL-IF-AR664-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "IF-AR664",
+            link_type: "Logical",
+            protocol_or_medium: "ARINC664",
+            direction: "Bidirectional",
+            trust_level: "Trusted",
+            security_mechanism: "ARINC664Secure"
+          },
+          {
+            edge_id: "E-IF-AR664-EXT-AVIONIC-01",
+            source_asset_id: "IF-AR664",
+            target_asset_id: "EXT-AVIONIC",
+            link_type: "DataFlow",
+            protocol_or_medium: "ARINC664",
+            direction: "Bidirectional",
+            trust_level: "Trusted"
+          },
+          {
+            edge_id: "E-SYS-PRCTRL-EXT-BLEED-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "EXT-BLEED",
+            link_type: "Control",
+            protocol_or_medium: "PressureCommand",
+            direction: "Unidirectional",
+            trust_level: "Trusted"
+          },
+          {
+            edge_id: "E-SYS-PRCTRL-SYS-FLSDATA-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "SYS-FLSDATA",
+            link_type: "DataFlow",
+            protocol_or_medium: "FLSStorage",
+            direction: "Bidirectional",
+            trust_level: "Trusted",
+            security_mechanism: "SignatureCheck"
+          },
+          {
+            edge_id: "E-SYS-PRCTRL-SYS-CFGDATA-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "SYS-CFGDATA",
+            link_type: "DataFlow",
+            protocol_or_medium: "ConfigStorage",
+            direction: "Bidirectional",
+            trust_level: "Trusted"
+          },
+          {
+            edge_id: "E-SYS-PRCTRL-SYS-FWDATA-01",
+            source_asset_id: "SYS-PRCTRL",
+            target_asset_id: "SYS-FWDATA",
+            link_type: "DataFlow",
+            protocol_or_medium: "FirmwareStorage",
+            direction: "Bidirectional",
+            trust_level: "Trusted",
+            security_mechanism: "SignatureCheck"
           }
         ],
         update: [],
@@ -577,25 +776,53 @@ export class GraphRepository {
       threat_points: {
         add: [
           {
-            threatpoint_id: "TP-EXT-WIFI-01",
-            name: "Spoofed wireless entry",
-            related_asset_id: "EXT-WIFI",
+            threatpoint_id: "TP-IF-CAN-01",
+            name: "TS1 CAN interface direct attack on pressurization storage",
+            related_asset_id: "IF-CAN",
+            stride_category: "Tampering",
+            attack_vector: "Maintenance",
+            entry_likelihood_level: "Medium",
+            attack_complexity_level: "Low",
+            threat_source: "external",
+            preconditions: "Direct CAN access during maintenance window",
+            detection_status: "Monitoring",
+            mitigation_reference: "SR3"
+          },
+          {
+            threatpoint_id: "TP-EXT-GSE-01",
+            name: "TS2 Maintenance GSE to pressurization storage attack",
+            related_asset_id: "EXT-GSE",
+            stride_category: "ElevationOfPrivilege",
+            attack_vector: "Maintenance",
+            entry_likelihood_level: "Medium",
+            attack_complexity_level: "Low",
+            threat_source: "external",
+            preconditions: "MRO without security training and maintenance mode enabled",
+            mitigation_reference: "SR3"
+          },
+          {
+            threatpoint_id: "TP-EXT-WBRIDGE-01",
+            name: "TS3 Wireless bridge multi-stage attack path",
+            related_asset_id: "EXT-WBRIDGE",
             stride_category: "Spoofing",
             attack_vector: "Wireless",
             entry_likelihood_level: "High",
             attack_complexity_level: "Medium",
             threat_source: "external",
-            detection_status: "Monitoring"
+            preconditions: "Aircraft on-ground and external wireless access available",
+            mitigation_reference: "SR2"
           },
           {
-            threatpoint_id: "TP-IS-PMAT-01",
-            name: "Internal info disclosure",
-            related_asset_id: "IS-PMAT",
-            stride_category: "InformationDisclosure",
+            threatpoint_id: "TP-EXT-IFE-01",
+            name: "TS4 IFE Ethernet interface attack path",
+            related_asset_id: "EXT-IFE",
+            stride_category: "Tampering",
             attack_vector: "Network",
             entry_likelihood_level: "Medium",
-            attack_complexity_level: "Low",
-            threat_source: "internal"
+            attack_complexity_level: "Medium",
+            threat_source: "external",
+            preconditions: "IFE reachable via Ethernet switch",
+            mitigation_reference: "SR1"
           }
         ],
         update: [],
@@ -604,10 +831,42 @@ export class GraphRepository {
       do326a_links: {
         add: [
           {
-            link_id: "DL-001",
-            standard_id: "DO-326A-3.2.1",
-            clause_title: "Security Risk Assessment",
-            semantic_element_id: ["SYS-CIS", "TP-EXT-WIFI-01"],
+            link_id: "DL-101",
+            standard_id: "DO-356A-AppD-TableD5-TS1",
+            clause_title: "TS.1 CAN direct attack scenario",
+            semantic_element_id: ["TP-IF-CAN-01", "SYS-PRCTRL", "IF-CAN"],
+            linkage_type: "Requirement",
+            review_status: "Draft"
+          },
+          {
+            link_id: "DL-102",
+            standard_id: "DO-356A-AppD-TableD5-TS2",
+            clause_title: "TS.2 GSE maintenance attack scenario",
+            semantic_element_id: ["TP-EXT-GSE-01", "EXT-GSE", "SYS-PRCTRL"],
+            linkage_type: "Evidence",
+            review_status: "Draft"
+          },
+          {
+            link_id: "DL-103",
+            standard_id: "DO-356A-AppD-TableD5-TS3",
+            clause_title: "TS.3 Wireless bridge multi-stage attack scenario",
+            semantic_element_id: ["TP-EXT-WBRIDGE-01", "EXT-WBRIDGE", "IF-ETHSW", "SYS-PRCTRL"],
+            linkage_type: "Evidence",
+            review_status: "Draft"
+          },
+          {
+            link_id: "DL-104",
+            standard_id: "DO-356A-AppD-TableD5-TS4",
+            clause_title: "TS.4 IFE Ethernet interface attack scenario",
+            semantic_element_id: ["TP-EXT-IFE-01", "EXT-IFE", "IF-ETHSW", "SYS-PRCTRL"],
+            linkage_type: "Evidence",
+            review_status: "Draft"
+          },
+          {
+            link_id: "DL-105",
+            standard_id: "DO-356A-AppD-D17-SR1-SR3",
+            clause_title: "Security requirements SR1/SR2/SR3",
+            semantic_element_id: ["IF-ETHSW", "IF-CAN", "TP-EXT-WBRIDGE-01", "TP-EXT-IFE-01"],
             linkage_type: "Requirement",
             review_status: "Draft"
           }
