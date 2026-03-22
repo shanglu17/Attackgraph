@@ -121,6 +121,12 @@ export interface GraphSnapshot {
   do326a_links: DO326ALink[];
 }
 
+export interface ModelingExportBundle {
+  graph: GraphSnapshot;
+  analysis_paths: AttackPath[];
+  do326a_links: DO326ALink[];
+}
+
 export interface AuditRecord {
   commit_id: string;
   user_id: string;

@@ -1,4 +1,4 @@
-import type { AttackPath, DO326ALink, GraphChangeSet, GraphData, ReviewStatus } from "./types";
+import type { AttackPath, DO326ALink, GraphChangeSet, GraphData, ModelingExportData, ReviewStatus } from "./types";
 
 const baseUrl = "http://localhost:4000";
 
@@ -96,6 +96,18 @@ export async function persistPaths(paths: AttackPath[]): Promise<{ persisted: nu
 export async function getDo326aLinks(): Promise<{ count: number; links: DO326ALink[] }> {
   const response = await fetch(`${baseUrl}/compliance/do326a-links`);
   await ensureOk(response, "Failed to load DO326A links");
+  return response.json();
+}
+
+export async function exportModelingResult(analysis_batch_id?: string): Promise<ModelingExportData> {
+  const searchParams = new URLSearchParams();
+  if (analysis_batch_id && analysis_batch_id.trim().length > 0) {
+    searchParams.set("analysis_batch_id", analysis_batch_id.trim());
+  }
+
+  const query = searchParams.toString();
+  const response = await fetch(`${baseUrl}/exports/modeling-result${query ? `?${query}` : ""}`);
+  await ensureOk(response, "Failed to export modeling result");
   return response.json();
 }
 

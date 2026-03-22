@@ -136,6 +136,10 @@ p {
   margin-bottom: 10px;
 }
 
+.toolbar.wrap {
+  flex-wrap: wrap;
+}
+
 .lane-row {
   display: flex;
   flex-wrap: wrap;
@@ -170,6 +174,16 @@ p {
 .button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.input-field {
+  min-width: 0;
+  flex: 1 1 220px;
+  border: 1px solid #334064;
+  color: #dbe5ff;
+  background: rgba(17, 26, 47, 0.95);
+  border-radius: 9px;
+  padding: 7px 12px;
 }
 
 .list {
@@ -251,4 +265,14 @@ p {
 .topo-node em {
   font-style: normal;
   color: #86a5ff;
+}
+
+.review-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.path-list {
+  flex: 1 1 auto;
+  max-height: none;
 }

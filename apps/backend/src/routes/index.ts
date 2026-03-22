@@ -1,19 +1,44 @@
 import { Router } from "express";
-import { GraphRepository } from "../repositories/graphRepository.js";
+import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
 import { ImportService } from "../services/importService.js";
 import {
   do326aLinkSchema,
   do326aReviewSchema,
   graphChangeSetSchema,
+  modelingExportQuerySchema,
   persistPathsSchema,
-  runAnalysisSchema
+  runAnalysisSchema,
+  singleSheetImportRequestSchema
 } from "../types/api.js";
 
 const router = Router();
 const graphRepo = new GraphRepository();
 const analysisService = new AnalysisService();
 const importService = new ImportService();
+
+const emptyImportSummary = {
+  asset_nodes: 0,
+  asset_edges: 0,
+  threat_points: 0,
+  do326a_links: 0
+};
+
+function toImportRequestErrorResponse(issues: Array<{ path: Array<string | number>; message: string }>) {
+  const error_details = issues.map((issue) => ({
+    type: "field" as const,
+    field: issue.path.join(".") || undefined,
+    message: issue.message
+  }));
+
+  return {
+    accepted: 0,
+    rejected: 0,
+    errors: error_details.map((detail) => (detail.field ? `field / ${detail.field}: ${detail.message}` : detail.message)),
+    error_details,
+    summary: emptyImportSummary
+  };
+}
 
 router.get("/health", async (_req, res) => {
   res.json({ ok: true });
@@ -30,12 +55,52 @@ router.post("/admin/seed/sample", async (req, res, next) => {
 });
 
 router.post("/imports/excel/single-sheet/preview", (req, res) => {
-  const preview = importService.preview(req.body?.rows ?? []);
-  res.json(preview);
+  const parsed = singleSheetImportRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json(toImportRequestErrorResponse(parsed.error.issues));
+  }
+
+  const preview = importService.preview(parsed.data);
+  return res.json(preview);
 });
 
-router.post("/imports/excel/single-sheet/commit", async (_req, res) => {
-  res.status(501).json({ message: "MVP 阶段暂不提供导入写入，请使用 /graph/changeset/commit" });
+router.post("/imports/excel/single-sheet/commit", async (req, res, next) => {
+  let accepted = 0;
+  let rejected = 0;
+  let summary = emptyImportSummary;
+
+  try {
+    const parsed = singleSheetImportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ committed: false, ...toImportRequestErrorResponse(parsed.error.issues) });
+    }
+
+    const graphVersion = await graphRepo.getGraphVersion();
+    const prepared = importService.prepareChangeSet(parsed.data, graphVersion);
+    accepted = prepared.accepted;
+    rejected = prepared.rejected;
+    summary = prepared.summary;
+    if (prepared.error_details.length > 0 || !prepared.change_set) {
+      return res.status(400).json({ committed: false, ...prepared });
+    }
+
+    const userId = String(req.headers["x-user-id"] ?? "excel-import");
+    const commit = await graphRepo.commitChangeSet(prepared.change_set, userId);
+    return res.json({ committed: true, ...prepared, ...commit });
+  } catch (error) {
+    if (error instanceof GraphChangeSetValidationError) {
+      const error_details = importService.createBindingErrors(error.errors);
+      return res.status(409).json({
+        committed: false,
+        accepted,
+        rejected,
+        errors: error_details.map((detail) => detail.message),
+        error_details,
+        summary
+      });
+    }
+    return next(error);
+  }
 });
 
 router.get("/graph", async (_req, res, next) => {
@@ -51,7 +116,7 @@ router.post("/graph/changeset/validate", async (req, res, next) => {
   try {
     const parsed = graphChangeSetSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ valid: false, errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ valid: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
     const result = await graphRepo.validateChangeSet(parsed.data);
     return res.json(result);
@@ -64,15 +129,24 @@ router.post("/graph/changeset/commit", async (req, res, next) => {
   try {
     const parsed = graphChangeSetSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ committed: false, errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ committed: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
+
     const valid = await graphRepo.validateChangeSet(parsed.data);
     if (!valid.valid) {
       return res.status(409).json({ committed: false, errors: valid.errors });
     }
+
     const userId = String(req.headers["x-user-id"] ?? "anonymous");
-    const commit = await graphRepo.commitChangeSet(parsed.data, userId);
-    return res.json({ committed: true, ...commit });
+    try {
+      const commit = await graphRepo.commitChangeSet(parsed.data, userId);
+      return res.json({ committed: true, ...commit });
+    } catch (error) {
+      if (error instanceof GraphChangeSetValidationError) {
+        return res.status(409).json({ committed: false, errors: error.errors });
+      }
+      throw error;
+    }
   } catch (error) {
     return next(error);
   }
@@ -82,7 +156,7 @@ router.post("/analysis/attack-paths/run", async (req, res, next) => {
   try {
     const parsed = runAnalysisSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
 
     const graph = await graphRepo.getGraph();
@@ -106,7 +180,7 @@ router.post("/analysis/attack-paths/persist", async (req, res, next) => {
   try {
     const parsed = persistPathsSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
     const count = await graphRepo.persistAttackPaths(parsed.data.paths);
     return res.json({ persisted: count });
@@ -125,6 +199,37 @@ router.get("/analysis/attack-paths", async (req, res, next) => {
   }
 });
 
+router.get("/exports/modeling-result", async (req, res, next) => {
+  try {
+    const parsed = modelingExportQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "invalid params",
+        errors: parsed.error.issues.map((issue) => issue.message)
+      });
+    }
+
+    const bundle = await graphRepo.getModelingExportBundle(parsed.data.analysis_batch_id);
+    return res.json({
+      metadata: {
+        exported_at: new Date().toISOString(),
+        filter: parsed.data.analysis_batch_id ? { analysis_batch_id: parsed.data.analysis_batch_id } : {},
+        graph_version: bundle.graph.graph_version,
+        counts: {
+          asset_nodes: bundle.graph.asset_nodes.length,
+          asset_edges: bundle.graph.asset_edges.length,
+          threat_points: bundle.graph.threat_points.length,
+          do326a_links: bundle.do326a_links.length,
+          analysis_paths: bundle.analysis_paths.length
+        }
+      },
+      payload: bundle
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/compliance/do326a-links", async (_req, res, next) => {
   try {
     const links = await graphRepo.getDo326ALinks();
@@ -138,7 +243,7 @@ router.post("/compliance/do326a-links", async (req, res, next) => {
   try {
     const parsed = do326aLinkSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ created: false, errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ created: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
     const link = await graphRepo.upsertDo326ALink(parsed.data);
     return res.status(201).json({ created: true, link });
@@ -151,7 +256,7 @@ router.patch("/compliance/do326a-links/:link_id/review", async (req, res, next) 
   try {
     const parsed = do326aReviewSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ updated: false, errors: parsed.error.issues.map((i) => i.message) });
+      return res.status(400).json({ updated: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
     const updated = await graphRepo.reviewDo326ALink(
       String(req.params.link_id),

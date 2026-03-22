@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import type { QueryResult } from "neo4j-driver";
 import { getDriver } from "../db/neo4j.js";
 import type {
   AttackPath,
@@ -6,10 +7,25 @@ import type {
   DO326ALink,
   GraphChangeSet,
   GraphSnapshot,
+  ModelingExportBundle,
   ReviewStatus
 } from "../types/domain.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
+
+interface QueryRunner {
+  run: (query: string, parameters?: Record<string, unknown>) => Promise<QueryResult>;
+}
+
+export class GraphChangeSetValidationError extends Error {
+  readonly errors: string[];
+
+  constructor(errors: string[]) {
+    super(errors.join("; "));
+    this.name = "GraphChangeSetValidationError";
+    this.errors = errors;
+  }
+}
 
 export class GraphRepository {
   async ensureConstraints(): Promise<void> {
@@ -122,77 +138,8 @@ export class GraphRepository {
 
   async validateChangeSet(changeSet: GraphChangeSet): Promise<{ valid: boolean; errors: string[] }> {
     const session = getDriver().session();
-    const errors: string[] = [];
-
     try {
-      const dbVersionResult = await session.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS version", {
-        id: graphVersionNodeId
-      });
-      const dbVersion = (dbVersionResult.records[0]?.get("version") as string) ?? "v1";
-      if (dbVersion !== changeSet.graph_version) {
-        errors.push(`graph version conflict: current=${dbVersion}, submitted=${changeSet.graph_version}`);
-      }
-
-      const allReferencedAssetIds = new Set<string>();
-      for (const edge of [...changeSet.asset_edges.add, ...changeSet.asset_edges.update]) {
-        allReferencedAssetIds.add(edge.source_asset_id);
-        allReferencedAssetIds.add(edge.target_asset_id);
-      }
-      for (const threat of [...changeSet.threat_points.add, ...changeSet.threat_points.update]) {
-        allReferencedAssetIds.add(threat.related_asset_id);
-      }
-
-      const semanticIds = new Set<string>();
-      for (const link of [...changeSet.do326a_links.add, ...changeSet.do326a_links.update]) {
-        for (const id of link.semantic_element_id) {
-          semanticIds.add(id);
-        }
-        if ((link.review_status === "Reviewed" || link.review_status === "Approved") && !link.reviewer) {
-          errors.push(`DO326A_Link ${link.link_id} requires reviewer for status ${link.review_status}`);
-        }
-      }
-
-      const existingAssetsResult = await session.run("MATCH (a:AssetNode) RETURN a.asset_id AS asset_id, a.security_domain AS security_domain");
-      const existingAssetMap = new Map<string, string | null>(
-        existingAssetsResult.records.map((record) => [record.get("asset_id") as string, (record.get("security_domain") as string | null) ?? null])
-      );
-
-      const draftAssetMap = new Map<string, string | null>(
-        [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update].map((asset) => [asset.asset_id, asset.security_domain ?? null])
-      );
-
-      for (const assetId of allReferencedAssetIds) {
-        if (!existingAssetMap.has(assetId) && !draftAssetMap.has(assetId)) {
-          errors.push(`referenced asset does not exist: ${assetId}`);
-        }
-      }
-
-      for (const edge of [...changeSet.asset_edges.add, ...changeSet.asset_edges.update]) {
-        const sourceDomain = draftAssetMap.get(edge.source_asset_id) ?? existingAssetMap.get(edge.source_asset_id) ?? null;
-        const targetDomain = draftAssetMap.get(edge.target_asset_id) ?? existingAssetMap.get(edge.target_asset_id) ?? null;
-        if (sourceDomain && targetDomain && sourceDomain !== targetDomain && !edge.trust_level) {
-          errors.push(`edge ${edge.edge_id} crosses security domains and requires trust_level`);
-        }
-      }
-
-      const existingThreatResult = await session.run("MATCH (th:ThreatPoint) RETURN th.threatpoint_id AS threatpoint_id");
-      const existingPathResult = await session.run("MATCH (p:AttackPath) RETURN p.path_id AS path_id");
-      const semanticKnownIds = new Set<string>([
-        ...existingAssetMap.keys(),
-        ...existingThreatResult.records.map((record) => record.get("threatpoint_id") as string),
-        ...existingPathResult.records.map((record) => record.get("path_id") as string),
-        ...changeSet.asset_nodes.add.map((item) => item.asset_id),
-        ...changeSet.asset_nodes.update.map((item) => item.asset_id),
-        ...changeSet.threat_points.add.map((item) => item.threatpoint_id),
-        ...changeSet.threat_points.update.map((item) => item.threatpoint_id)
-      ]);
-
-      for (const semanticId of semanticIds) {
-        if (!semanticKnownIds.has(semanticId)) {
-          errors.push(`DO326A semantic_element_id does not exist: ${semanticId}`);
-        }
-      }
-
+      const errors = await this.collectChangeSetValidationErrors(session, changeSet);
       return { valid: errors.length === 0, errors };
     } finally {
       await session.close();
@@ -206,6 +153,11 @@ export class GraphRepository {
 
     try {
       await session.executeWrite(async (tx) => {
+        const validationErrors = await this.collectChangeSetValidationErrors(tx, changeSet);
+        if (validationErrors.length > 0) {
+          throw new GraphChangeSetValidationError(validationErrors);
+        }
+
         for (const linkId of changeSet.do326a_links.delete) {
           await tx.run("MATCH (l:DO326A_Link {link_id: $link_id}) DETACH DELETE l", { link_id: linkId });
         }
@@ -306,6 +258,32 @@ export class GraphRepository {
     } finally {
       await session.close();
     }
+  }
+
+  async getGraphVersion(): Promise<string> {
+    const session = getDriver().session();
+    try {
+      const result = await session.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS version", {
+        id: graphVersionNodeId
+      });
+      return (result.records[0]?.get("version") as string) ?? "v1";
+    } finally {
+      await session.close();
+    }
+  }
+
+  async getModelingExportBundle(analysisBatchId?: string): Promise<ModelingExportBundle> {
+    const [graph, analysis_paths, do326a_links] = await Promise.all([
+      this.getGraph(),
+      this.getAttackPaths(analysisBatchId),
+      this.getDo326ALinks()
+    ]);
+
+    return {
+      graph,
+      analysis_paths,
+      do326a_links
+    };
   }
 
   async persistAttackPaths(paths: AttackPath[]): Promise<number> {
@@ -497,6 +475,89 @@ export class GraphRepository {
     } finally {
       await session.close();
     }
+  }
+
+  private async collectChangeSetValidationErrors(queryRunner: QueryRunner, changeSet: GraphChangeSet): Promise<string[]> {
+    const errors: string[] = [];
+
+    const [dbVersionResult, existingAssetsResult, existingThreatResult, existingPathResult] = await Promise.all([
+      queryRunner.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS version", {
+        id: graphVersionNodeId
+      }),
+      queryRunner.run("MATCH (a:AssetNode) RETURN a.asset_id AS asset_id, a.security_domain AS security_domain"),
+      queryRunner.run("MATCH (th:ThreatPoint) RETURN th.threatpoint_id AS threatpoint_id"),
+      queryRunner.run("MATCH (p:AttackPath) RETURN p.path_id AS path_id")
+    ]);
+
+    const dbVersion = (dbVersionResult.records[0]?.get("version") as string) ?? "v1";
+    if (dbVersion !== changeSet.graph_version) {
+      errors.push(`graph version conflict: current=${dbVersion}, submitted=${changeSet.graph_version}`);
+    }
+
+    const deletedAssetIds = new Set(changeSet.asset_nodes.delete);
+    const deletedThreatIds = new Set(changeSet.threat_points.delete);
+
+    const existingAssetMap = new Map<string, string | null>(
+      existingAssetsResult.records
+        .map((record) => [record.get("asset_id") as string, (record.get("security_domain") as string | null) ?? null] as const)
+        .filter(([assetId]) => !deletedAssetIds.has(assetId))
+    );
+    const draftAssetMap = new Map<string, string | null>(
+      [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update].map((asset) => [asset.asset_id, asset.security_domain ?? null])
+    );
+
+    const referencedAssetIds = new Set<string>();
+    for (const edge of [...changeSet.asset_edges.add, ...changeSet.asset_edges.update]) {
+      referencedAssetIds.add(edge.source_asset_id);
+      referencedAssetIds.add(edge.target_asset_id);
+    }
+    for (const threat of [...changeSet.threat_points.add, ...changeSet.threat_points.update]) {
+      referencedAssetIds.add(threat.related_asset_id);
+    }
+
+    for (const assetId of referencedAssetIds) {
+      if (!draftAssetMap.has(assetId) && !existingAssetMap.has(assetId)) {
+        errors.push(`referenced asset does not exist: ${assetId}`);
+      }
+    }
+
+    for (const edge of [...changeSet.asset_edges.add, ...changeSet.asset_edges.update]) {
+      const sourceDomain = draftAssetMap.get(edge.source_asset_id) ?? existingAssetMap.get(edge.source_asset_id) ?? null;
+      const targetDomain = draftAssetMap.get(edge.target_asset_id) ?? existingAssetMap.get(edge.target_asset_id) ?? null;
+      if (sourceDomain && targetDomain && sourceDomain !== targetDomain && !edge.trust_level) {
+        errors.push(`edge ${edge.edge_id} crosses security domains and requires trust_level`);
+      }
+    }
+
+    const semanticIds = new Set<string>();
+    for (const link of [...changeSet.do326a_links.add, ...changeSet.do326a_links.update]) {
+      for (const id of link.semantic_element_id) {
+        semanticIds.add(id);
+      }
+      if ((link.review_status === "Reviewed" || link.review_status === "Approved") && !link.reviewer) {
+        errors.push(`DO326A_Link ${link.link_id} requires reviewer for status ${link.review_status}`);
+      }
+    }
+
+    const semanticKnownIds = new Set<string>([
+      ...existingAssetMap.keys(),
+      ...existingThreatResult.records
+        .map((record) => record.get("threatpoint_id") as string)
+        .filter((threatId) => !deletedThreatIds.has(threatId)),
+      ...existingPathResult.records.map((record) => record.get("path_id") as string),
+      ...changeSet.asset_nodes.add.map((item) => item.asset_id),
+      ...changeSet.asset_nodes.update.map((item) => item.asset_id),
+      ...changeSet.threat_points.add.map((item) => item.threatpoint_id),
+      ...changeSet.threat_points.update.map((item) => item.threatpoint_id)
+    ]);
+
+    for (const semanticId of semanticIds) {
+      if (!semanticKnownIds.has(semanticId)) {
+        errors.push(`DO326A semantic_element_id does not exist: ${semanticId}`);
+      }
+    }
+
+    return errors;
   }
 
   async seedSampleData(userId = "seed-script"): Promise<{ commit_id: string; new_version: string; counts: Record<string, number> }> {

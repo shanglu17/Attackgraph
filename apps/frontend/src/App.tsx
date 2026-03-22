@@ -14,6 +14,7 @@ import "reactflow/dist/style.css";
 import {
   commitChangeSet,
   createOrUpdateDo326aLink,
+  exportModelingResult,
   getDo326aLinks,
   getGraph,
   persistPaths,
@@ -72,12 +73,29 @@ function getNextLinkId(links: DO326ALink[]): string {
   return `DL-${String(max + 1).padStart(3, "0")}`;
 }
 
+function createExportFileName(analysisBatchId?: string): string {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const batchPart = analysisBatchId ? `-${analysisBatchId.replace(/[^a-zA-Z0-9-_]+/g, "_")}` : "";
+  return `attackgraph-modeling-result${batchPart}-${timestamp}.json`;
+}
+
+function downloadJson(payload: unknown, fileName: string): void {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.URL.revokeObjectURL(url);
+}
+
 export function App() {
   const [graph, setGraph] = useState<GraphData | null>(null);
   const [paths, setPaths] = useState<AttackPath[]>([]);
   const [links, setLinks] = useState<DO326ALink[]>([]);
   const [message, setMessage] = useState("Load graph data to start");
   const [busy, setBusy] = useState(false);
+  const [exportBatchId, setExportBatchId] = useState("");
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -236,6 +254,7 @@ export function App() {
       const result = await runAnalysis();
       setPaths(result.paths);
       setSelectedPathId(result.paths[0]?.path_id ?? null);
+      setExportBatchId(result.paths[0]?.analysis_batch_id ?? "");
       setMessage(`Analysis done: ${result.count} paths`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Analysis failed");
@@ -297,6 +316,24 @@ export function App() {
       await handleRefreshLinks();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to update review");
+    }
+  }
+
+  async function handleExportResult() {
+    try {
+      setBusy(true);
+      const analysisBatchId = exportBatchId.trim() || undefined;
+      const payload = await exportModelingResult(analysisBatchId);
+      downloadJson(payload, createExportFileName(analysisBatchId));
+      setMessage(
+        analysisBatchId
+          ? `Exported modeling result for analysis batch ${analysisBatchId}`
+          : "Exported modeling result for the full dataset"
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to export modeling result");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -396,13 +433,24 @@ export function App() {
           </div>
         </main>
 
-        <aside className="panel right">
+        <aside className="panel right review-panel">
           <h3>Review Panel</h3>
           <p className="status">{message}</p>
+          <div className="toolbar wrap">
+            <input
+              className="input-field"
+              value={exportBatchId}
+              onChange={(event) => setExportBatchId(event.target.value)}
+              placeholder="analysis_batch_id (optional)"
+            />
+            <button className="button" onClick={handleExportResult} disabled={busy}>
+              Export Modeling JSON
+            </button>
+          </div>
 
           <h3>Path Ranking</h3>
-          <div className="list">
-            {paths.slice(0, 8).map((path) => (
+          <div className="list path-list">
+            {paths.map((path) => (
               <div
                 key={path.path_id}
                 className={`item vertical clickable ${selectedPathId === path.path_id ? "active" : ""}`}
@@ -416,6 +464,7 @@ export function App() {
                 <span>{path.is_low_priority ? "low priority" : "mitigation queue"}</span>
               </div>
             ))}
+            {paths.length === 0 ? <div className="item vertical">Run analysis to populate attack paths.</div> : null}
           </div>
         </aside>
 

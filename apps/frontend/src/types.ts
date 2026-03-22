@@ -101,3 +101,27 @@ export interface GraphChangeSet {
   threat_points: ChangeSet<ThreatPoint>;
   do326a_links: ChangeSet<DO326ALink>;
 }
+
+export interface ModelingExportMetadata {
+  exported_at: string;
+  filter: {
+    analysis_batch_id?: string;
+  };
+  graph_version: string;
+  counts: {
+    asset_nodes: number;
+    asset_edges: number;
+    threat_points: number;
+    do326a_links: number;
+    analysis_paths: number;
+  };
+}
+
+export interface ModelingExportData {
+  metadata: ModelingExportMetadata;
+  payload: {
+    graph: GraphData;
+    analysis_paths: AttackPath[];
+    do326a_links: DO326ALink[];
+  };
+}

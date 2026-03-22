@@ -29,7 +29,7 @@ Attackgraph 平台用于构建航空系统资产图（Asset Graph）及威胁覆
 - 提交审计记录查询
 
 ### 3.2 Out of Scope（当前未覆盖）
-- Excel 导入正式写入（仅预览，commit 接口返回 501）
+- Excel 原始文件上传与二进制解析（当前接口仍以 `headers + rows` JSON 载荷为主）
 - 认证授权（当前仅通过 `x-user-id` 透传）
 - 多租户隔离
 - 细粒度 RBAC
@@ -82,7 +82,7 @@ Attackgraph 平台用于构建航空系统资产图（Asset Graph）及威胁覆
 - FR-B-002: 种子数据应包含 AssetNode、AssetEdge、ThreatPoint、DO326A_Link。
 - FR-B-003: 系统应提供 Excel 单表导入预览 `POST /imports/excel/single-sheet/preview`。
 - FR-B-004: 导入预览应返回 accepted/rejected/errors/summary。
-- FR-B-005: 导入写入接口 `POST /imports/excel/single-sheet/commit` 当前阶段应明确返回 501。
+- FR-B-005: 导入写入接口 `POST /imports/excel/single-sheet/commit` 应执行模板校验、字段校验、绑定校验与原子提交。
 
 ## 6.3 FR-C: 图谱读取与变更集
 - FR-C-001: 系统应提供 `GET /graph` 返回完整图谱快照:
@@ -213,17 +213,99 @@ Attackgraph 平台用于构建航空系统资产图（Asset Graph）及威胁覆
 - Medium: `0.15 <= normalized_score < 0.5`
 - Low: `normalized_score < 0.15`
 
+### 9.5 算法工程实现细节（路径分析内核）
+
+#### 9.5.1 图构建过程
+- 实现入口: `AnalysisService.run(input)`。
+- 输入数据: `asset_nodes`、`asset_edges`、`threat_points`。
+- 工程步骤:
+  1. 调用 `buildAdjacency(asset_edges)` 构建邻接表 `Map<string, AssetEdge[]>`，以 `source_asset_id` 为 key。
+  2. 对 `direction = Bidirectional` 的边，运行时动态生成反向边（`edge_id#rev`），写入邻接表，仅用于搜索阶段，不回写图谱主数据。
+  3. 构建 `asset_ids` 集合用于 O(1) 节点存在性判断。
+  4. 若请求携带 `scope_asset_ids`，构建 `scope_set` 用于范围约束过滤。
+- 该实现的工程优势是“搜索时图展开、存储时图简化”，减少持久层冗余边写入。
+
+#### 9.5.2 起点和终点设定
+- 起点设定:
+  - 以每个 `ThreatPoint.related_asset_id` 作为搜索起点资产。
+  - 路径条目中的 `entry_point_id` 取自 `ThreatPoint.threatpoint_id`。
+- 终点设定:
+  - 当前实现不预设固定终点资产。
+  - 每次扩展到一个合法下一跳资产时，都会产出一条“从起点到该资产”的候选路径，因此终点是“所有可达资产”。
+- 工程说明:
+  - 这种设计支持全图风险扩散分析，不受单终点假设限制。
+  - 前端可按 `target_asset_id` 与优先级筛选目标资产。
+
+#### 9.5.3 搜索策略
+- 策略类型: 深度优先递归搜索（DFS），实现函数为 `dps(context, state)`。
+- 状态结构 `DfsState` 包含:
+  - `current_asset_id`: 当前节点
+  - `traverses`: 当前路径跳序列（含 hop、edge_id、asset_id、edge_factor）
+  - `structural_score`: 当前路径结构累计分（边因子连乘）
+  - `visited`: 当前分支访问集
+- 扩展逻辑:
+  1. 从邻接表取 `current_asset_id` 的所有出边。
+  2. 逐边执行过滤（scope、资产存在性、去环）。
+  3. 计算下一跳 `nextHop` 与边因子 `edgeFactor`。
+  4. 增量计算 `nextStructuralScore = structural_score * edgeFactor`。
+  5. 计算启发式分、hop 衰减、`dps_score` 和 `raw_score`。
+  6. 立即落入候选集，再递归进入下一层。
+- 该策略属于“边扩展边评分”的在线计算方式，避免二次遍历路径重算成本。
+
+#### 9.5.4 剪枝方法
+- 剪枝 1: 最大跳数剪枝
+  - 条件: `state.traverses.length >= input.max_hops` 时立即返回。
+  - 作用: 控制指数级扩展，稳定计算时长。
+- 剪枝 2: 范围剪枝（scope）
+  - 条件: 目标资产不在 `scope_set` 则跳过。
+  - 作用: 支持局部子图分析，降低无关路径干扰。
+- 剪枝 3: 非法资产剪枝
+  - 条件: `target_asset_id` 不在 `asset_ids` 集合则跳过。
+  - 作用: 避免脏边导致无效路径与异常评分。
+- 剪枝 4: 循环剪枝
+  - 条件: 目标资产已存在于 `visited` 集合则跳过。
+  - 作用: 防止无限递归与环路路径污染。
+
+#### 9.5.5 去环逻辑
+- 实现方式:
+  - 每个递归分支维护独立 `visited: Set<string>`。
+  - 进入下一跳前复制当前集合：`nextVisited = new Set(state.visited)`。
+  - 将下一跳资产 `add` 到 `nextVisited` 后递归。
+- 工程含义:
+  - 去环粒度是“路径分支级”，而非全局级。
+  - 同一资产可出现在不同分支中（允许多路径比较），但不能在同一路径内重复出现。
+- 效果:
+  - 保证输出路径是简单路径（simple path），避免闭环放大分数。
+
+#### 9.5.6 路径输出格式
+- 运行时候选对象 `CandidatePath` 字段:
+  - 标识类: `analysis_batch_id`、`entry_point_id`、`target_asset_id`
+  - 路径类: `hop_sequence`、`hop_count`、`traverses[]`
+  - 评分类: `path_probability`、`raw_score`、`dps_score`、`heuristic_score`
+  - 上下文类: `entry_likelihood_level`、`attack_complexity_level`、`threat_source`、`expert_modifier`
+- 最终输出 `AttackPath` 增强字段:
+  - `path_id`（`AP-0001` 递增）
+  - `normalized_score`
+  - `priority_label`（High/Medium/Low）
+  - `is_low_priority`
+  - `score_config_version`
+  - `explanations[]`（解释性证据）
+- 输出与持久化衔接:
+  - `POST /analysis/attack-paths/run` 返回计算结果。
+  - `POST /analysis/attack-paths/persist` 将结果写入 `AttackPath` 节点并重建 `STARTS_FROM`、`TARGETS`、`TRAVERSES` 关系。
+
 ## 10. 接口需求总览（REST）
 - `GET /health`
 - `POST /admin/seed/sample`
 - `POST /imports/excel/single-sheet/preview`
-- `POST /imports/excel/single-sheet/commit` (501)
+- `POST /imports/excel/single-sheet/commit`
 - `GET /graph`
 - `POST /graph/changeset/validate`
 - `POST /graph/changeset/commit`
 - `POST /analysis/attack-paths/run`
 - `POST /analysis/attack-paths/persist`
 - `GET /analysis/attack-paths`
+- `GET /exports/modeling-result`
 - `GET /compliance/do326a-links`
 - `POST /compliance/do326a-links`
 - `PATCH /compliance/do326a-links/:link_id/review`
@@ -307,3 +389,37 @@ Attackgraph 平台用于构建航空系统资产图（Asset Graph）及威胁覆
 - Frontend API: `apps/frontend/src/api.ts`
 - Docker: `docker-compose.yml`
 - 参考文档: `docs/do356a_appendix_d_example.md`
+
+## 16. 2026-03-19 增量更新
+
+### 16.1 Excel 单表导入
+- `POST /imports/excel/single-sheet/preview` 与 `POST /imports/excel/single-sheet/commit` 均已启用模板列头强校验。
+- 请求体格式为 `{ headers?: string[]; rows: Array<Record<string, unknown>> }`。
+- 模板列头要求“全集存在、顺序可变、非法列拒绝”。
+- 允许的额外列仅有 `template_version`，当前不参与业务校验。
+- 当 Excel 解析器会丢失全空列时，调用方应显式传入 `headers` 以保留模板列头信息。
+- 导入提交会先将单表数据映射为 `GraphChangeSet`，再复用仓储层校验与事务提交逻辑。
+- `AssetEdge.source_asset_id`、`AssetEdge.target_asset_id` 以及 `ThreatPoint.related_asset_id` 必须能绑定到当前图谱或同批导入的 `AssetNode`；任一引用缺失时整批拒绝，数据库不允许部分写入。
+- 导入错误统一返回 `error_details`，错误类别分为 `template`、`field`、`binding`。
+
+模板列头集合：
+
+```text
+row_type, id, asset_name, asset_type, criticality, security_domain, description, data_classification, tags,
+source_asset_id, target_asset_id, link_type, protocol_or_medium, direction, trust_level, security_mechanism,
+related_asset_id, name, stride_category, attack_vector, entry_likelihood_level, attack_complexity_level,
+threat_source, preconditions, detection_status, cve_reference, expert_modifier, expert_adjustment_note,
+mitigation_reference, standard_id, clause_title, semantic_element_id, linkage_type, evidence_reference,
+review_status, reviewer, mapping_version
+```
+
+### 16.2 建模结果导出
+- 新增只读导出接口 `GET /exports/modeling-result`。
+- 支持可选查询参数 `analysis_batch_id`，用于过滤 `Analysis Paths` 导出范围。
+- 导出响应结构为 `metadata + payload`：
+  - `metadata` 包含 `exported_at`、过滤条件、`graph_version` 与数据条数统计。
+  - `payload` 包含 `graph`、`analysis_paths`、`do326a_links` 三部分。
+
+### 16.3 前端审查台
+- 攻击路径列表取消 `slice(0, 8)` 限制，改为完整展示。
+- 页面新增“导出建模结果(JSON)”入口，并支持填写可选的 `analysis_batch_id` 过滤条件。
