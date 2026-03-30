@@ -83,6 +83,20 @@ export async function seedSampleData(): Promise<{
   return response.json();
 }
 
+export async function seedGenericData(): Promise<{
+  seeded: boolean;
+  commit_id: string;
+  new_version: string;
+  counts: { asset_nodes: number; asset_edges: number; threat_points: number; do326a_links: number };
+}> {
+  const response = await fetch(`${baseUrl}/admin/seed/generic`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-id": "frontend-generic-seed" }
+  });
+  await ensureOk(response, "Failed to seed generic example data");
+  return response.json();
+}
+
 export async function persistPaths(paths: AttackPath[]): Promise<{ persisted: number }> {
   const response = await fetch(`${baseUrl}/analysis/attack-paths/persist`, {
     method: "POST",

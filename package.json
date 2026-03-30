@@ -9,6 +9,7 @@
     "dev": "npm run dev -w @attackgraph/backend",
     "dev:frontend": "npm run dev -w @attackgraph/frontend",
     "build": "npm run build -w @attackgraph/backend && npm run build -w @attackgraph/frontend",
-    "seed:sample": "npm run seed:sample -w @attackgraph/backend"
+    "seed:sample": "npm run seed:sample -w @attackgraph/backend",
+    "seed:generic": "npm run seed:generic -w @attackgraph/backend"
   }
 }

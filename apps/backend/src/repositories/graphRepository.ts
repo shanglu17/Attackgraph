@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import type { QueryResult } from "neo4j-driver";
+import type { QueryResult, Session } from "neo4j-driver";
 import { getDriver } from "../db/neo4j.js";
 import type {
   AttackPath,
@@ -31,21 +31,27 @@ export class GraphRepository {
   async ensureConstraints(): Promise<void> {
     const session = getDriver().session();
     try {
-      await session.executeWrite(async (tx) => {
-        await tx.run("CREATE CONSTRAINT asset_unique IF NOT EXISTS FOR (a:AssetNode) REQUIRE a.asset_id IS UNIQUE");
-        await tx.run("CREATE CONSTRAINT edge_unique IF NOT EXISTS FOR ()-[r:ASSET_EDGE]-() REQUIRE r.edge_id IS UNIQUE");
-        await tx.run("CREATE CONSTRAINT threat_unique IF NOT EXISTS FOR (t:ThreatPoint) REQUIRE t.threatpoint_id IS UNIQUE");
-        await tx.run("CREATE CONSTRAINT path_unique IF NOT EXISTS FOR (p:AttackPath) REQUIRE p.path_id IS UNIQUE");
-        await tx.run("CREATE CONSTRAINT do326a_link_unique IF NOT EXISTS FOR (l:DO326A_Link) REQUIRE l.link_id IS UNIQUE");
-        await tx.run("CREATE CONSTRAINT graph_version_unique IF NOT EXISTS FOR (v:GraphVersion) REQUIRE v.id IS UNIQUE");
-      });
-
-      await session.executeWrite(async (tx) => {
-        await tx.run(
-          "MERGE (v:GraphVersion {id: $id}) ON CREATE SET v.value = $version ON MATCH SET v.value = coalesce(v.value, $version)",
-          { id: graphVersionNodeId, version: "v1" }
-        );
-      });
+      await session.run("CREATE CONSTRAINT asset_unique IF NOT EXISTS FOR (a:AssetNode) REQUIRE a.asset_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT edge_unique IF NOT EXISTS FOR ()-[r:ASSET_EDGE]-() REQUIRE r.edge_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT threat_unique IF NOT EXISTS FOR (t:ThreatPoint) REQUIRE t.threatpoint_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT do326a_link_unique IF NOT EXISTS FOR (l:DO326A_Link) REQUIRE l.link_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT graph_version_unique IF NOT EXISTS FOR (v:GraphVersion) REQUIRE v.id IS UNIQUE");
+      await session.run("DROP CONSTRAINT path_unique IF EXISTS");
+      await session.run(
+        `MATCH (p:AttackPath)
+         WITH p.analysis_batch_id AS analysis_batch_id, p.path_id AS path_id, p
+         ORDER BY coalesce(p.generated_at, datetime({epochMillis: 0})) DESC
+         WITH analysis_batch_id, path_id, collect(p) AS paths
+         WHERE analysis_batch_id IS NOT NULL AND path_id IS NOT NULL AND size(paths) > 1
+         FOREACH (duplicate IN tail(paths) | DETACH DELETE duplicate)`
+      );
+      await session.run(
+        "CREATE CONSTRAINT path_unique IF NOT EXISTS FOR (p:AttackPath) REQUIRE (p.analysis_batch_id, p.path_id) IS UNIQUE"
+      );
+      await session.run(
+        "MERGE (v:GraphVersion {id: $id}) ON CREATE SET v.value = $version ON MATCH SET v.value = coalesce(v.value, $version)",
+        { id: graphVersionNodeId, version: "v1" }
+      );
     } finally {
       await session.close();
     }
@@ -290,29 +296,44 @@ export class GraphRepository {
     const session = getDriver().session();
     try {
       await session.executeWrite(async (tx) => {
+        const pathsByBatch = new Map<string, string[]>();
+        for (const path of paths) {
+          const batchPathIds = pathsByBatch.get(path.analysis_batch_id) ?? [];
+          batchPathIds.push(path.path_id);
+          pathsByBatch.set(path.analysis_batch_id, batchPathIds);
+        }
+
+        for (const [analysis_batch_id, path_ids] of pathsByBatch.entries()) {
+          await tx.run(
+            "MATCH (p:AttackPath {analysis_batch_id: $analysis_batch_id}) WHERE NOT p.path_id IN $path_ids DETACH DELETE p",
+            { analysis_batch_id, path_ids }
+          );
+        }
+
         for (const path of paths) {
           await tx.run(
-            "MERGE (p:AttackPath {path_id: $path_id}) SET p.analysis_batch_id = $analysis_batch_id, p.entry_point_id = $entry_point_id, p.target_asset_id = $target_asset_id, p.hop_sequence = $hop_sequence, p.hop_count = $hop_count, p.path_probability = $path_probability, p.raw_score = $raw_score, p.dps_score = $dps_score, p.heuristic_score = $heuristic_score, p.normalized_score = $normalized_score, p.priority_label = $priority_label, p.is_low_priority = $is_low_priority, p.score_config_version = $score_config_version, p.explanations = $explanations, p.generated_by = $generated_by, p.generated_at = datetime($generated_at)",
+            "MERGE (p:AttackPath {analysis_batch_id: $analysis_batch_id, path_id: $path_id}) SET p.entry_point_id = $entry_point_id, p.target_asset_id = $target_asset_id, p.hop_sequence = $hop_sequence, p.hop_count = $hop_count, p.path_probability = $path_probability, p.raw_score = $raw_score, p.dps_score = $dps_score, p.heuristic_score = $heuristic_score, p.normalized_score = $normalized_score, p.priority_label = $priority_label, p.is_low_priority = $is_low_priority, p.score_config_version = $score_config_version, p.explanations = $explanations, p.generated_by = $generated_by, p.generated_at = datetime($generated_at)",
             path
           );
 
           await tx.run(
-            "MATCH (p:AttackPath {path_id: $path_id}) OPTIONAL MATCH (p)-[old:STARTS_FROM|TARGETS|TRAVERSES]->() DELETE old",
-            { path_id: path.path_id }
+            "MATCH (p:AttackPath {analysis_batch_id: $analysis_batch_id, path_id: $path_id}) OPTIONAL MATCH (p)-[old:STARTS_FROM|TARGETS|TRAVERSES]->() DELETE old",
+            { analysis_batch_id: path.analysis_batch_id, path_id: path.path_id }
           );
           await tx.run(
-            "MATCH (p:AttackPath {path_id: $path_id}), (th:ThreatPoint {threatpoint_id: $entry_point_id}) MERGE (p)-[:STARTS_FROM]->(th)",
-            { path_id: path.path_id, entry_point_id: path.entry_point_id }
+            "MATCH (p:AttackPath {analysis_batch_id: $analysis_batch_id, path_id: $path_id}), (th:ThreatPoint {threatpoint_id: $entry_point_id}) MERGE (p)-[:STARTS_FROM]->(th)",
+            { analysis_batch_id: path.analysis_batch_id, path_id: path.path_id, entry_point_id: path.entry_point_id }
           );
           await tx.run(
-            "MATCH (p:AttackPath {path_id: $path_id}), (a:AssetNode {asset_id: $target_asset_id}) MERGE (p)-[:TARGETS]->(a)",
-            { path_id: path.path_id, target_asset_id: path.target_asset_id }
+            "MATCH (p:AttackPath {analysis_batch_id: $analysis_batch_id, path_id: $path_id}), (a:AssetNode {asset_id: $target_asset_id}) MERGE (p)-[:TARGETS]->(a)",
+            { analysis_batch_id: path.analysis_batch_id, path_id: path.path_id, target_asset_id: path.target_asset_id }
           );
 
           for (const traverse of path.traverses) {
             await tx.run(
-              "MATCH (p:AttackPath {path_id: $path_id}), (a:AssetNode {asset_id: $asset_id}) MERGE (p)-[r:TRAVERSES {hop: $hop, edge_id: $edge_id}]->(a) SET r.edge_factor = $edge_factor",
+              "MATCH (p:AttackPath {analysis_batch_id: $analysis_batch_id, path_id: $path_id}), (a:AssetNode {asset_id: $asset_id}) MERGE (p)-[r:TRAVERSES {hop: $hop, edge_id: $edge_id}]->(a) SET r.edge_factor = $edge_factor",
               {
+                analysis_batch_id: path.analysis_batch_id,
                 path_id: path.path_id,
                 hop: traverse.hop,
                 edge_id: traverse.edge_id,
@@ -558,6 +579,34 @@ export class GraphRepository {
     }
 
     return errors;
+  }
+
+  private async resetAndCommitSeed(
+    session: Session,
+    changeSet: GraphChangeSet,
+    newVersion: string,
+    userId: string
+  ): Promise<{ commit_id: string; new_version: string; counts: Record<string, number> }> {
+    await session.executeWrite(async (tx) => {
+      await tx.run("MATCH (n) DETACH DELETE n");
+      await tx.run("MERGE (v:GraphVersion {id: $id}) SET v.value = $version", {
+        id: graphVersionNodeId,
+        version: newVersion
+      });
+    });
+
+    const commit = await this.commitChangeSet({ ...changeSet, graph_version: newVersion }, userId);
+
+    return {
+      commit_id: commit.commit_id,
+      new_version: commit.new_version,
+      counts: {
+        asset_nodes: changeSet.asset_nodes.add.length,
+        asset_edges: changeSet.asset_edges.add.length,
+        threat_points: changeSet.threat_points.add.length,
+        do326a_links: changeSet.do326a_links.add.length
+      }
+    };
   }
 
   async seedSampleData(userId = "seed-script"): Promise<{ commit_id: string; new_version: string; counts: Record<string, number> }> {
@@ -938,26 +987,138 @@ export class GraphRepository {
     };
 
     try {
-      await session.executeWrite(async (tx) => {
-        await tx.run("MATCH (n) DETACH DELETE n");
-        await tx.run("MERGE (v:GraphVersion {id: $id}) SET v.value = $version", {
-          id: graphVersionNodeId,
-          version: newVersion
-        });
-      });
+      return await this.resetAndCommitSeed(session, changeSet, newVersion, userId);
+    } finally {
+      await session.close();
+    }
+  }
 
-      const commit = await this.commitChangeSet({ ...changeSet, graph_version: newVersion }, userId);
+  async seedGenericExample(userId = "seed-script"): Promise<{ commit_id: string; new_version: string; counts: Record<string, number> }> {
+    const session = getDriver().session();
+    const newVersion = `v_generic_${Date.now()}`;
 
-      return {
-        commit_id: commit.commit_id,
-        new_version: commit.new_version,
-        counts: {
-          asset_nodes: changeSet.asset_nodes.add.length,
-          asset_edges: changeSet.asset_edges.add.length,
-          threat_points: changeSet.threat_points.add.length,
-          do326a_links: changeSet.do326a_links.add.length
-        }
-      };
+    const changeSet: GraphChangeSet = {
+      graph_version: "v1",
+      asset_nodes: {
+        add: [
+          {
+            asset_id: "SYS-CTRL",
+            asset_name: "Generic Control Unit",
+            asset_type: "Terminal",
+            criticality: "High",
+            security_domain: "Internal",
+            description: "Simple generic example kept separate from the DO-356A dataset"
+          },
+          {
+            asset_id: "IF-MAINT",
+            asset_name: "Maintenance Interface",
+            asset_type: "Interface",
+            criticality: "Medium",
+            security_domain: "Shared",
+            description: "Common service interface used during maintenance"
+          },
+          {
+            asset_id: "EXT-LAPTOP",
+            asset_name: "Service Laptop",
+            asset_type: "Terminal",
+            criticality: "Medium",
+            security_domain: "External",
+            description: "External device temporarily connected for service work"
+          },
+          {
+            asset_id: "SYS-LOG",
+            asset_name: "Event Log Store",
+            asset_type: "Data",
+            criticality: "Low",
+            security_domain: "Internal",
+            data_classification: "Internal"
+          }
+        ],
+        update: [],
+        delete: []
+      },
+      asset_edges: {
+        add: [
+          {
+            edge_id: "E-SYS-CTRL-IF-MAINT-01",
+            source_asset_id: "SYS-CTRL",
+            target_asset_id: "IF-MAINT",
+            link_type: "Control",
+            protocol_or_medium: "Ethernet",
+            direction: "Bidirectional",
+            trust_level: "Semi-Trusted",
+            security_mechanism: "RoleCheck",
+            description: "Maintenance control and status channel"
+          },
+          {
+            edge_id: "E-IF-MAINT-EXT-LAPTOP-01",
+            source_asset_id: "IF-MAINT",
+            target_asset_id: "EXT-LAPTOP",
+            link_type: "Physical",
+            protocol_or_medium: "Ethernet",
+            direction: "Bidirectional",
+            trust_level: "Untrusted",
+            description: "Temporary wired maintenance connection"
+          },
+          {
+            edge_id: "E-SYS-CTRL-SYS-LOG-01",
+            source_asset_id: "SYS-CTRL",
+            target_asset_id: "SYS-LOG",
+            link_type: "DataFlow",
+            protocol_or_medium: "LocalStorage",
+            direction: "Bidirectional",
+            trust_level: "Trusted",
+            description: "Local event logging"
+          }
+        ],
+        update: [],
+        delete: []
+      },
+      threat_points: {
+        add: [
+          {
+            threatpoint_id: "TP-EXT-LAPTOP-01",
+            name: "Service laptop misuse over maintenance port",
+            related_asset_id: "EXT-LAPTOP",
+            stride_category: "Tampering",
+            attack_vector: "Maintenance",
+            entry_likelihood_level: "Medium",
+            attack_complexity_level: "Low",
+            threat_source: "external",
+            preconditions: "Laptop is connected to the maintenance interface",
+            detection_status: "Monitoring",
+            mitigation_reference: "GEN-SR-01"
+          }
+        ],
+        update: [],
+        delete: []
+      },
+      do326a_links: {
+        add: [
+          {
+            link_id: "DL-GEN-001",
+            standard_id: "GEN-EX-TS1",
+            clause_title: "Generic maintenance access scenario",
+            semantic_element_id: ["TP-EXT-LAPTOP-01", "EXT-LAPTOP", "IF-MAINT", "SYS-CTRL"],
+            linkage_type: "Evidence",
+            review_status: "Draft"
+          },
+          {
+            link_id: "DL-GEN-002",
+            standard_id: "GEN-EX-SR1",
+            clause_title: "Role check on maintenance access",
+            semantic_element_id: ["IF-MAINT", "SYS-CTRL"],
+            linkage_type: "Requirement",
+            review_status: "Draft"
+          }
+        ],
+        update: [],
+        delete: []
+      }
+    };
+
+    try {
+      return await this.resetAndCommitSeed(session, changeSet, newVersion, userId);
     } finally {
       await session.close();
     }

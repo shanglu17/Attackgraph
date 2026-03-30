@@ -54,6 +54,16 @@ router.post("/admin/seed/sample", async (req, res, next) => {
   }
 });
 
+router.post("/admin/seed/generic", async (req, res, next) => {
+  try {
+    const userId = String(req.headers["x-user-id"] ?? "admin-generic-seed");
+    const result = await graphRepo.seedGenericExample(userId);
+    res.json({ seeded: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/imports/excel/single-sheet/preview", (req, res) => {
   const parsed = singleSheetImportRequestSchema.safeParse(req.body);
   if (!parsed.success) {
