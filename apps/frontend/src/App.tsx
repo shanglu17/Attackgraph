@@ -21,6 +21,7 @@ import {
   seedSampleData,
   validateChangeSet
 } from "./api";
+import { CxfImportPanel } from "./CxfImportPanel";
 import type {
   AssetEdge,
   AssetNode,
@@ -776,6 +777,20 @@ export function App() {
     }
   }
 
+  async function handleCxfImportCommit(result: { commit_id?: string; new_version?: string }) {
+    try {
+      setBusy(true);
+      const data = await getGraph();
+      setGraph(data);
+      setDraft(emptyChangeSet(data.graph_version));
+      setMessage(`Multi-sheet import committed: ${result.commit_id ?? "-"}, version ${result.new_version ?? data.graph_version}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to refresh graph after import");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleExportResult() {
     try {
       setBusy(true);
@@ -840,6 +855,8 @@ export function App() {
           <strong>{kpi.links}</strong>
         </article>
       </section>
+
+      <CxfImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleCxfImportCommit} />
 
       <div className="layout">
         <aside className="panel left">

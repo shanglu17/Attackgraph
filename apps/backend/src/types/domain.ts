@@ -2,6 +2,7 @@ export type AssetType = "Terminal" | "Interface" | "Link" | "Data";
 export type CriticalityLevel = "High" | "Medium" | "Low";
 export type SecurityDomain = "Internal" | "External" | "DMZ" | "Shared";
 export type DataClassification = "Public" | "Internal" | "Sensitive" | "Restricted";
+export type AssetSource = "manual" | "excel_import" | "auto_generated";
 
 export type LinkType = "Physical" | "Logical" | "DataFlow" | "Control";
 export type Direction = "Unidirectional" | "Bidirectional";
@@ -35,6 +36,8 @@ export interface AssetNode {
   description?: string;
   data_classification?: DataClassification;
   tags?: string[];
+  is_placeholder?: boolean;
+  source?: AssetSource;
 }
 
 export interface AssetEdge {

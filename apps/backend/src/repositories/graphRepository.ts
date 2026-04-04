@@ -88,7 +88,9 @@ export class GraphRepository {
             description: (properties.description as string | undefined) ?? undefined,
             data_classification:
               (properties.data_classification as GraphSnapshot["asset_nodes"][number]["data_classification"]) ?? undefined,
-            tags: (properties.tags as string[] | undefined) ?? undefined
+            tags: (properties.tags as string[] | undefined) ?? undefined,
+            is_placeholder: (properties.is_placeholder as boolean | undefined) ?? undefined,
+            source: (properties.source as GraphSnapshot["asset_nodes"][number]["source"] | undefined) ?? undefined
           };
         }),
         asset_edges: result.edgesRes.records.map((record) => ({
@@ -181,13 +183,15 @@ export class GraphRepository {
 
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
           await tx.run(
-            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags",
+            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source",
             {
               ...asset,
               security_domain: asset.security_domain ?? null,
               description: asset.description ?? null,
               data_classification: asset.data_classification ?? null,
-              tags: asset.tags ?? []
+              tags: asset.tags ?? [],
+              is_placeholder: asset.is_placeholder ?? false,
+              source: asset.source ?? null
             }
           );
         }

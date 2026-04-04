@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
+import { CxfImportService, type CxfImportSummary } from "../services/cxfImportService.js";
 import { ImportService } from "../services/importService.js";
 import {
+  cxfImportRequestSchema,
   do326aLinkSchema,
   do326aReviewSchema,
   graphChangeSetSchema,
@@ -16,12 +18,29 @@ const router = Router();
 const graphRepo = new GraphRepository();
 const analysisService = new AnalysisService();
 const importService = new ImportService();
+const cxfImportService = new CxfImportService();
 
 const emptyImportSummary = {
   asset_nodes: 0,
   asset_edges: 0,
   threat_points: 0,
   do326a_links: 0
+};
+
+const emptyCxfAccepted = {
+  functional_assets: 0,
+  interface_assets: 0,
+  support_assets: 0,
+  data_assets: 0
+};
+
+const emptyCxfSummary: CxfImportSummary = {
+  asset_nodes_to_add: 0,
+  asset_edges_to_add: 0,
+  threat_points_to_add: 0,
+  auto_placeholder_assets_to_add: 0,
+  warnings: [],
+  auto_generated_threats: []
 };
 
 function toImportRequestErrorResponse(issues: Array<{ path: Array<string | number>; message: string }>) {
@@ -37,6 +56,22 @@ function toImportRequestErrorResponse(issues: Array<{ path: Array<string | numbe
     errors: error_details.map((detail) => (detail.field ? `field / ${detail.field}: ${detail.message}` : detail.message)),
     error_details,
     summary: emptyImportSummary
+  };
+}
+
+function toCxfImportRequestErrorResponse(issues: Array<{ path: Array<string | number>; message: string }>) {
+  const error_details = issues.map((issue) => ({
+    type: "field" as const,
+    field: issue.path.join(".") || undefined,
+    message: issue.message
+  }));
+
+  return {
+    ok: false,
+    accepted: emptyCxfAccepted,
+    errors: error_details.map((detail) => (detail.field ? `field / ${detail.field}: ${detail.message}` : detail.message)),
+    error_details,
+    summary: emptyCxfSummary
   };
 }
 
@@ -104,6 +139,53 @@ router.post("/imports/excel/single-sheet/commit", async (req, res, next) => {
         committed: false,
         accepted,
         rejected,
+        errors: error_details.map((detail) => detail.message),
+        error_details,
+        summary
+      });
+    }
+    return next(error);
+  }
+});
+
+router.post("/imports/cxf-asset-inventory/preview", (req, res) => {
+  const parsed = cxfImportRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json(toCxfImportRequestErrorResponse(parsed.error.issues));
+  }
+
+  const preview = cxfImportService.preview(parsed.data);
+  return res.json(preview);
+});
+
+router.post("/imports/cxf-asset-inventory/commit", async (req, res, next) => {
+  let accepted = emptyCxfAccepted;
+  let summary = emptyCxfSummary;
+
+  try {
+    const parsed = cxfImportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ committed: false, ...toCxfImportRequestErrorResponse(parsed.error.issues) });
+    }
+
+    const graphVersion = await graphRepo.getGraphVersion();
+    const prepared = cxfImportService.prepareChangeSet(parsed.data, graphVersion);
+    accepted = prepared.accepted;
+    summary = prepared.summary;
+    if (prepared.error_details.length > 0 || !prepared.change_set) {
+      return res.status(400).json({ committed: false, ...prepared });
+    }
+
+    const userId = String(req.headers["x-user-id"] ?? "cxf-import");
+    const commit = await graphRepo.commitChangeSet(prepared.change_set, userId);
+    return res.json({ committed: true, ...prepared, ...commit });
+  } catch (error) {
+    if (error instanceof GraphChangeSetValidationError) {
+      const error_details = cxfImportService.createBindingErrors(error.errors);
+      return res.status(409).json({
+        committed: false,
+        ok: false,
+        accepted,
         errors: error_details.map((detail) => detail.message),
         error_details,
         summary

@@ -1,15 +1,20 @@
 import { z } from "zod";
 
+const assetIdPattern = /^(IS|IF|SYS|EXT)-[A-Z0-9]{2,24}(?:-[A-Z0-9]{2,8})?$/;
+const threatIdPattern = /^TP-[A-Z0-9-]+-\d{2}$/;
+
 export const assetNodeSchema = z
   .object({
-    asset_id: z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/),
+    asset_id: z.string().regex(assetIdPattern),
     asset_name: z.string().min(2).max(48).regex(/^[A-Za-z\u4e00-\u9fa5][A-Za-z0-9\u4e00-\u9fa5\s\-_\/]{1,47}$/),
     asset_type: z.enum(["Terminal", "Interface", "Link", "Data"]),
     criticality: z.enum(["High", "Medium", "Low"]),
     security_domain: z.enum(["Internal", "External", "DMZ", "Shared"]).optional(),
     description: z.string().max(200).optional(),
     data_classification: z.enum(["Public", "Internal", "Sensitive", "Restricted"]).optional(),
-    tags: z.array(z.string().min(1)).optional()
+    tags: z.array(z.string().min(1)).optional(),
+    is_placeholder: z.boolean().optional(),
+    source: z.enum(["manual", "excel_import", "auto_generated"]).optional()
   })
   .superRefine((value, ctx) => {
     if (value.asset_type === "Data" && !value.data_classification) {
@@ -24,8 +29,8 @@ export const assetNodeSchema = z
 export const assetEdgeSchema = z
   .object({
     edge_id: z.string().regex(/^E-[A-Z0-9-]+-[A-Z0-9-]+-\d{2}$/),
-    source_asset_id: z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/),
-    target_asset_id: z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/),
+    source_asset_id: z.string().regex(assetIdPattern),
+    target_asset_id: z.string().regex(assetIdPattern),
     link_type: z.enum(["Physical", "Logical", "DataFlow", "Control"]),
     protocol_or_medium: z.string().min(1).max(64).optional(),
     direction: z.enum(["Unidirectional", "Bidirectional"]),
@@ -45,9 +50,9 @@ export const assetEdgeSchema = z
 
 export const threatPointSchema = z
   .object({
-    threatpoint_id: z.string().regex(/^TP-[A-Z0-9-]+-\d{2}$/),
+    threatpoint_id: z.string().regex(threatIdPattern),
     name: z.string().min(4).max(64),
-    related_asset_id: z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/),
+    related_asset_id: z.string().regex(assetIdPattern),
     stride_category: z.enum([
       "Spoofing",
       "Tampering",
@@ -125,7 +130,7 @@ export const runAnalysisSchema = z.object({
   analysis_batch_id: z.string().min(1),
   max_hops: z.number().int().min(1).max(8).default(3),
   generated_by: z.string().min(1),
-  scope_asset_ids: z.array(z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/)).optional(),
+  scope_asset_ids: z.array(z.string().regex(assetIdPattern)).optional(),
   dps_hop_decay: z.number().min(0.8).max(1).optional()
 });
 
@@ -134,8 +139,8 @@ export const persistPathsSchema = z.object({
     z.object({
       path_id: z.string().regex(/^AP-\d{4}$/),
       analysis_batch_id: z.string().min(1),
-      entry_point_id: z.string().regex(/^TP-[A-Z0-9-]+-\d{2}$/),
-      target_asset_id: z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/),
+      entry_point_id: z.string().regex(threatIdPattern),
+      target_asset_id: z.string().regex(assetIdPattern),
       hop_sequence: z.string().min(1),
       hop_count: z.number().int().min(1),
       path_probability: z.number().min(0),
@@ -153,7 +158,7 @@ export const persistPathsSchema = z.object({
         z.object({
           hop: z.number().int().min(1),
           edge_id: z.string().min(1),
-          asset_id: z.string().regex(/^(IS|IF|SYS|EXT)-[A-Z0-9]{2,12}$/),
+          asset_id: z.string().regex(assetIdPattern),
           edge_factor: z.number().min(0).max(1)
         })
       )
@@ -181,6 +186,63 @@ export const singleSheetImportRequestSchema = z.object({
   rows: z.array(z.record(z.unknown()))
 });
 
+const cxfRowBaseSchema = {
+  id: z.string().min(1),
+  excel_row: z.number().int().min(2).optional()
+} as const;
+
+export const cxfSourceSchema = z.object({
+  aircraft_model: z.string().min(1),
+  file_name: z.string().min(1).optional(),
+  submitted_by: z.string().min(1),
+  submitted_at: z.string().datetime()
+});
+
+export const cxfFunctionalAssetSchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().min(1),
+  description: z.string().optional()
+});
+
+export const cxfInterfaceAssetSchema = z.object({
+  ...cxfRowBaseSchema,
+  producer: z.string().min(1),
+  producer_ref: z.string().min(1).optional(),
+  consumer: z.string().min(1),
+  consumer_ref: z.string().min(1).optional(),
+  data_flow_description: z.string().optional(),
+  physical_interface: z.string().optional(),
+  logical_interface: z.string().optional(),
+  network_domain: z.string().optional(),
+  zone: z.string().optional(),
+  purpose: z.string().optional()
+});
+
+export const cxfSupportAssetSchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().min(1),
+  linked_interfaces: z.array(z.string().min(1)).optional()
+});
+
+export const cxfDataAssetSchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().min(1),
+  data_type: z.string().optional(),
+  load_description: z.string().optional(),
+  description: z.string().optional()
+});
+
+export const cxfImportRequestSchema = z.object({
+  template_version: z.literal("cxf_asset_inventory_v1"),
+  source: cxfSourceSchema,
+  workbook: z.object({
+    functional_assets: z.array(cxfFunctionalAssetSchema),
+    interface_assets: z.array(cxfInterfaceAssetSchema),
+    support_assets: z.array(cxfSupportAssetSchema),
+    data_assets: z.array(cxfDataAssetSchema)
+  })
+});
+
 export const modelingExportQuerySchema = z.object({
   analysis_batch_id: z.preprocess((value) => {
     if (typeof value !== "string") {
@@ -192,4 +254,5 @@ export const modelingExportQuerySchema = z.object({
 });
 
 export type SingleSheetImportRequest = z.infer<typeof singleSheetImportRequestSchema>;
+export type CxfImportRequest = z.infer<typeof cxfImportRequestSchema>;
 export type ModelingExportQuery = z.infer<typeof modelingExportQuerySchema>;

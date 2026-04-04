@@ -77,6 +77,7 @@ interface DfsContext {
   adjacency: Map<string, AssetEdge[]>;
   scope_set: Set<string> | null;
   asset_ids: Set<string>;
+  target_asset_ids: Set<string>;
   candidates: CandidatePath[];
 }
 
@@ -85,6 +86,7 @@ export class AnalysisService {
     const adjacency = this.buildAdjacency(input.asset_edges);
     const assetIds = new Set(input.asset_nodes.map((asset) => asset.asset_id));
     const scopeSet = input.scope_asset_ids ? new Set(input.scope_asset_ids) : null;
+    const targetAssetIds = this.resolveAnalysisTargetIds(input.asset_nodes, scopeSet);
     const candidates: CandidatePath[] = [];
 
     for (const threat of input.threat_points) {
@@ -102,6 +104,7 @@ export class AnalysisService {
           adjacency,
           scope_set: scopeSet,
           asset_ids: assetIds,
+          target_asset_ids: targetAssetIds,
           candidates
         },
         {
@@ -202,28 +205,30 @@ export class AnalysisService {
         ...nextTraverses.map((traverse) => traverse.asset_id)
       ].join(">");
 
-      context.candidates.push({
-        analysis_batch_id: context.input.analysis_batch_id,
-        entry_point_id: context.threat.threatpoint_id,
-        target_asset_id: edge.target_asset_id,
-        hop_sequence: hopSequence,
-        hop_count: nextHop,
-        path_probability: rawScore,
-        raw_score: rawScore,
-        dps_score: dpsScore,
-        heuristic_score: heuristicScore,
-        generated_by: context.input.generated_by,
-        generated_at: new Date().toISOString(),
-        traverses: nextTraverses,
-        entry_likelihood_level: context.threat.entry_likelihood_level,
-        attack_complexity_level: context.threat.attack_complexity_level,
-        threat_source: context.threat.threat_source,
-        entry_likelihood_value: entryLikelihoodMap[context.threat.entry_likelihood_level],
-        attack_success_factor: attackComplexityMap[context.threat.attack_complexity_level],
-        source_weight: sourceWeightMap[context.threat.threat_source],
-        expert_modifier: this.normalizeExpertModifier(context.threat.expert_modifier),
-        expert_adjustment_note: context.threat.expert_adjustment_note
-      });
+      if (context.target_asset_ids.has(edge.target_asset_id)) {
+        context.candidates.push({
+          analysis_batch_id: context.input.analysis_batch_id,
+          entry_point_id: context.threat.threatpoint_id,
+          target_asset_id: edge.target_asset_id,
+          hop_sequence: hopSequence,
+          hop_count: nextHop,
+          path_probability: rawScore,
+          raw_score: rawScore,
+          dps_score: dpsScore,
+          heuristic_score: heuristicScore,
+          generated_by: context.input.generated_by,
+          generated_at: new Date().toISOString(),
+          traverses: nextTraverses,
+          entry_likelihood_level: context.threat.entry_likelihood_level,
+          attack_complexity_level: context.threat.attack_complexity_level,
+          threat_source: context.threat.threat_source,
+          entry_likelihood_value: entryLikelihoodMap[context.threat.entry_likelihood_level],
+          attack_success_factor: attackComplexityMap[context.threat.attack_complexity_level],
+          source_weight: sourceWeightMap[context.threat.threat_source],
+          expert_modifier: this.normalizeExpertModifier(context.threat.expert_modifier),
+          expert_adjustment_note: context.threat.expert_adjustment_note
+        });
+      }
 
       const nextVisited = new Set(state.visited);
       nextVisited.add(edge.target_asset_id);
@@ -256,6 +261,59 @@ export class AnalysisService {
       }
     }
     return adjacency;
+  }
+
+  private resolveAnalysisTargetIds(assetNodes: AssetNode[], scopeSet: Set<string> | null): Set<string> {
+    const primaryTargets = new Set(
+      assetNodes
+        .filter((asset) => (!scopeSet || scopeSet.has(asset.asset_id)) && this.isAnalysisTarget(asset))
+        .map((asset) => asset.asset_id)
+    );
+    if (primaryTargets.size > 0) {
+      return primaryTargets;
+    }
+
+    return new Set(
+      assetNodes
+        .filter((asset) => (!scopeSet || scopeSet.has(asset.asset_id)) && this.isFallbackTarget(asset))
+        .map((asset) => asset.asset_id)
+    );
+  }
+
+  private isAnalysisTarget(asset: AssetNode): boolean {
+    if (asset.is_placeholder || asset.security_domain === "External" || asset.asset_type === "Interface") {
+      return false;
+    }
+    if (this.looksLikeFunctionalDescription(asset)) {
+      return false;
+    }
+
+    const tags = new Set((asset.tags ?? []).map((tag) => tag.toLowerCase()));
+    if (tags.has("analysis_target") || tags.has("crown_jewel") || tags.has("controller")) {
+      return true;
+    }
+    if (asset.asset_type === "Data") {
+      return asset.data_classification === "Sensitive" || asset.data_classification === "Restricted";
+    }
+    if (tags.has("ams_related") && !tags.has("controller") && /core/i.test(asset.asset_name)) {
+      return false;
+    }
+    return asset.criticality === "High";
+  }
+
+  private isFallbackTarget(asset: AssetNode): boolean {
+    if (asset.is_placeholder || asset.security_domain === "External" || asset.asset_type === "Interface") {
+      return false;
+    }
+    if (this.looksLikeFunctionalDescription(asset)) {
+      return false;
+    }
+    return asset.asset_type === "Data" || asset.criticality === "High";
+  }
+
+  private looksLikeFunctionalDescription(asset: AssetNode): boolean {
+    const normalizedName = asset.asset_name.trim().toLowerCase();
+    return /^(provide|maintain|support|manage|report|enable)\b/.test(normalizedName) || /^(提供|维持|为|向)/.test(asset.asset_name);
   }
 
   private resolveHeuristicScore(threat: ThreatPoint): number {

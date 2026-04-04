@@ -1,5 +1,6 @@
 export type PriorityLabel = "High" | "Medium" | "Low";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
+export type CxfSheetName = "functional_assets" | "interface_assets" | "support_assets" | "data_assets";
 
 export interface AssetNode {
   asset_id: string;
@@ -10,6 +11,8 @@ export interface AssetNode {
   description?: string;
   data_classification?: "Public" | "Internal" | "Sensitive" | "Restricted";
   tags?: string[];
+  is_placeholder?: boolean;
+  source?: "manual" | "excel_import" | "auto_generated";
 }
 
 export interface AssetEdge {
@@ -124,4 +127,103 @@ export interface ModelingExportData {
     analysis_paths: AttackPath[];
     do326a_links: DO326ALink[];
   };
+}
+
+export interface CxfFunctionalAssetRow {
+  id: string;
+  name: string;
+  description?: string;
+  excel_row?: number;
+}
+
+export interface CxfInterfaceAssetRow {
+  id: string;
+  producer: string;
+  producer_ref?: string;
+  consumer: string;
+  consumer_ref?: string;
+  data_flow_description?: string;
+  physical_interface?: string;
+  logical_interface?: string;
+  network_domain?: string;
+  zone?: string;
+  purpose?: string;
+  excel_row?: number;
+}
+
+export interface CxfSupportAssetRow {
+  id: string;
+  name: string;
+  linked_interfaces?: string[];
+  excel_row?: number;
+}
+
+export interface CxfDataAssetRow {
+  id: string;
+  name: string;
+  data_type?: string;
+  load_description?: string;
+  description?: string;
+  excel_row?: number;
+}
+
+export interface CxfImportRequest {
+  template_version: "cxf_asset_inventory_v1";
+  source: {
+    aircraft_model: string;
+    file_name?: string;
+    submitted_by: string;
+    submitted_at: string;
+  };
+  workbook: {
+    functional_assets: CxfFunctionalAssetRow[];
+    interface_assets: CxfInterfaceAssetRow[];
+    support_assets: CxfSupportAssetRow[];
+    data_assets: CxfDataAssetRow[];
+  };
+}
+
+export interface CxfImportErrorDetail {
+  type: "field" | "binding";
+  sheet?: CxfSheetName;
+  row?: number;
+  field?: string;
+  message: string;
+}
+
+export interface CxfAutoThreatSummary {
+  threatpoint_id: string;
+  related_asset_id: string;
+  asset_name: string;
+  threat_kind: "ingress" | "integrity" | "control_misuse";
+  attack_vector: ThreatPoint["attack_vector"];
+  stride_category: ThreatPoint["stride_category"];
+}
+
+export interface CxfImportSummary {
+  asset_nodes_to_add: number;
+  asset_edges_to_add: number;
+  threat_points_to_add: number;
+  auto_placeholder_assets_to_add: number;
+  warnings: string[];
+  auto_generated_threats: CxfAutoThreatSummary[];
+}
+
+export interface CxfImportPreviewResult {
+  ok: boolean;
+  accepted: {
+    functional_assets: number;
+    interface_assets: number;
+    support_assets: number;
+    data_assets: number;
+  };
+  errors: string[];
+  error_details: CxfImportErrorDetail[];
+  summary: CxfImportSummary;
+}
+
+export interface CxfImportCommitResult extends CxfImportPreviewResult {
+  committed: boolean;
+  commit_id?: string;
+  new_version?: string;
 }

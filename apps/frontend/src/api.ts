@@ -1,4 +1,14 @@
-import type { AttackPath, DO326ALink, GraphChangeSet, GraphData, ModelingExportData, ReviewStatus } from "./types";
+import type {
+  AttackPath,
+  CxfImportCommitResult,
+  CxfImportPreviewResult,
+  CxfImportRequest,
+  DO326ALink,
+  GraphChangeSet,
+  GraphData,
+  ModelingExportData,
+  ReviewStatus
+} from "./types";
 
 const baseUrl = "http://localhost:4000";
 
@@ -45,6 +55,24 @@ export async function commitChangeSet(
   });
   await ensureOk(response, "Failed to commit changeset");
   return response.json();
+}
+
+export async function previewCxfImport(payload: CxfImportRequest): Promise<CxfImportPreviewResult> {
+  const response = await fetch(`${baseUrl}/imports/cxf-asset-inventory/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return (await response.json()) as CxfImportPreviewResult;
+}
+
+export async function commitCxfImport(payload: CxfImportRequest): Promise<CxfImportCommitResult> {
+  const response = await fetch(`${baseUrl}/imports/cxf-asset-inventory/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
+    body: JSON.stringify(payload)
+  });
+  return (await response.json()) as CxfImportCommitResult;
 }
 
 export async function runAnalysis(payload?: {
