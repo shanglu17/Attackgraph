@@ -486,10 +486,10 @@ export function App() {
           )
         },
         style: {
-          border: "1px solid #435279",
+          border: "1px solid #8ea7d1",
           borderRadius: "10px",
-          background: "#131c34",
-          color: "#dbe5ff",
+          background: "#f8fbff",
+          color: "#243453",
           width: 168,
           padding: 2
         }
@@ -505,10 +505,10 @@ export function App() {
         label: `${assetEdge.link_type}${assetEdge.trust_level ? `/${assetEdge.trust_level}` : ""}`,
         animated: highlighted,
         style: {
-          stroke: highlighted ? "#7aa2ff" : "#3e4a70",
+          stroke: highlighted ? "#4f7dff" : "#7f96bf",
           strokeWidth: highlighted ? 2.8 : 1.4
         },
-        labelStyle: { fill: highlighted ? "#bcd0ff" : "#90a0c8", fontSize: 11 }
+        labelStyle: { fill: highlighted ? "#3d62c9" : "#667da6", fontSize: 11 }
       };
     });
 
@@ -910,7 +910,7 @@ export function App() {
             >
               <MiniMap pannable zoomable style={{ width: 136, height: 88 }} />
               <Controls />
-              <Background gap={16} color="#243353" />
+              <Background gap={16} color="#a9bcdd" />
             </ReactFlow>
           </div>
         </main>
