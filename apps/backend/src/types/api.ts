@@ -224,10 +224,21 @@ export const cxfSupportAssetSchema = z.object({
   linked_interfaces: z.array(z.string().min(1)).optional()
 });
 
+export const cxfDomainPropertySchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().min(1),
+  trust_level: z.string().min(1),
+  security_domain: z.string().min(1),
+  description: z.string().optional()
+});
+
 export const cxfDataAssetSchema = z.object({
   ...cxfRowBaseSchema,
   name: z.string().min(1),
   data_type: z.string().optional(),
+  data_flow_type: z.string().optional(),
+  linked_interfaces: z.string().optional(),
+  domain_id: z.string().optional(),
   load_description: z.string().optional(),
   description: z.string().optional()
 });
@@ -239,7 +250,8 @@ export const cxfImportRequestSchema = z.object({
     functional_assets: z.array(cxfFunctionalAssetSchema),
     interface_assets: z.array(cxfInterfaceAssetSchema),
     support_assets: z.array(cxfSupportAssetSchema),
-    data_assets: z.array(cxfDataAssetSchema)
+    data_assets: z.array(cxfDataAssetSchema),
+    domain_properties: z.array(cxfDomainPropertySchema).default([])
   })
 });
 

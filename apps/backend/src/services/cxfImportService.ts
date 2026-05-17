@@ -23,7 +23,8 @@ const sheetLabels: Record<CxfSheetName, string> = {
   functional_assets: "功能资产",
   interface_assets: "接口资产",
   support_assets: "支持资产",
-  data_assets: "数据资产"
+  data_assets: "数据资产",
+  domain_properties: "域属性表"
 };
 
 const autoThreatProfiles: Array<{
@@ -35,6 +36,8 @@ const autoThreatProfiles: Array<{
   { kind: "integrity", idSuffix: "INT", nameSuffix: "data integrity threat" },
   { kind: "control_misuse", idSuffix: "CTL", nameSuffix: "control misuse threat" }
 ];
+
+const validDataFlowTypes = new Set(["CMD", "CONFIG", "STATE", "DATA", "LOAD", "ALERT"]);
 
 interface AutoThreatSummary {
   threatpoint_id: string;
@@ -50,6 +53,7 @@ interface AcceptedSummary {
   interface_assets: number;
   support_assets: number;
   data_assets: number;
+  domain_properties: number;
 }
 
 interface EdgeDraft {
@@ -73,6 +77,8 @@ interface EndpointResolutionContext {
 interface RegisteredDataAsset {
   asset_id: string;
   row: CxfImportRequest["workbook"]["data_assets"][number];
+  linked_interface_ids: string[];
+  domain_id?: string;
 }
 
 export interface CxfImportErrorDetail {
@@ -207,7 +213,12 @@ export class CxfImportService {
         continue;
       }
 
-      registeredDataAssets.push({ asset_id: assetId, row });
+      registeredDataAssets.push({
+        asset_id: assetId,
+        row,
+        linked_interface_ids: this.parseLinkedInterfaces(row.linked_interfaces),
+        domain_id: row.domain_id
+      });
       businessIdToAssetId.set(businessId, assetId);
       this.registerNameAlias(nameRegistry, row.name, assetId);
       accepted.data_assets += 1;
@@ -215,6 +226,37 @@ export class CxfImportService {
 
     const interfaceIdSet = new Set<string>();
     const interfaceRows: Array<CxfImportRequest["workbook"]["interface_assets"][number]> = [];
+
+    // Register domain properties as Interface-type assets for edge linking
+    const domainIdToAssetId = new Map<string, string>();
+    for (const row of input.workbook.domain_properties) {
+      const businessId = this.normalizeBusinessId(row.id);
+      if (!this.ensureUniqueSheetId(interfaceIdSet, "domain_properties", row.excel_row, row.id, errors)) {
+        continue;
+      }
+
+      const assetId = this.toInternalAssetId("IF", row.id);
+      const candidate: AssetNode = {
+        asset_id: assetId,
+        asset_name: this.sanitizeAssetName(row.name, "Domain"),
+        asset_type: "Interface",
+        criticality: "Medium",
+        security_domain: (row.security_domain === "Internal" || row.security_domain === "External" || row.security_domain === "DMZ" || row.security_domain === "Shared")
+          ? row.security_domain : "Shared",
+        description: this.buildDescription("Domain property", row.description),
+        source: "excel_import",
+        tags: ["domain_property"]
+      };
+      if (!this.registerAsset(assets, candidate, errors, "domain_properties", row.excel_row)) {
+        continue;
+      }
+
+      domainIdToAssetId.set(businessId, assetId);
+      businessIdToAssetId.set(businessId, assetId);
+      this.registerNameAlias(nameRegistry, row.name, assetId);
+      accepted.domain_properties += 1;
+    }
+
     for (const row of input.workbook.interface_assets) {
       const businessId = this.normalizeBusinessId(row.id);
       if (!this.ensureUniqueSheetId(interfaceIdSet, "interface_assets", row.excel_row, row.id, errors)) {
@@ -366,6 +408,7 @@ export class CxfImportService {
 
     this.registerMinimalSystemEdges(edges, edgeSequenceByPair, errors);
     this.registerDataOwnershipEdges(registeredDataAssets, edges, edgeSequenceByPair, errors);
+    this.registerDataAssetInterfaceEdges(registeredDataAssets, interfaceRows, nameRegistry, businessIdToAssetId, assets, placeholderAssetIds, edges, edgeSequenceByPair, errors);
 
     const threatTargets = this.resolveThreatTargets(interfaceAssetIds, placeholderAssetIds, assets, edges);
     const threatPoints: ThreatPoint[] = [];
@@ -573,6 +616,109 @@ export class CxfImportService {
     }
   }
 
+  private parseLinkedInterfaces(raw: string | undefined): string[] {
+    if (!raw) return [];
+    return raw.split(",").map((s) => s.trim()).filter((s) => /^SI\.\d+$/i.test(s));
+  }
+
+  private registerDataAssetInterfaceEdges(
+    dataAssets: RegisteredDataAsset[],
+    interfaceRows: CxfImportRequest["workbook"]["interface_assets"][number][],
+    nameRegistry: NameRegistry,
+    businessIdToAssetId: Map<string, string>,
+    assets: Map<string, AssetNode>,
+    placeholderAssetIds: Set<string>,
+    edges: Map<string, AssetEdge>,
+    edgeSequenceByPair: Map<string, number>,
+    errors: CxfImportErrorDetail[]
+  ): void {
+    // Build map: SI.normalizedId → interfaceRow
+    const interfaceRowMap = new Map<string, CxfImportRequest["workbook"]["interface_assets"][number]>();
+    for (const row of interfaceRows) {
+      interfaceRowMap.set(this.normalizeBusinessId(row.id), row);
+    }
+
+    for (const dataAsset of dataAssets) {
+      if (dataAsset.linked_interface_ids.length === 0) {
+        continue;
+      }
+
+      for (const ifaceId of dataAsset.linked_interface_ids) {
+        const interfaceRow = interfaceRowMap.get(this.normalizeBusinessId(ifaceId));
+        if (!interfaceRow) {
+          errors.push({
+            type: "binding",
+            sheet: "data_assets",
+            field: "linked_interfaces",
+            message: `data asset ${dataAsset.asset_id} references non-existent interface: ${ifaceId}`
+          });
+          continue;
+        }
+
+        const interfaceAssetId = businessIdToAssetId.get(this.normalizeBusinessId(ifaceId));
+        if (!interfaceAssetId) {
+          continue;
+        }
+
+        // Producer → data asset: connect producer to the data traveling over this interface
+        const producerIds = this.resolveEndpointAssetIds(
+          interfaceRow.producer,
+          interfaceRow.producer_ref,
+          { sheet: "data_assets", nameField: "producer", refField: "producer_ref" },
+          businessIdToAssetId,
+          nameRegistry, // This is a class field issue — need to pass it.
+          assets,
+          placeholderAssetIds,
+          errors
+        );
+        for (const producerId of producerIds) {
+          this.registerEdge(
+            edges,
+            edgeSequenceByPair,
+            {
+              source_asset_id: producerId,
+              target_asset_id: dataAsset.asset_id,
+              link_type: "DataFlow",
+              protocol_or_medium: this.truncate(this.firstNonEmpty(dataAsset.row.data_flow_type, dataAsset.row.data_type, "AssetData"), 64),
+              direction: "Bidirectional",
+              trust_level: "Trusted",
+              description: this.buildDescription("Data via", ifaceId, dataAsset.row.name)
+            },
+            errors
+          );
+        }
+
+        // Data asset → consumer: connect data asset to the consumer
+        const consumerIds = this.resolveEndpointAssetIds(
+          interfaceRow.consumer,
+          interfaceRow.consumer_ref,
+          { sheet: "data_assets", nameField: "consumer", refField: "consumer_ref" },
+          businessIdToAssetId,
+          nameRegistry,
+          assets,
+          placeholderAssetIds,
+          errors
+        );
+        for (const consumerId of consumerIds) {
+          this.registerEdge(
+            edges,
+            edgeSequenceByPair,
+            {
+              source_asset_id: dataAsset.asset_id,
+              target_asset_id: consumerId,
+              link_type: "DataFlow",
+              protocol_or_medium: this.truncate(this.firstNonEmpty(dataAsset.row.data_flow_type, dataAsset.row.data_type, "AssetData"), 64),
+              direction: "Bidirectional",
+              trust_level: "Trusted",
+              description: this.buildDescription("Data via", ifaceId, dataAsset.row.name)
+            },
+            errors
+          );
+        }
+      }
+    }
+  }
+
   private resolveDataOwnerAssetIds(row: CxfImportRequest["workbook"]["data_assets"][number]): Set<string> {
     const owners = new Set<string>();
     const text = `${row.id} ${row.name} ${row.data_type ?? ""} ${row.load_description ?? ""} ${row.description ?? ""}`.toLowerCase();
@@ -656,7 +802,8 @@ export class CxfImportService {
       functional_assets: 0,
       interface_assets: 0,
       support_assets: 0,
-      data_assets: 0
+      data_assets: 0,
+      domain_properties: 0
     };
   }
 

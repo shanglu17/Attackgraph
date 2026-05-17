@@ -1,6 +1,7 @@
 import type { WorkBook } from "xlsx";
 import type {
   CxfDataAssetRow,
+  CxfDomainPropertyRow,
   CxfFunctionalAssetRow,
   CxfImportRequest,
   CxfInterfaceAssetRow,
@@ -15,21 +16,24 @@ const sheetNames: Record<CxfSheetName, string> = {
   functional_assets: "功能资产",
   interface_assets: "接口资产",
   support_assets: "支持资产",
-  data_assets: "数据资产"
+  data_assets: "数据资产",
+  domain_properties: "域属性表"
 };
 
 const sheetHeaders: Record<CxfSheetName, string[]> = {
   functional_assets: ["编号", "功能资产名称", "资产说明"],
   interface_assets: ["接口编号", "产生者", "用户", "数据流描述", "物理接口", "逻辑接口", "网络域", "区域", "目的"],
   support_assets: ["编号", "名称", "交联接口"],
-  data_assets: ["编号", "数据名称", "数据类型", "加载描述", "资产说明"]
+  data_assets: ["编号", "数据名称", "数据类型", "数据流类型", "对应接口", "所属域", "说明"],
+  domain_properties: ["域编号", "域名称", "信任程度", "安全域", "描述"]
 };
 
 const sheetIdPatterns: Record<CxfSheetName, RegExp> = {
   functional_assets: /^[A-Z]{2,4}\.[A-Z0-9]+$/i,
   interface_assets: /^SI\.\d+$/i,
   support_assets: /^(ASA|SSA)\.\d+$/i,
-  data_assets: /^[A-Z]{2,4}\.[A-Z0-9]+$/i
+  data_assets: /^[A-Z]{2,4}\.[A-Z0-9]+$/i,
+  domain_properties: /^D\.\d+$/i
 };
 
 let xlsxModule: typeof import("xlsx") | null = null;
@@ -58,6 +62,7 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
   const interfaceAssets = parseInterfaceAssets(workbook);
   const supportAssets = parseSupportAssets(workbook);
   const dataAssets = parseDataAssets(workbook);
+  const domainProperties = parseDomainProperties(workbook);
 
   return {
     payload: {
@@ -72,14 +77,16 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
         functional_assets: functionalAssets,
         interface_assets: interfaceAssets,
         support_assets: supportAssets,
-        data_assets: dataAssets
+        data_assets: dataAssets,
+        domain_properties: domainProperties
       }
     },
     sheet_counts: {
       functional_assets: functionalAssets.length,
       interface_assets: interfaceAssets.length,
       support_assets: supportAssets.length,
-      data_assets: dataAssets.length
+      data_assets: dataAssets.length,
+      domain_properties: domainProperties.length
     }
   };
 }
@@ -133,7 +140,23 @@ function parseDataAssets(workbook: WorkBook): CxfDataAssetRow[] {
       id: requiredCell(row, 0, "data_assets", index + 2, "id"),
       name: requiredCell(row, 1, "data_assets", index + 2, "name"),
       data_type: cell(row, 2),
-      load_description: cell(row, 3),
+      data_flow_type: cell(row, 3),
+      linked_interfaces: cell(row, 4),
+      domain_id: cell(row, 5),
+      description: cell(row, 6),
+      excel_row: index + 2
+    })
+  );
+}
+
+function parseDomainProperties(workbook: WorkBook): CxfDomainPropertyRow[] {
+  const rows = readSheetRows(workbook, "domain_properties");
+  return rows.map((row, index) =>
+    cleanObject<CxfDomainPropertyRow>({
+      id: requiredCell(row, 0, "domain_properties", index + 2, "id"),
+      name: requiredCell(row, 1, "domain_properties", index + 2, "name"),
+      trust_level: requiredCell(row, 2, "domain_properties", index + 2, "trust_level"),
+      security_domain: requiredCell(row, 3, "domain_properties", index + 2, "security_domain"),
       description: cell(row, 4),
       excel_row: index + 2
     })

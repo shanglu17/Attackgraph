@@ -1,0 +1,37 @@
+{
+  "model_id": "astra-uav-v1",
+  "display_name": "Astra UAV (v1)",
+  "default_criticality": "Medium",
+  "core_systems": [
+    {"system_id":"SYS-CTRL","name":"Integrated Control Computer","asset_id":"SYS-CTRL","asset_type":"Terminal","criticality":"High","security_domain":"Internal","tags":["flight_control"]},
+    {"system_id":"SYS-DAA","name":"DAA Detection Computer","asset_id":"SYS-DAA","asset_type":"Terminal","criticality":"High","security_domain":"Internal","tags":["daa"]},
+    {"system_id":"SYS-ACU","name":"Aircraft Communication Unit","asset_id":"SYS-ACU","asset_type":"Terminal","criticality":"High","security_domain":"Internal","tags":["comm","external_gateway"]},
+    {"system_id":"SYS-CCU","name":"Cabin Communication Unit","asset_id":"SYS-CCU","asset_type":"Terminal","criticality":"Medium","security_domain":"Internal","tags":["cabin"]},
+    {"system_id":"SYS-GCU","name":"Ground Communication Unit","asset_id":"SYS-GCU","asset_type":"Terminal","criticality":"High","security_domain":"External","tags":["ground"]},
+    {"system_id":"SYS-RCS","name":"Remote Control Station","asset_id":"SYS-RCS","asset_type":"Terminal","criticality":"High","security_domain":"External","tags":["ground","rcs"]}
+  ],
+  "data_ownership_rules": [
+    {"id":"rule_flightcontrol","priority":100,"match_regex":"(飞行控制|flight control|flight-control|FCAN|fcu|control)","owner_system_ids":["SYS-CTRL"]},
+    {"id":"rule_flight_software","priority":90,"match_regex":"(飞行|flight).*(软件|software|firmware)","owner_system_ids":["SYS-CTRL"]},
+    {"id":"rule_monitoring","priority":80,"match_regex":"(监控|monitor|telemetry|log|logging)","owner_system_ids":["SYS-DAA","SYS-CTRL"]},
+    {"id":"rule_comm","priority":80,"match_regex":"(通信|comm|ACU|GCU|wan|4G|5G|lte|1\\.4G)","owner_system_ids":["SYS-ACU","SYS-GCU"]},
+    {"id":"rule_cabin","priority":60,"match_regex":"(客舱|cabin|IFE|in-flight)","owner_system_ids":["SYS-CCU"]},
+    {"id":"rule_params","priority":70,"match_regex":"(参数|parameter|config|配置)","owner_system_ids":["SYS-CTRL","SYS-DAA"]},
+    {"id":"rule_default","priority":10,"match_regex":"^.*$","owner_system_ids":["SYS-CTRL"]}
+  ],
+  "interface_aliases": [
+    {"regex":"CAN|FCAN","interface_asset_id":"IF-CAN"},
+    {"regex":"ETH|LAN|ETHSW","interface_asset_id":"IF-ETHSW"},
+    {"regex":"RS422","interface_asset_id":"IF-RS422"},
+    {"regex":"GCU|RCS","interface_asset_id":"IF-GCU"}
+  ],
+  "minimal_system_edges": [
+    {"source":"SYS-DAA","target":"SYS-CTRL","link_type":"Logical","protocol_or_medium":"LAN","trust_level":"Trusted","description":"DAA to control core"},
+    {"source":"SYS-CTRL","target":"SYS-ACU","link_type":"DataFlow","protocol_or_medium":"RS422/ACAN","trust_level":"Semi-Trusted","description":"Control to ACU"},
+    {"source":"SYS-ACU","target":"SYS-GCU","link_type":"DataFlow","protocol_or_medium":"4G/5G","trust_level":"Untrusted","description":"ACU to ground"},
+    {"source":"SYS-GCU","target":"SYS-RCS","link_type":"DataFlow","protocol_or_medium":"WAN","trust_level":"Untrusted","description":"GCU to RCS"}
+  ],
+  "threat_entry_rules": [
+    {"id":"external_comm_entry","match_regex":"(ACU|GCU|EXT|RCS|IFE|wifi|wireless)","entry_type":"external","likelihood":"High"}
+  ]
+}

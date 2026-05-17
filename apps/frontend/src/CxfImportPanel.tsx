@@ -77,7 +77,7 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
       setParsedWorkbook(parsed);
       setPreview(null);
       updateMessage(
-        `Workbook parsed: 功能 ${parsed.sheet_counts.functional_assets}, 接口 ${parsed.sheet_counts.interface_assets}, 支持 ${parsed.sheet_counts.support_assets}, 数据 ${parsed.sheet_counts.data_assets}`
+        `Workbook parsed: 功能 ${parsed.sheet_counts.functional_assets}, 接口 ${parsed.sheet_counts.interface_assets}, 支持 ${parsed.sheet_counts.support_assets}, 数据 ${parsed.sheet_counts.data_assets}, 域 ${parsed.sheet_counts.domain_properties}`
       );
     } catch (error) {
       const normalized =
@@ -150,7 +150,8 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
     functional_assets: 0,
     interface_assets: 0,
     support_assets: 0,
-    data_assets: 0
+    data_assets: 0,
+    domain_properties: 0
   };
   const importDisabled = disabled || busy;
 

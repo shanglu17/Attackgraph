@@ -1,0 +1,2444 @@
+{
+  "metadata": {
+    "exported_at": "2026-03-30T06:02:21.575Z",
+    "filter": {
+      "analysis_batch_id": "batch-1774850525754"
+    },
+    "graph_version": "v_1774850521359",
+    "counts": {
+      "asset_nodes": 17,
+      "asset_edges": 14,
+      "threat_points": 4,
+      "do326a_links": 5,
+      "analysis_paths": 45
+    }
+  },
+  "payload": {
+    "graph": {
+      "graph_version": "v_1774850521359",
+      "asset_nodes": [
+        {
+          "asset_id": "EXT-AIRNET",
+          "asset_name": "Airline Network",
+          "asset_type": "Terminal",
+          "criticality": "Medium",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "EXT-AVIONIC",
+          "asset_name": "Avionic System",
+          "asset_type": "Terminal",
+          "criticality": "High",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "EXT-BLEED",
+          "asset_name": "Bleed System",
+          "asset_type": "Terminal",
+          "criticality": "High",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "EXT-GSE",
+          "asset_name": "Maintenance GSE",
+          "asset_type": "Terminal",
+          "criticality": "Medium",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "EXT-IFE",
+          "asset_name": "In-flight Entertainment System",
+          "asset_type": "Terminal",
+          "criticality": "Medium",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "EXT-MFGNET",
+          "asset_name": "Manufacturer Network",
+          "asset_type": "Terminal",
+          "criticality": "Medium",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "EXT-WBRIDGE",
+          "asset_name": "Wireless Bridge",
+          "asset_type": "Terminal",
+          "criticality": "Medium",
+          "security_domain": "External",
+          "tags": []
+        },
+        {
+          "asset_id": "IF-AR664",
+          "asset_name": "ARINC 664 Interface",
+          "asset_type": "Interface",
+          "criticality": "Medium",
+          "security_domain": "Shared",
+          "tags": []
+        },
+        {
+          "asset_id": "IF-CAN",
+          "asset_name": "Maintenance CAN Interface",
+          "asset_type": "Interface",
+          "criticality": "Medium",
+          "security_domain": "Shared",
+          "tags": []
+        },
+        {
+          "asset_id": "IF-ETHSW",
+          "asset_name": "Ethernet Switch Interface",
+          "asset_type": "Interface",
+          "criticality": "Medium",
+          "security_domain": "Shared",
+          "tags": []
+        },
+        {
+          "asset_id": "IF-USB9",
+          "asset_name": "USB Interface (Optional, not used in operation)",
+          "asset_type": "Interface",
+          "criticality": "Low",
+          "security_domain": "Shared",
+          "tags": []
+        },
+        {
+          "asset_id": "SYS-AMS",
+          "asset_name": "Air Management System",
+          "asset_type": "Terminal",
+          "criticality": "High",
+          "security_domain": "Internal",
+          "description": "DO-356A Appendix D example system",
+          "tags": []
+        },
+        {
+          "asset_id": "SYS-CFGDATA",
+          "asset_name": "Configuration Files",
+          "asset_type": "Data",
+          "criticality": "Medium",
+          "security_domain": "Internal",
+          "data_classification": "Internal",
+          "tags": []
+        },
+        {
+          "asset_id": "SYS-FLSDATA",
+          "asset_name": "Field Loadable Software",
+          "asset_type": "Data",
+          "criticality": "High",
+          "security_domain": "Internal",
+          "data_classification": "Sensitive",
+          "tags": []
+        },
+        {
+          "asset_id": "SYS-FWDATA",
+          "asset_name": "Controller Firmware",
+          "asset_type": "Data",
+          "criticality": "High",
+          "security_domain": "Internal",
+          "data_classification": "Sensitive",
+          "tags": []
+        },
+        {
+          "asset_id": "SYS-PRCTRL",
+          "asset_name": "Pressurization Controller",
+          "asset_type": "Terminal",
+          "criticality": "High",
+          "security_domain": "Internal",
+          "description": "Primary target for FC.3 catastrophic condition",
+          "tags": []
+        },
+        {
+          "asset_id": "SYS-TMPCTRL",
+          "asset_name": "Temperature Controller",
+          "asset_type": "Terminal",
+          "criticality": "Medium",
+          "security_domain": "Internal",
+          "tags": []
+        }
+      ],
+      "asset_edges": [
+        {
+          "edge_id": "E-EXT-WBRIDGE-EXT-AIRNET-01",
+          "source_asset_id": "EXT-WBRIDGE",
+          "target_asset_id": "EXT-AIRNET",
+          "link_type": "Logical",
+          "protocol_or_medium": "802.11",
+          "direction": "Bidirectional",
+          "trust_level": "Untrusted"
+        },
+        {
+          "edge_id": "E-EXT-WBRIDGE-EXT-MFGNET-01",
+          "source_asset_id": "EXT-WBRIDGE",
+          "target_asset_id": "EXT-MFGNET",
+          "link_type": "Logical",
+          "protocol_or_medium": "TLSVPN",
+          "direction": "Bidirectional",
+          "trust_level": "Semi-Trusted",
+          "security_mechanism": "TLS"
+        },
+        {
+          "edge_id": "E-IF-AR664-EXT-AVIONIC-01",
+          "source_asset_id": "IF-AR664",
+          "target_asset_id": "EXT-AVIONIC",
+          "link_type": "DataFlow",
+          "protocol_or_medium": "ARINC664",
+          "direction": "Bidirectional",
+          "trust_level": "Trusted"
+        },
+        {
+          "edge_id": "E-IF-CAN-EXT-GSE-01",
+          "source_asset_id": "IF-CAN",
+          "target_asset_id": "EXT-GSE",
+          "link_type": "Physical",
+          "protocol_or_medium": "CAN",
+          "direction": "Bidirectional",
+          "trust_level": "Semi-Trusted"
+        },
+        {
+          "edge_id": "E-IF-ETHSW-EXT-IFE-01",
+          "source_asset_id": "IF-ETHSW",
+          "target_asset_id": "EXT-IFE",
+          "link_type": "DataFlow",
+          "protocol_or_medium": "Ethernet",
+          "direction": "Bidirectional",
+          "trust_level": "Untrusted"
+        },
+        {
+          "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01",
+          "source_asset_id": "IF-ETHSW",
+          "target_asset_id": "EXT-WBRIDGE",
+          "link_type": "Logical",
+          "protocol_or_medium": "Ethernet",
+          "direction": "Bidirectional",
+          "trust_level": "Untrusted"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-EXT-BLEED-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "EXT-BLEED",
+          "link_type": "Control",
+          "protocol_or_medium": "PressureCommand",
+          "direction": "Unidirectional",
+          "trust_level": "Trusted"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-IF-AR664-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "IF-AR664",
+          "link_type": "Logical",
+          "protocol_or_medium": "ARINC664",
+          "direction": "Bidirectional",
+          "trust_level": "Trusted",
+          "security_mechanism": "ARINC664Secure"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-IF-CAN-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "IF-CAN",
+          "link_type": "Control",
+          "protocol_or_medium": "CAN",
+          "direction": "Bidirectional",
+          "trust_level": "Semi-Trusted",
+          "security_mechanism": "MaintenanceModeSR3"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "IF-ETHSW",
+          "link_type": "Logical",
+          "protocol_or_medium": "Ethernet",
+          "direction": "Bidirectional",
+          "trust_level": "Semi-Trusted"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-SYS-CFGDATA-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "SYS-CFGDATA",
+          "link_type": "DataFlow",
+          "protocol_or_medium": "ConfigStorage",
+          "direction": "Bidirectional",
+          "trust_level": "Trusted"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-SYS-FLSDATA-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "SYS-FLSDATA",
+          "link_type": "DataFlow",
+          "protocol_or_medium": "FLSStorage",
+          "direction": "Bidirectional",
+          "trust_level": "Trusted",
+          "security_mechanism": "SignatureCheck"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-SYS-FWDATA-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "SYS-FWDATA",
+          "link_type": "DataFlow",
+          "protocol_or_medium": "FirmwareStorage",
+          "direction": "Bidirectional",
+          "trust_level": "Trusted",
+          "security_mechanism": "SignatureCheck"
+        },
+        {
+          "edge_id": "E-SYS-PRCTRL-SYS-TMPCTRL-01",
+          "source_asset_id": "SYS-PRCTRL",
+          "target_asset_id": "SYS-TMPCTRL",
+          "link_type": "Logical",
+          "protocol_or_medium": "Ethernet",
+          "direction": "Bidirectional",
+          "trust_level": "Trusted",
+          "security_mechanism": "TLS"
+        }
+      ],
+      "threat_points": [
+        {
+          "threatpoint_id": "TP-EXT-GSE-01",
+          "name": "TS2 Maintenance GSE to pressurization storage attack",
+          "related_asset_id": "EXT-GSE",
+          "stride_category": "ElevationOfPrivilege",
+          "attack_vector": "Maintenance",
+          "entry_likelihood_level": "Medium",
+          "attack_complexity_level": "Low",
+          "threat_source": "external",
+          "preconditions": "MRO without security training and maintenance mode enabled",
+          "expert_modifier": 1,
+          "mitigation_reference": "SR3"
+        },
+        {
+          "threatpoint_id": "TP-EXT-IFE-01",
+          "name": "TS4 IFE Ethernet interface attack path",
+          "related_asset_id": "EXT-IFE",
+          "stride_category": "Tampering",
+          "attack_vector": "Network",
+          "entry_likelihood_level": "Medium",
+          "attack_complexity_level": "Medium",
+          "threat_source": "external",
+          "preconditions": "IFE reachable via Ethernet switch",
+          "expert_modifier": 1,
+          "mitigation_reference": "SR1"
+        },
+        {
+          "threatpoint_id": "TP-EXT-WBRIDGE-01",
+          "name": "TS3 Wireless bridge multi-stage attack path",
+          "related_asset_id": "EXT-WBRIDGE",
+          "stride_category": "Spoofing",
+          "attack_vector": "Wireless",
+          "entry_likelihood_level": "High",
+          "attack_complexity_level": "Medium",
+          "threat_source": "external",
+          "preconditions": "Aircraft on-ground and external wireless access available",
+          "expert_modifier": 1,
+          "mitigation_reference": "SR2"
+        },
+        {
+          "threatpoint_id": "TP-IF-CAN-01",
+          "name": "TS1 CAN interface direct attack on pressurization storage",
+          "related_asset_id": "IF-CAN",
+          "stride_category": "Tampering",
+          "attack_vector": "Maintenance",
+          "entry_likelihood_level": "Medium",
+          "attack_complexity_level": "Low",
+          "threat_source": "external",
+          "preconditions": "Direct CAN access during maintenance window",
+          "detection_status": "Monitoring",
+          "expert_modifier": 1,
+          "mitigation_reference": "SR3"
+        }
+      ],
+      "do326a_links": [
+        {
+          "link_id": "DL-101",
+          "standard_id": "DO-356A-AppD-TableD5-TS1",
+          "clause_title": "TS.1 CAN direct attack scenario",
+          "semantic_element_id": [
+            "TP-IF-CAN-01",
+            "SYS-PRCTRL",
+            "IF-CAN"
+          ],
+          "linkage_type": "Requirement",
+          "review_status": "Draft"
+        },
+        {
+          "link_id": "DL-102",
+          "standard_id": "DO-356A-AppD-TableD5-TS2",
+          "clause_title": "TS.2 GSE maintenance attack scenario",
+          "semantic_element_id": [
+            "TP-EXT-GSE-01",
+            "EXT-GSE",
+            "SYS-PRCTRL"
+          ],
+          "linkage_type": "Evidence",
+          "review_status": "Draft"
+        },
+        {
+          "link_id": "DL-103",
+          "standard_id": "DO-356A-AppD-TableD5-TS3",
+          "clause_title": "TS.3 Wireless bridge multi-stage attack scenario",
+          "semantic_element_id": [
+            "TP-EXT-WBRIDGE-01",
+            "EXT-WBRIDGE",
+            "IF-ETHSW",
+            "SYS-PRCTRL"
+          ],
+          "linkage_type": "Evidence",
+          "review_status": "Draft"
+        },
+        {
+          "link_id": "DL-104",
+          "standard_id": "DO-356A-AppD-TableD5-TS4",
+          "clause_title": "TS.4 IFE Ethernet interface attack scenario",
+          "semantic_element_id": [
+            "TP-EXT-IFE-01",
+            "EXT-IFE",
+            "IF-ETHSW",
+            "SYS-PRCTRL"
+          ],
+          "linkage_type": "Evidence",
+          "review_status": "Draft"
+        },
+        {
+          "link_id": "DL-105",
+          "standard_id": "DO-356A-AppD-D17-SR1-SR3",
+          "clause_title": "Security requirements SR1/SR2/SR3",
+          "semantic_element_id": [
+            "IF-ETHSW",
+            "IF-CAN",
+            "TP-EXT-WBRIDGE-01",
+            "TP-EXT-IFE-01"
+          ],
+          "linkage_type": "Requirement",
+          "review_status": "Draft"
+        }
+      ]
+    },
+    "analysis_paths": [
+      {
+        "path_id": "AP-0001",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "IF-CAN",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN",
+        "hop_count": 1,
+        "path_probability": 0.2975,
+        "raw_score": 0.2975,
+        "dps_score": 0.85,
+        "heuristic_score": 0.35,
+        "normalized_score": 1,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.850000 (edge_factor_product x hop_decay)",
+          "raw_score=0.297500, normalized_score=1.000000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.807Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0002",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "EXT-GSE",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>EXT-GSE",
+        "hop_count": 1,
+        "path_probability": 0.2975,
+        "raw_score": 0.2975,
+        "dps_score": 0.85,
+        "heuristic_score": 0.35,
+        "normalized_score": 1,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.850000 (edge_factor_product x hop_decay)",
+          "raw_score=0.297500, normalized_score=1.000000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01",
+            "asset_id": "EXT-GSE",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0003",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "SYS-PRCTRL",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL",
+        "hop_count": 1,
+        "path_probability": 0.26775,
+        "raw_score": 0.26775,
+        "dps_score": 0.765,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.9,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.765000 (edge_factor_product x hop_decay)",
+          "raw_score=0.267750, normalized_score=0.900000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0004",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "EXT-BLEED",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>EXT-BLEED",
+        "hop_count": 2,
+        "path_probability": 0.254362,
+        "raw_score": 0.254362,
+        "dps_score": 0.72675,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.855,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.726750 (edge_factor_product x hop_decay)",
+          "raw_score=0.254362, normalized_score=0.855000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-EXT-BLEED-01",
+            "asset_id": "EXT-BLEED",
+            "edge_factor": 1
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0005",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "SYS-CFGDATA",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>SYS-CFGDATA",
+        "hop_count": 2,
+        "path_probability": 0.254362,
+        "raw_score": 0.254362,
+        "dps_score": 0.72675,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.855,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.726750 (edge_factor_product x hop_decay)",
+          "raw_score=0.254362, normalized_score=0.855000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-SYS-CFGDATA-01",
+            "asset_id": "SYS-CFGDATA",
+            "edge_factor": 1
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0006",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "EXT-AIRNET",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>EXT-AIRNET",
+        "hop_count": 1,
+        "path_probability": 0.2401,
+        "raw_score": 0.2401,
+        "dps_score": 0.7,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.807059,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.700000 (edge_factor_product x hop_decay)",
+          "raw_score=0.240100, normalized_score=0.807059",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-EXT-WBRIDGE-EXT-AIRNET-01",
+            "asset_id": "EXT-AIRNET",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0007",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "IF-ETHSW",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW",
+        "hop_count": 1,
+        "path_probability": 0.2401,
+        "raw_score": 0.2401,
+        "dps_score": 0.7,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.807059,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.700000 (edge_factor_product x hop_decay)",
+          "raw_score=0.240100, normalized_score=0.807059",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0008",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "EXT-MFGNET",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>EXT-MFGNET",
+        "hop_count": 1,
+        "path_probability": 0.23324,
+        "raw_score": 0.23324,
+        "dps_score": 0.68,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.784,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.680000 (edge_factor_product x hop_decay)",
+          "raw_score=0.233240, normalized_score=0.784000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-EXT-WBRIDGE-EXT-MFGNET-01",
+            "asset_id": "EXT-MFGNET",
+            "edge_factor": 0.68
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0009",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "IF-AR664",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>IF-AR664",
+        "hop_count": 2,
+        "path_probability": 0.228926,
+        "raw_score": 0.228926,
+        "dps_score": 0.654075,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.7695,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.654075 (edge_factor_product x hop_decay)",
+          "raw_score=0.228926, normalized_score=0.769500",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-AR664-01",
+            "asset_id": "IF-AR664",
+            "edge_factor": 0.9
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0010",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "EXT-AVIONIC",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>IF-AR664>EXT-AVIONIC",
+        "hop_count": 3,
+        "path_probability": 0.21748,
+        "raw_score": 0.21748,
+        "dps_score": 0.621371,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.731025,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.621371 (edge_factor_product x hop_decay)",
+          "raw_score=0.217480, normalized_score=0.731025",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-IF-AR664-EXT-AVIONIC-01",
+            "asset_id": "EXT-AVIONIC",
+            "edge_factor": 1
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-AR664-01",
+            "asset_id": "IF-AR664",
+            "edge_factor": 0.9
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0011",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "SYS-PRCTRL",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL",
+        "hop_count": 2,
+        "path_probability": 0.216208,
+        "raw_score": 0.216208,
+        "dps_score": 0.617737,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.72675,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.617737 (edge_factor_product x hop_decay)",
+          "raw_score=0.216208, normalized_score=0.726750",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.808Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0012",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "IF-ETHSW",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>IF-ETHSW",
+        "hop_count": 2,
+        "path_probability": 0.216208,
+        "raw_score": 0.216208,
+        "dps_score": 0.617737,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.72675,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.617737 (edge_factor_product x hop_decay)",
+          "raw_score=0.216208, normalized_score=0.726750",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0013",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "SYS-FLSDATA",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>SYS-FLSDATA",
+        "hop_count": 2,
+        "path_probability": 0.216208,
+        "raw_score": 0.216208,
+        "dps_score": 0.617737,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.72675,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.617737 (edge_factor_product x hop_decay)",
+          "raw_score=0.216208, normalized_score=0.726750",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-SYS-FLSDATA-01",
+            "asset_id": "SYS-FLSDATA",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0014",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "SYS-FWDATA",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>SYS-FWDATA",
+        "hop_count": 2,
+        "path_probability": 0.216208,
+        "raw_score": 0.216208,
+        "dps_score": 0.617737,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.72675,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.617737 (edge_factor_product x hop_decay)",
+          "raw_score=0.216208, normalized_score=0.726750",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-SYS-FWDATA-01",
+            "asset_id": "SYS-FWDATA",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0015",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "EXT-BLEED",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>EXT-BLEED",
+        "hop_count": 3,
+        "path_probability": 0.205398,
+        "raw_score": 0.205398,
+        "dps_score": 0.586851,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.690412,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.586851 (edge_factor_product x hop_decay)",
+          "raw_score=0.205398, normalized_score=0.690412",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.808Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-EXT-BLEED-01",
+            "asset_id": "EXT-BLEED",
+            "edge_factor": 1
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0016",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "SYS-CFGDATA",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>SYS-CFGDATA",
+        "hop_count": 3,
+        "path_probability": 0.205398,
+        "raw_score": 0.205398,
+        "dps_score": 0.586851,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.690412,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.586851 (edge_factor_product x hop_decay)",
+          "raw_score=0.205398, normalized_score=0.690412",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.808Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-CFGDATA-01",
+            "asset_id": "SYS-CFGDATA",
+            "edge_factor": 1
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0017",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "SYS-TMPCTRL",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>SYS-TMPCTRL",
+        "hop_count": 2,
+        "path_probability": 0.20349,
+        "raw_score": 0.20349,
+        "dps_score": 0.5814,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.684,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.581400 (edge_factor_product x hop_decay)",
+          "raw_score=0.203490, normalized_score=0.684000",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-SYS-TMPCTRL-01",
+            "asset_id": "SYS-TMPCTRL",
+            "edge_factor": 0.8
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0018",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "SYS-PRCTRL",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL",
+        "hop_count": 2,
+        "path_probability": 0.193881,
+        "raw_score": 0.193881,
+        "dps_score": 0.56525,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.6517,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.565250 (edge_factor_product x hop_decay)",
+          "raw_score=0.193881, normalized_score=0.651700",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0019",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "IF-AR664",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>IF-AR664",
+        "hop_count": 3,
+        "path_probability": 0.184858,
+        "raw_score": 0.184858,
+        "dps_score": 0.528166,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.621371,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.528166 (edge_factor_product x hop_decay)",
+          "raw_score=0.184858, normalized_score=0.621371",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.808Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-IF-AR664-01",
+            "asset_id": "IF-AR664",
+            "edge_factor": 0.9
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0020",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "EXT-BLEED",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>EXT-BLEED",
+        "hop_count": 3,
+        "path_probability": 0.184187,
+        "raw_score": 0.184187,
+        "dps_score": 0.536987,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.619115,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.536987 (edge_factor_product x hop_decay)",
+          "raw_score=0.184187, normalized_score=0.619115",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-EXT-BLEED-01",
+            "asset_id": "EXT-BLEED",
+            "edge_factor": 1
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0021",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "SYS-CFGDATA",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>SYS-CFGDATA",
+        "hop_count": 3,
+        "path_probability": 0.184187,
+        "raw_score": 0.184187,
+        "dps_score": 0.536987,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.619115,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.536987 (edge_factor_product x hop_decay)",
+          "raw_score=0.184187, normalized_score=0.619115",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-CFGDATA-01",
+            "asset_id": "SYS-CFGDATA",
+            "edge_factor": 1
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0022",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "IF-ETHSW",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>IF-ETHSW",
+        "hop_count": 3,
+        "path_probability": 0.174588,
+        "raw_score": 0.174588,
+        "dps_score": 0.498823,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.586851,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.498823 (edge_factor_product x hop_decay)",
+          "raw_score=0.174588, normalized_score=0.586851",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.808Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0023",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "SYS-FLSDATA",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>SYS-FLSDATA",
+        "hop_count": 3,
+        "path_probability": 0.174588,
+        "raw_score": 0.174588,
+        "dps_score": 0.498823,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.586851,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.498823 (edge_factor_product x hop_decay)",
+          "raw_score=0.174588, normalized_score=0.586851",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-FLSDATA-01",
+            "asset_id": "SYS-FLSDATA",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0024",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "SYS-FWDATA",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>SYS-FWDATA",
+        "hop_count": 3,
+        "path_probability": 0.174588,
+        "raw_score": 0.174588,
+        "dps_score": 0.498823,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.586851,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.498823 (edge_factor_product x hop_decay)",
+          "raw_score=0.174588, normalized_score=0.586851",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-FWDATA-01",
+            "asset_id": "SYS-FWDATA",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0025",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "IF-ETHSW",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW",
+        "hop_count": 1,
+        "path_probability": 0.1715,
+        "raw_score": 0.1715,
+        "dps_score": 0.7,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.576471,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.700000 (edge_factor_product x hop_decay)",
+          "raw_score=0.171500, normalized_score=0.576471",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0026",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "IF-AR664",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>IF-AR664",
+        "hop_count": 3,
+        "path_probability": 0.165768,
+        "raw_score": 0.165768,
+        "dps_score": 0.483289,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.557203,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.483289 (edge_factor_product x hop_decay)",
+          "raw_score=0.165768, normalized_score=0.557203",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-IF-AR664-01",
+            "asset_id": "IF-AR664",
+            "edge_factor": 0.9
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0027",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-GSE-01",
+        "target_asset_id": "SYS-TMPCTRL",
+        "hop_sequence": "TP-EXT-GSE-01>EXT-GSE>IF-CAN>SYS-PRCTRL>SYS-TMPCTRL",
+        "hop_count": 3,
+        "path_probability": 0.164318,
+        "raw_score": 0.164318,
+        "dps_score": 0.46948,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.55233,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.469480 (edge_factor_product x hop_decay)",
+          "raw_score=0.164318, normalized_score=0.552330",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-TMPCTRL-01",
+            "asset_id": "SYS-TMPCTRL",
+            "edge_factor": 0.8
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-CAN-EXT-GSE-01#rev",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0028",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "EXT-IFE",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>EXT-IFE",
+        "hop_count": 2,
+        "path_probability": 0.159666,
+        "raw_score": 0.159666,
+        "dps_score": 0.4655,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.536694,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.465500 (edge_factor_product x hop_decay)",
+          "raw_score=0.159666, normalized_score=0.536694",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01",
+            "asset_id": "EXT-IFE",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0029",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "SYS-FLSDATA",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>SYS-FLSDATA",
+        "hop_count": 3,
+        "path_probability": 0.156559,
+        "raw_score": 0.156559,
+        "dps_score": 0.456439,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.526248,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.456439 (edge_factor_product x hop_decay)",
+          "raw_score=0.156559, normalized_score=0.526248",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-FLSDATA-01",
+            "asset_id": "SYS-FLSDATA",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0030",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "SYS-FWDATA",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>SYS-FWDATA",
+        "hop_count": 3,
+        "path_probability": 0.156559,
+        "raw_score": 0.156559,
+        "dps_score": 0.456439,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.526248,
+        "priority_label": "High",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.456439 (edge_factor_product x hop_decay)",
+          "raw_score=0.156559, normalized_score=0.526248",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-FWDATA-01",
+            "asset_id": "SYS-FWDATA",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0031",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "SYS-TMPCTRL",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>SYS-TMPCTRL",
+        "hop_count": 3,
+        "path_probability": 0.147349,
+        "raw_score": 0.147349,
+        "dps_score": 0.42959,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.495292,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.429590 (edge_factor_product x hop_decay)",
+          "raw_score=0.147349, normalized_score=0.495292",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-TMPCTRL-01",
+            "asset_id": "SYS-TMPCTRL",
+            "edge_factor": 0.8
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0032",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "EXT-IFE",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>IF-ETHSW>EXT-IFE",
+        "hop_count": 3,
+        "path_probability": 0.143778,
+        "raw_score": 0.143778,
+        "dps_score": 0.410795,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.483289,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.410795 (edge_factor_product x hop_decay)",
+          "raw_score=0.143778, normalized_score=0.483289",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01",
+            "asset_id": "EXT-IFE",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0033",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-IF-CAN-01",
+        "target_asset_id": "EXT-WBRIDGE",
+        "hop_sequence": "TP-IF-CAN-01>IF-CAN>SYS-PRCTRL>IF-ETHSW>EXT-WBRIDGE",
+        "hop_count": 3,
+        "path_probability": 0.143778,
+        "raw_score": 0.143778,
+        "dps_score": 0.410795,
+        "heuristic_score": 0.35,
+        "normalized_score": 0.483289,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Low)=1",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.410795 (edge_factor_product x hop_decay)",
+          "raw_score=0.143778, normalized_score=0.483289",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01",
+            "asset_id": "EXT-WBRIDGE",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0034",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-WBRIDGE-01",
+        "target_asset_id": "IF-CAN",
+        "hop_sequence": "TP-EXT-WBRIDGE-01>EXT-WBRIDGE>IF-ETHSW>SYS-PRCTRL>IF-CAN",
+        "hop_count": 3,
+        "path_probability": 0.140903,
+        "raw_score": 0.140903,
+        "dps_score": 0.410795,
+        "heuristic_score": 0.343,
+        "normalized_score": 0.473623,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(High)=0.7",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.410795 (edge_factor_product x hop_decay)",
+          "raw_score=0.140903, normalized_score=0.473623",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.81Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0035",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "SYS-PRCTRL",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL",
+        "hop_count": 2,
+        "path_probability": 0.138486,
+        "raw_score": 0.138486,
+        "dps_score": 0.56525,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.4655,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.565250 (edge_factor_product x hop_decay)",
+          "raw_score=0.138486, normalized_score=0.465500",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0036",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "EXT-BLEED",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>EXT-BLEED",
+        "hop_count": 3,
+        "path_probability": 0.131562,
+        "raw_score": 0.131562,
+        "dps_score": 0.536987,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.442225,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.536987 (edge_factor_product x hop_decay)",
+          "raw_score=0.131562, normalized_score=0.442225",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-EXT-BLEED-01",
+            "asset_id": "EXT-BLEED",
+            "edge_factor": 1
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0037",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "SYS-CFGDATA",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>SYS-CFGDATA",
+        "hop_count": 3,
+        "path_probability": 0.131562,
+        "raw_score": 0.131562,
+        "dps_score": 0.536987,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.442225,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.536987 (edge_factor_product x hop_decay)",
+          "raw_score=0.131562, normalized_score=0.442225",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-CFGDATA-01",
+            "asset_id": "SYS-CFGDATA",
+            "edge_factor": 1
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0038",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "IF-AR664",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>IF-AR664",
+        "hop_count": 3,
+        "path_probability": 0.118406,
+        "raw_score": 0.118406,
+        "dps_score": 0.483289,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.398002,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.483289 (edge_factor_product x hop_decay)",
+          "raw_score=0.118406, normalized_score=0.398002",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-IF-AR664-01",
+            "asset_id": "IF-AR664",
+            "edge_factor": 0.9
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0039",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "EXT-WBRIDGE",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>EXT-WBRIDGE",
+        "hop_count": 2,
+        "path_probability": 0.114047,
+        "raw_score": 0.114047,
+        "dps_score": 0.4655,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.383353,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.465500 (edge_factor_product x hop_decay)",
+          "raw_score=0.114047, normalized_score=0.383353",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01",
+            "asset_id": "EXT-WBRIDGE",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0040",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "SYS-FLSDATA",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>SYS-FLSDATA",
+        "hop_count": 3,
+        "path_probability": 0.111828,
+        "raw_score": 0.111828,
+        "dps_score": 0.456439,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.375891,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.456439 (edge_factor_product x hop_decay)",
+          "raw_score=0.111828, normalized_score=0.375891",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-FLSDATA-01",
+            "asset_id": "SYS-FLSDATA",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0041",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "SYS-FWDATA",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>SYS-FWDATA",
+        "hop_count": 3,
+        "path_probability": 0.111828,
+        "raw_score": 0.111828,
+        "dps_score": 0.456439,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.375891,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.456439 (edge_factor_product x hop_decay)",
+          "raw_score=0.111828, normalized_score=0.375891",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-FWDATA-01",
+            "asset_id": "SYS-FWDATA",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0042",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "SYS-TMPCTRL",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>SYS-TMPCTRL",
+        "hop_count": 3,
+        "path_probability": 0.10525,
+        "raw_score": 0.10525,
+        "dps_score": 0.42959,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.35378,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.429590 (edge_factor_product x hop_decay)",
+          "raw_score=0.105250, normalized_score=0.353780",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-SYS-TMPCTRL-01",
+            "asset_id": "SYS-TMPCTRL",
+            "edge_factor": 0.8
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0043",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "IF-CAN",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>SYS-PRCTRL>IF-CAN",
+        "hop_count": 3,
+        "path_probability": 0.100645,
+        "raw_score": 0.100645,
+        "dps_score": 0.410795,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.338302,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.410795 (edge_factor_product x hop_decay)",
+          "raw_score=0.100645, normalized_score=0.338302",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-SYS-PRCTRL-IF-CAN-01",
+            "asset_id": "IF-CAN",
+            "edge_factor": 0.765
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-SYS-PRCTRL-IF-ETHSW-01#rev",
+            "asset_id": "SYS-PRCTRL",
+            "edge_factor": 0.85
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0044",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "EXT-AIRNET",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>EXT-WBRIDGE>EXT-AIRNET",
+        "hop_count": 3,
+        "path_probability": 0.075842,
+        "raw_score": 0.075842,
+        "dps_score": 0.309557,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.25493,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.309557 (edge_factor_product x hop_decay)",
+          "raw_score=0.075842, normalized_score=0.254930",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-EXT-WBRIDGE-EXT-AIRNET-01",
+            "asset_id": "EXT-AIRNET",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 2,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01",
+            "asset_id": "EXT-WBRIDGE",
+            "edge_factor": 0.7
+          }
+        ]
+      },
+      {
+        "path_id": "AP-0045",
+        "analysis_batch_id": "batch-1774850525754",
+        "entry_point_id": "TP-EXT-IFE-01",
+        "target_asset_id": "EXT-MFGNET",
+        "hop_sequence": "TP-EXT-IFE-01>EXT-IFE>IF-ETHSW>EXT-WBRIDGE>EXT-MFGNET",
+        "hop_count": 3,
+        "path_probability": 0.073675,
+        "raw_score": 0.073675,
+        "dps_score": 0.300713,
+        "heuristic_score": 0.245,
+        "normalized_score": 0.247646,
+        "priority_label": "Medium",
+        "is_low_priority": false,
+        "score_config_version": "dps-heuristic-v1-2026-03-09",
+        "explanations": [
+          "entry_likelihood_value(Medium)=0.5",
+          "attack_success_factor(Medium)=0.7",
+          "source_weight(external)=0.7",
+          "expert_modifier=1",
+          "dps_score=0.300713 (edge_factor_product x hop_decay)",
+          "raw_score=0.073675, normalized_score=0.247646",
+          "normalized_score >= 0.15, move to mitigation queue"
+        ],
+        "generated_by": "frontend-user",
+        "generated_at": "2026-03-30T06:02:05.809Z",
+        "traverses": [
+          {
+            "hop": 2,
+            "edge_id": "E-IF-ETHSW-EXT-WBRIDGE-01",
+            "asset_id": "EXT-WBRIDGE",
+            "edge_factor": 0.7
+          },
+          {
+            "hop": 3,
+            "edge_id": "E-EXT-WBRIDGE-EXT-MFGNET-01",
+            "asset_id": "EXT-MFGNET",
+            "edge_factor": 0.68
+          },
+          {
+            "hop": 1,
+            "edge_id": "E-IF-ETHSW-EXT-IFE-01#rev",
+            "asset_id": "IF-ETHSW",
+            "edge_factor": 0.7
+          }
+        ]
+      }
+    ],
+    "do326a_links": [
+      {
+        "link_id": "DL-101",
+        "standard_id": "DO-356A-AppD-TableD5-TS1",
+        "clause_title": "TS.1 CAN direct attack scenario",
+        "semantic_element_id": [
+          "TP-IF-CAN-01",
+          "SYS-PRCTRL",
+          "IF-CAN"
+        ],
+        "linkage_type": "Requirement",
+        "review_status": "Draft"
+      },
+      {
+        "link_id": "DL-102",
+        "standard_id": "DO-356A-AppD-TableD5-TS2",
+        "clause_title": "TS.2 GSE maintenance attack scenario",
+        "semantic_element_id": [
+          "TP-EXT-GSE-01",
+          "EXT-GSE",
+          "SYS-PRCTRL"
+        ],
+        "linkage_type": "Evidence",
+        "review_status": "Draft"
+      },
+      {
+        "link_id": "DL-103",
+        "standard_id": "DO-356A-AppD-TableD5-TS3",
+        "clause_title": "TS.3 Wireless bridge multi-stage attack scenario",
+        "semantic_element_id": [
+          "TP-EXT-WBRIDGE-01",
+          "EXT-WBRIDGE",
+          "IF-ETHSW",
+          "SYS-PRCTRL"
+        ],
+        "linkage_type": "Evidence",
+        "review_status": "Draft"
+      },
+      {
+        "link_id": "DL-104",
+        "standard_id": "DO-356A-AppD-TableD5-TS4",
+        "clause_title": "TS.4 IFE Ethernet interface attack scenario",
+        "semantic_element_id": [
+          "TP-EXT-IFE-01",
+          "EXT-IFE",
+          "IF-ETHSW",
+          "SYS-PRCTRL"
+        ],
+        "linkage_type": "Evidence",
+        "review_status": "Draft"
+      },
+      {
+        "link_id": "DL-105",
+        "standard_id": "DO-356A-AppD-D17-SR1-SR3",
+        "clause_title": "Security requirements SR1/SR2/SR3",
+        "semantic_element_id": [
+          "IF-ETHSW",
+          "IF-CAN",
+          "TP-EXT-WBRIDGE-01",
+          "TP-EXT-IFE-01"
+        ],
+        "linkage_type": "Requirement",
+        "review_status": "Draft"
+      }
+    ]
+  }
+}

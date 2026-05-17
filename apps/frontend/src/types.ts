@@ -1,6 +1,6 @@
 export type PriorityLabel = "High" | "Medium" | "Low";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
-export type CxfSheetName = "functional_assets" | "interface_assets" | "support_assets" | "data_assets";
+export type CxfSheetName = "functional_assets" | "interface_assets" | "support_assets" | "data_assets" | "domain_properties";
 
 export interface AssetNode {
   asset_id: string;
@@ -162,7 +162,19 @@ export interface CxfDataAssetRow {
   id: string;
   name: string;
   data_type?: string;
+  data_flow_type?: string;
+  linked_interfaces?: string;
+  domain_id?: string;
   load_description?: string;
+  description?: string;
+  excel_row?: number;
+}
+
+export interface CxfDomainPropertyRow {
+  id: string;
+  name: string;
+  trust_level: string;
+  security_domain: string;
   description?: string;
   excel_row?: number;
 }
@@ -180,6 +192,7 @@ export interface CxfImportRequest {
     interface_assets: CxfInterfaceAssetRow[];
     support_assets: CxfSupportAssetRow[];
     data_assets: CxfDataAssetRow[];
+    domain_properties: CxfDomainPropertyRow[];
   };
 }
 
@@ -216,6 +229,7 @@ export interface CxfImportPreviewResult {
     interface_assets: number;
     support_assets: number;
     data_assets: number;
+    domain_properties: number;
   };
   errors: string[];
   error_details: CxfImportErrorDetail[];
