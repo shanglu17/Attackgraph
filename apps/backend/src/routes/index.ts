@@ -31,7 +31,8 @@ const emptyCxfAccepted = {
   functional_assets: 0,
   interface_assets: 0,
   support_assets: 0,
-  data_assets: 0
+  data_assets: 0,
+  domain_properties: 0
 };
 
 const emptyCxfSummary: CxfImportSummary = {

@@ -149,7 +149,11 @@ export class CxfImportService {
     const legacyImportedAssetIdsToDelete = new Set<string>();
     const autoThreatIdsToDelete = new Set<string>();
 
-    this.registerDerivedSystemAssets(assets, nameRegistry, errors);
+    const hasAmsReferences = this.scanInputForAmsReferences(input);
+
+    if (hasAmsReferences) {
+      this.registerDerivedSystemAssets(assets, nameRegistry, errors);
+    }
 
     const functionalIdSet = new Set<string>();
     for (const row of input.workbook.functional_assets) {
@@ -406,7 +410,9 @@ export class CxfImportService {
       }
     }
 
-    this.registerMinimalSystemEdges(edges, edgeSequenceByPair, errors);
+    if (hasAmsReferences) {
+      this.registerMinimalSystemEdges(edges, edgeSequenceByPair, errors);
+    }
     this.registerDataOwnershipEdges(registeredDataAssets, edges, edgeSequenceByPair, errors);
     this.registerDataAssetInterfaceEdges(registeredDataAssets, interfaceRows, nameRegistry, businessIdToAssetId, assets, placeholderAssetIds, edges, edgeSequenceByPair, errors);
 
@@ -1026,6 +1032,21 @@ export class CxfImportService {
     return [placeholder.asset_id];
   }
 
+  private scanInputForAmsReferences(input: CxfImportRequest): boolean {
+    const amsPattern = /温控器|增压控制器|temperature\s*controller|pressurization\s*controller|temp\s*ctrl|press\s*ctrl|ams\s*core|air\s*management\s*system/i;
+    for (const row of input.workbook.interface_assets) {
+      if (amsPattern.test(row.producer) || amsPattern.test(row.consumer) || amsPattern.test(row.data_flow_description ?? "")) {
+        return true;
+      }
+    }
+    for (const row of input.workbook.data_assets) {
+      if (amsPattern.test(row.name) || amsPattern.test(row.description ?? "") || amsPattern.test(row.load_description ?? "")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private createPlaceholderAsset(rawName: string): AssetNode {
     const normalized = this.normalizeName(rawName);
     const digest = crypto.createHash("sha1").update(normalized).digest("hex").slice(0, 6).toUpperCase();
@@ -1178,7 +1199,7 @@ export class CxfImportService {
 
   private isAllowedExternalPlaceholder(value: string): boolean {
     const normalized = this.normalizeName(value);
-    return /gse|network|server|switch|router|bridge|usb|wireless|wifi|manufacturer|airline|ground|航电|引气|维护|航空公司|制造商|地面|设备|系统/.test(
+    return /gse|network|server|switch|router|bridge|usb|wireless|wifi|manufacturer|airline|ground|航电|引气|维护|航空公司|制造商|地面|设备|系统|gcu|acu|ccu|rtk|遥控站|转发服务器|综合管理计算机|综合控制计算机|大数据平台|调试计算机|电动发动机|电池管理|综管|飞控|飞管|激活装置|弹射桶|伞降ecu|高压配电盒|高压bms|配电盒|bms|感知避障/.test(
       normalized
     );
   }

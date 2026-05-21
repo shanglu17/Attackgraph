@@ -9,7 +9,7 @@ const app = express();
 const graphRepo = new GraphRepository();
 
 app.use(cors());
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "50mb" }));
 app.use(router);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

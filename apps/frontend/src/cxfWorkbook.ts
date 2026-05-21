@@ -60,9 +60,9 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
 
   const functionalAssets = parseFunctionalAssets(workbook);
   const interfaceAssets = parseInterfaceAssets(workbook);
-  const supportAssets = parseSupportAssets(workbook);
+  const supportAssets = tryParseSheet(workbook, "support_assets", parseSupportAssets);
   const dataAssets = parseDataAssets(workbook);
-  const domainProperties = parseDomainProperties(workbook);
+  const domainProperties = tryParseSheet(workbook, "domain_properties", parseDomainProperties);
 
   return {
     payload: {
@@ -89,6 +89,18 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
       domain_properties: domainProperties.length
     }
   };
+}
+
+function tryParseSheet<T>(
+  workbook: WorkBook,
+  sheetKey: CxfSheetName,
+  parseFn: (wb: WorkBook) => T[]
+): T[] {
+  const worksheet = workbook.Sheets[sheetNames[sheetKey]];
+  if (!worksheet) {
+    return [];
+  }
+  return parseFn(workbook);
 }
 
 function parseFunctionalAssets(workbook: WorkBook): CxfFunctionalAssetRow[] {
