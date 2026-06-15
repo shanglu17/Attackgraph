@@ -131,7 +131,7 @@ export class AnalysisService {
       .sort((a, b) => b.raw_score - a.raw_score);
 
     return ranked.map((item, index) => {
-      const pathId = `AP-${String(index + 1).padStart(4, "0")}`;
+      const pathId = `AP-${String(index + 1).padStart(6, "0")}`;
       return {
         path_id: pathId,
         analysis_batch_id: item.analysis_batch_id,

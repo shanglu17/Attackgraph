@@ -22,18 +22,18 @@ const sheetNames: Record<CxfSheetName, string> = {
 
 const sheetHeaders: Record<CxfSheetName, string[]> = {
   functional_assets: ["编号", "功能资产名称", "资产说明"],
-  interface_assets: ["接口编号", "产生者", "用户", "数据流描述", "物理接口", "逻辑接口", "网络域", "区域", "目的"],
+  interface_assets: ["接口编号", "产生者", "用户", "数据流描述", "数据流类型", "物理接口", "逻辑接口", "网络域", "区域", "目的"],
   support_assets: ["编号", "名称", "交联接口"],
   data_assets: ["编号", "数据名称", "数据类型", "数据流类型", "对应接口", "所属域", "说明"],
   domain_properties: ["域编号", "域名称", "信任程度", "安全域", "描述"]
 };
 
 const sheetIdPatterns: Record<CxfSheetName, RegExp> = {
-  functional_assets: /^[A-Z]{2,4}\.[A-Z0-9]+$/i,
-  interface_assets: /^SI\.\d+$/i,
-  support_assets: /^(ASA|SSA)\.\d+$/i,
-  data_assets: /^[A-Z]{2,4}\.[A-Z0-9]+$/i,
-  domain_properties: /^D\.\d+$/i
+  functional_assets: /^[A-Z]{2,4}\.?[A-Z0-9]+$/i,
+  interface_assets: /^(SI|BI|SD|ACD|BD|SSD|ACI)\.?[A-Z0-9]+$/i,
+  support_assets: /^(ASA|SSA)\.?\d+$/i,
+  data_assets: /^[A-Z]{2,4}\.?[A-Z0-9]+$/i,
+  domain_properties: /^D\.?\d+$/i
 };
 
 let xlsxModule: typeof import("xlsx") | null = null;
@@ -123,11 +123,13 @@ function parseInterfaceAssets(workbook: WorkBook): CxfInterfaceAssetRow[] {
       producer: requiredCell(row, 1, "interface_assets", index + 2, "producer"),
       consumer: requiredCell(row, 2, "interface_assets", index + 2, "consumer"),
       data_flow_description: cell(row, 3),
-      physical_interface: cell(row, 4),
-      logical_interface: cell(row, 5),
-      network_domain: cell(row, 6),
-      zone: cell(row, 7),
-      purpose: cell(row, 8),
+      data_flow_type: cell(row, 4),
+      physical_interface: cell(row, 5),
+      logical_interface: cell(row, 6),
+      network_domain: cell(row, 7),
+      zone: cell(row, 8),
+      purpose: cell(row, 9),
+      target_function: cell(row, 10),
       excel_row: index + 2
     })
   );
@@ -156,6 +158,7 @@ function parseDataAssets(workbook: WorkBook): CxfDataAssetRow[] {
       linked_interfaces: cell(row, 4),
       domain_id: cell(row, 5),
       description: cell(row, 6),
+      target_function: cell(row, 7),
       excel_row: index + 2
     })
   );

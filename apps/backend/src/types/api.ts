@@ -137,7 +137,7 @@ export const runAnalysisSchema = z.object({
 export const persistPathsSchema = z.object({
   paths: z.array(
     z.object({
-      path_id: z.string().regex(/^AP-\d{4}$/),
+      path_id: z.string().regex(/^AP-\d{1,6}$/),
       analysis_batch_id: z.string().min(1),
       entry_point_id: z.string().regex(threatIdPattern),
       target_asset_id: z.string().regex(assetIdPattern),
@@ -211,11 +211,13 @@ export const cxfInterfaceAssetSchema = z.object({
   consumer: z.string().min(1),
   consumer_ref: z.string().min(1).optional(),
   data_flow_description: z.string().optional(),
+  data_flow_type: z.string().optional(),
   physical_interface: z.string().optional(),
   logical_interface: z.string().optional(),
   network_domain: z.string().optional(),
   zone: z.string().optional(),
-  purpose: z.string().optional()
+  purpose: z.string().optional(),
+  target_function: z.string().optional()
 });
 
 export const cxfSupportAssetSchema = z.object({
@@ -240,7 +242,8 @@ export const cxfDataAssetSchema = z.object({
   linked_interfaces: z.string().optional(),
   domain_id: z.string().optional(),
   load_description: z.string().optional(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  target_function: z.string().optional()
 });
 
 export const cxfImportRequestSchema = z.object({

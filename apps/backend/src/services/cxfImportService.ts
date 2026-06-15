@@ -142,7 +142,9 @@ export class CxfImportService {
     const assets = new Map<string, AssetNode>();
     const edges = new Map<string, AssetEdge>();
     const interfaceAssetIds = new Set<string>();
+    const dataAssetThreatIds = new Set<string>();
     const placeholderAssetIds = new Set<string>();
+    const unresolvedEndpointNames = new Set<string>();
     const edgeSequenceByPair = new Map<string, number>();
     const registeredDataAssets: RegisteredDataAsset[] = [];
     const functionalAssetIdsToDelete = new Set<string>();
@@ -208,9 +210,15 @@ export class CxfImportService {
         asset_name: this.sanitizeAssetName(row.name, "Data Asset"),
         asset_type: "Data",
         criticality: "Medium",
-        security_domain: "Internal",
+        security_domain: this.resolveDomainSecurityDomain(row.domain_id),
         data_classification: this.resolveDataClassification(`${row.name} ${row.data_type ?? ""} ${row.description ?? ""}`),
-        description: this.buildDescription(row.data_type, row.load_description, row.description),
+        description: this.buildDescription(
+          row.data_flow_type,
+          row.data_type,
+          row.load_description,
+          row.description,
+          row.target_function ? `F:${row.target_function}` : undefined
+        ),
         source: "excel_import"
       };
       if (!this.registerAsset(assets, candidate, errors, "data_assets", row.excel_row)) {
@@ -223,6 +231,9 @@ export class CxfImportService {
         linked_interface_ids: this.parseLinkedInterfaces(row.linked_interfaces),
         domain_id: row.domain_id
       });
+      if (row.data_flow_type && validDataFlowTypes.has(row.data_flow_type.toUpperCase())) {
+        dataAssetThreatIds.add(assetId);
+      }
       businessIdToAssetId.set(businessId, assetId);
       this.registerNameAlias(nameRegistry, row.name, assetId);
       accepted.data_assets += 1;
@@ -276,12 +287,14 @@ export class CxfImportService {
         criticality: "Medium",
         security_domain: "Shared",
         description: this.buildDescription(
+          row.data_flow_type,
           row.data_flow_description,
           row.logical_interface,
           row.physical_interface,
           row.network_domain,
           row.zone,
-          row.purpose
+          row.purpose,
+          row.target_function ? `F:${row.target_function}` : undefined
         ),
         source: "excel_import"
       };
@@ -346,6 +359,7 @@ export class CxfImportService {
         nameRegistry,
         assets,
         placeholderAssetIds,
+        unresolvedEndpointNames,
         errors
       );
       const consumerAssetIds = this.resolveEndpointAssetIds(
@@ -356,6 +370,7 @@ export class CxfImportService {
         nameRegistry,
         assets,
         placeholderAssetIds,
+        unresolvedEndpointNames,
         errors
       );
 
@@ -414,9 +429,12 @@ export class CxfImportService {
       this.registerMinimalSystemEdges(edges, edgeSequenceByPair, errors);
     }
     this.registerDataOwnershipEdges(registeredDataAssets, edges, edgeSequenceByPair, errors);
-    this.registerDataAssetInterfaceEdges(registeredDataAssets, interfaceRows, nameRegistry, businessIdToAssetId, assets, placeholderAssetIds, edges, edgeSequenceByPair, errors);
+    this.registerDataAssetInterfaceEdges(registeredDataAssets, interfaceRows, nameRegistry, businessIdToAssetId, assets, placeholderAssetIds, unresolvedEndpointNames, edges, edgeSequenceByPair, errors);
 
     const threatTargets = this.resolveThreatTargets(interfaceAssetIds, placeholderAssetIds, assets, edges);
+    for (const id of dataAssetThreatIds) {
+      threatTargets.add(id);
+    }
     const threatPoints: ThreatPoint[] = [];
     for (const assetId of Array.from(threatTargets).sort()) {
       const asset = assets.get(assetId);
@@ -456,8 +474,14 @@ export class CxfImportService {
         `Accepted ${accepted.functional_assets} functional rows as metadata only; no functional nodes are added to the attack graph.`
       );
     }
-    if (placeholderAssetIds.size > 0) {
-      summary.warnings.push(`Auto-created ${placeholderAssetIds.size} placeholder assets for unresolved external interface endpoints.`);
+    if (unresolvedEndpointNames.size > 0) {
+      const names = Array.from(unresolvedEndpointNames).sort().slice(0, 15).join(", ");
+      const more = unresolvedEndpointNames.size > 15 ? ` …+${unresolvedEndpointNames.size - 15} more` : "";
+      summary.warnings.push(
+        `Auto-created ${placeholderAssetIds.size} placeholder asset(s) for unresolved endpoint name(s): ${names}${more}. Add these to 支持资产 sheet or use producer_ref/consumer_ref to suppress this warning.`
+      );
+    } else if (placeholderAssetIds.size > 0) {
+      summary.warnings.push(`Auto-created ${placeholderAssetIds.size} placeholder assets for unresolved interface endpoints.`);
     }
     if (warningKeywords.some((keyword) => (input.source.file_name ?? "").includes(keyword))) {
       summary.warnings.push("Input file name appears to contain template notes; verify the uploaded workbook is the filled version.");
@@ -624,7 +648,10 @@ export class CxfImportService {
 
   private parseLinkedInterfaces(raw: string | undefined): string[] {
     if (!raw) return [];
-    return raw.split(",").map((s) => s.trim()).filter((s) => /^SI\.\d+$/i.test(s));
+    return raw
+      .split(/[,\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => /^(SI|BI|SD|ACD|BD|SSD|ACI)\.?[A-Z0-9]+$/i.test(s));
   }
 
   private registerDataAssetInterfaceEdges(
@@ -634,6 +661,7 @@ export class CxfImportService {
     businessIdToAssetId: Map<string, string>,
     assets: Map<string, AssetNode>,
     placeholderAssetIds: Set<string>,
+    unresolvedEndpointNames: Set<string>,
     edges: Map<string, AssetEdge>,
     edgeSequenceByPair: Map<string, number>,
     errors: CxfImportErrorDetail[]
@@ -672,9 +700,10 @@ export class CxfImportService {
           interfaceRow.producer_ref,
           { sheet: "data_assets", nameField: "producer", refField: "producer_ref" },
           businessIdToAssetId,
-          nameRegistry, // This is a class field issue — need to pass it.
+          nameRegistry,
           assets,
           placeholderAssetIds,
+          unresolvedEndpointNames,
           errors
         );
         for (const producerId of producerIds) {
@@ -703,6 +732,7 @@ export class CxfImportService {
           nameRegistry,
           assets,
           placeholderAssetIds,
+          unresolvedEndpointNames,
           errors
         );
         for (const consumerId of consumerIds) {
@@ -777,8 +807,29 @@ export class CxfImportService {
     return threatTargets;
   }
 
+  private extractDataFlowType(normalizedText: string): string | undefined {
+    const match = normalizedText.match(/^(cmd|config|load|state|alert|data)\s*\|/);
+    return match?.[1];
+  }
+
   private resolveThreatProfiles(asset: AssetNode): Array<(typeof autoThreatProfiles)[number]> {
     const text = `${asset.asset_name} ${asset.description ?? ""}`.toLowerCase();
+    const flowType = this.extractDataFlowType(text);
+
+    if (flowType) {
+      switch (flowType) {
+        case "load":
+        case "config":
+        case "alert":
+        case "data":
+          return autoThreatProfiles.filter((p) => p.kind === "integrity");
+        case "state":
+          return autoThreatProfiles.filter((p) => p.kind !== "control_misuse");
+        case "cmd":
+          return autoThreatProfiles;
+      }
+    }
+
     return autoThreatProfiles.filter((profile) => {
       if (profile.kind !== "control_misuse") {
         return true;
@@ -959,6 +1010,7 @@ export class CxfImportService {
     nameRegistry: NameRegistry,
     assets: Map<string, AssetNode>,
     placeholderAssetIds: Set<string>,
+    unresolvedEndpointNames: Set<string>,
     errors: CxfImportErrorDetail[]
   ): string[] {
     if (rawRef) {
@@ -1012,22 +1064,14 @@ export class CxfImportService {
       return [];
     }
 
-    if (!this.isAllowedExternalPlaceholder(rawName)) {
-      errors.push({
-        type: "binding",
-        sheet: context.sheet,
-        row: context.row,
-        field: context.nameField,
-        message: `unresolved endpoint ${rawName}; add ${context.refField} or extend AMS alias rules`
-      });
-      return [];
-    }
-
+    // Always auto-create a placeholder; no hard error for unresolved names.
+    // The caller collects these in unresolvedEndpointNames for the summary warning.
     const placeholder = this.createPlaceholderAsset(rawName);
     if (!assets.has(placeholder.asset_id)) {
       this.registerAsset(assets, placeholder, errors, context.sheet, context.row);
       placeholderAssetIds.add(placeholder.asset_id);
       this.registerNameAlias(nameRegistry, rawName, placeholder.asset_id);
+      unresolvedEndpointNames.add(rawName);
     }
     return [placeholder.asset_id];
   }
@@ -1050,17 +1094,26 @@ export class CxfImportService {
   private createPlaceholderAsset(rawName: string): AssetNode {
     const normalized = this.normalizeName(rawName);
     const digest = crypto.createHash("sha1").update(normalized).digest("hex").slice(0, 6).toUpperCase();
+    const isExternal = this.isAllowedExternalPlaceholder(rawName);
     return {
       asset_id: `EXT-PL-${digest}`,
-      asset_name: this.sanitizeAssetName(rawName, "External Placeholder"),
+      asset_name: this.sanitizeAssetName(rawName, "Placeholder"),
       asset_type: "Terminal",
       criticality: "Medium",
-      security_domain: "External",
-      description: "Auto-created placeholder asset from unresolved external interface endpoint",
+      security_domain: isExternal ? "External" : "Shared",
+      description: "Auto-created placeholder asset from unresolved interface endpoint",
       is_placeholder: true,
       source: "auto_generated",
       tags: ["placeholder", "auto_generated"]
     };
+  }
+
+  private resolveDomainSecurityDomain(domainId: string | undefined): AssetNode["security_domain"] {
+    if (!domainId) return "Internal";
+    const id = domainId.toUpperCase().replace(/[\s.]/g, "");
+    if (id === "D1" || id === "D2") return "External";
+    if (id === "D3" || id === "D6") return "Shared";
+    return "Internal";
   }
 
   private resolveCompoundAmsAlias(rawName: string): string[] {
@@ -1166,6 +1219,27 @@ export class CxfImportService {
 
   private resolveThreatStrideCategory(threatKind: ThreatKind, value: string): ThreatPoint["stride_category"] {
     const normalized = value.toLowerCase();
+
+    // Data flow type-driven mapping (stored as first token in description)
+    const flowType = this.extractDataFlowType(normalized);
+    if (flowType) {
+      switch (flowType) {
+        case "load":
+          return "Tampering"; // Malicious software load
+        case "config":
+          return "Tampering"; // Malicious configuration/parameter tampering
+        case "cmd":
+          return threatKind === "ingress" ? "Spoofing" : "Tampering";
+        case "state":
+          return "Spoofing"; // State data forgery
+        case "alert":
+          return threatKind === "integrity" ? "DenialOfService" : "Tampering";
+        case "data":
+          return threatKind === "integrity" ? "InformationDisclosure" : "Tampering";
+      }
+    }
+
+    // Fallback: keyword-based mapping
     if (/auth|certificate|cert|credential|identity|spoof|认证|证书|凭据|身份|伪装/.test(normalized)) {
       return "Spoofing";
     }

@@ -143,11 +143,13 @@ export interface CxfInterfaceAssetRow {
   consumer: string;
   consumer_ref?: string;
   data_flow_description?: string;
+  data_flow_type?: string;
   physical_interface?: string;
   logical_interface?: string;
   network_domain?: string;
   zone?: string;
   purpose?: string;
+  target_function?: string;
   excel_row?: number;
 }
 
@@ -167,6 +169,7 @@ export interface CxfDataAssetRow {
   domain_id?: string;
   load_description?: string;
   description?: string;
+  target_function?: string;
   excel_row?: number;
 }
 
