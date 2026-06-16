@@ -4,11 +4,13 @@ import { getDriver } from "../db/neo4j.js";
 import type {
   AttackPath,
   AuditRecord,
+  BoundaryDataFlowReportRow,
   DO326ALink,
   GraphChangeSet,
   GraphSnapshot,
   ModelingExportBundle,
-  ReviewStatus
+  ReviewStatus,
+  TrustBoundaryReportRow
 } from "../types/domain.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
@@ -36,6 +38,10 @@ export class GraphRepository {
       await session.run("CREATE CONSTRAINT threat_unique IF NOT EXISTS FOR (t:ThreatPoint) REQUIRE t.threatpoint_id IS UNIQUE");
       await session.run("CREATE CONSTRAINT do326a_link_unique IF NOT EXISTS FOR (l:DO326A_Link) REQUIRE l.link_id IS UNIQUE");
       await session.run("CREATE CONSTRAINT graph_version_unique IF NOT EXISTS FOR (v:GraphVersion) REQUIRE v.id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT function_unique IF NOT EXISTS FOR (f:FunctionNode) REQUIRE f.function_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT trust_boundary_unique IF NOT EXISTS FOR (sb:TrustBoundary) REQUIRE sb.boundary_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT threat_actor_unique IF NOT EXISTS FOR (ta:ThreatActor) REQUIRE ta.actor_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT boundary_interface_unique IF NOT EXISTS FOR (bi:BoundaryInterface) REQUIRE bi.interface_id IS UNIQUE");
       await session.run("DROP CONSTRAINT path_unique IF EXISTS");
       await session.run(
         `MATCH (p:AttackPath)
@@ -61,18 +67,27 @@ export class GraphRepository {
     const session = getDriver().session();
     try {
       const result = await session.executeRead(async (tx) => {
-        const [versionRes, assetsRes, edgesRes, threatsRes, linksRes] = await Promise.all([
-          tx.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS graph_version", { id: graphVersionNodeId }),
-          tx.run("MATCH (a:AssetNode) RETURN a ORDER BY a.asset_id"),
-          tx.run(
-            "MATCH (s:AssetNode)-[r:ASSET_EDGE]->(t:AssetNode) RETURN r.edge_id AS edge_id, s.asset_id AS source_asset_id, t.asset_id AS target_asset_id, r.link_type AS link_type, r.protocol_or_medium AS protocol_or_medium, r.direction AS direction, r.trust_level AS trust_level, r.security_mechanism AS security_mechanism, r.description AS description ORDER BY edge_id"
-          ),
-          tx.run(
-            "MATCH (th:ThreatPoint)-[:OVERLAY_ON]->(a:AssetNode) RETURN th.threatpoint_id AS threatpoint_id, th.name AS name, a.asset_id AS related_asset_id, th.stride_category AS stride_category, th.attack_vector AS attack_vector, th.entry_likelihood_level AS entry_likelihood_level, th.attack_complexity_level AS attack_complexity_level, th.threat_source AS threat_source, th.preconditions AS preconditions, th.detection_status AS detection_status, th.cve_reference AS cve_reference, th.expert_modifier AS expert_modifier, th.expert_adjustment_note AS expert_adjustment_note, th.mitigation_reference AS mitigation_reference ORDER BY threatpoint_id"
-          ),
-          tx.run("MATCH (l:DO326A_Link) RETURN l ORDER BY l.link_id")
-        ]);
-        return { versionRes, assetsRes, edgesRes, threatsRes, linksRes };
+        const [versionRes, assetsRes, edgesRes, threatsRes, linksRes, functionsRes, boundariesRes, actorsRes, interfacesRes] =
+          await Promise.all([
+            tx.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS graph_version", { id: graphVersionNodeId }),
+            tx.run("MATCH (a:AssetNode) RETURN a ORDER BY a.asset_id"),
+            tx.run(
+              "MATCH (s:AssetNode)-[r:ASSET_EDGE]->(t:AssetNode) RETURN r.edge_id AS edge_id, s.asset_id AS source_asset_id, t.asset_id AS target_asset_id, r.link_type AS link_type, r.protocol_or_medium AS protocol_or_medium, r.direction AS direction, r.trust_level AS trust_level, r.security_mechanism AS security_mechanism, r.description AS description ORDER BY edge_id"
+            ),
+            tx.run(
+              "MATCH (th:ThreatPoint)-[:OVERLAY_ON]->(a:AssetNode) RETURN th.threatpoint_id AS threatpoint_id, th.name AS name, a.asset_id AS related_asset_id, th.stride_category AS stride_category, th.attack_vector AS attack_vector, th.entry_likelihood_level AS entry_likelihood_level, th.attack_complexity_level AS attack_complexity_level, th.threat_source AS threat_source, th.preconditions AS preconditions, th.detection_status AS detection_status, th.cve_reference AS cve_reference, th.expert_modifier AS expert_modifier, th.expert_adjustment_note AS expert_adjustment_note, th.mitigation_reference AS mitigation_reference ORDER BY threatpoint_id"
+            ),
+            tx.run("MATCH (l:DO326A_Link) RETURN l ORDER BY l.link_id"),
+            tx.run("MATCH (f:FunctionNode) RETURN f ORDER BY f.function_id"),
+            tx.run(
+              "MATCH (sb:TrustBoundary) OPTIONAL MATCH (sb)-[:HAS_INTERFACE]->(bi:BoundaryInterface) OPTIONAL MATCH (sb)-[:COVERS_DOMAIN]->(d:AssetNode) RETURN sb.boundary_id AS boundary_id, sb.name AS name, sb.description AS description, sb.enters_internal_propagation AS enters_internal_propagation, collect(DISTINCT bi.interface_id) AS interface_asset_ids, collect(DISTINCT d.asset_id) AS domain_asset_ids ORDER BY boundary_id"
+            ),
+            tx.run(
+              "MATCH (ta:ThreatActor) OPTIONAL MATCH (ta)-[:THREATENS]->(sb:TrustBoundary) RETURN ta.actor_id AS actor_id, ta.name AS name, ta.actor_type AS actor_type, ta.description AS description, collect(DISTINCT sb.boundary_id) AS boundary_ids ORDER BY actor_id"
+            ),
+            tx.run("MATCH (bi:BoundaryInterface) RETURN bi ORDER BY bi.interface_id")
+          ]);
+        return { versionRes, assetsRes, edgesRes, threatsRes, linksRes, functionsRes, boundariesRes, actorsRes, interfacesRes };
       });
 
       return {
@@ -90,7 +105,13 @@ export class GraphRepository {
               (properties.data_classification as GraphSnapshot["asset_nodes"][number]["data_classification"]) ?? undefined,
             tags: (properties.tags as string[] | undefined) ?? undefined,
             is_placeholder: (properties.is_placeholder as boolean | undefined) ?? undefined,
-            source: (properties.source as GraphSnapshot["asset_nodes"][number]["source"] | undefined) ?? undefined
+            source: (properties.source as GraphSnapshot["asset_nodes"][number]["source"] | undefined) ?? undefined,
+            business_id: (properties.business_id as string | undefined) ?? undefined,
+            data_flow_type: (properties.data_flow_type as string | undefined) ?? undefined,
+            bdf_ids: (properties.bdf_ids as string[] | undefined) ?? undefined,
+            enters_internal_propagation:
+              (properties.enters_internal_propagation as boolean | undefined) ?? undefined,
+            boundary_interface_id: (properties.boundary_interface_id as string | undefined) ?? undefined
           };
         }),
         asset_edges: result.edgesRes.records.map((record) => ({
@@ -137,6 +158,44 @@ export class GraphRepository {
             reviewer: (properties.reviewer as string | undefined) ?? undefined,
             mapping_version: (properties.mapping_version as string | undefined) ?? undefined
           };
+        }),
+        function_nodes: result.functionsRes.records.map((record) => {
+          const properties = record.get("f").properties as Record<string, unknown>;
+          return {
+            function_id: String(properties.function_id),
+            name: String(properties.name),
+            description: (properties.description as string | undefined) ?? undefined
+          };
+        }),
+        trust_boundaries: result.boundariesRes.records.map((record) => ({
+          boundary_id: record.get("boundary_id") as string,
+          name: record.get("name") as string,
+          description: (record.get("description") as string | null) ?? undefined,
+          enters_internal_propagation: (record.get("enters_internal_propagation") as boolean | null) ?? undefined,
+          interface_asset_ids: ((record.get("interface_asset_ids") as unknown[]) ?? []).map((value) => String(value)),
+          domain_asset_ids: ((record.get("domain_asset_ids") as unknown[]) ?? []).map((value) => String(value))
+        })),
+        threat_actors: result.actorsRes.records.map((record) => ({
+          actor_id: record.get("actor_id") as string,
+          name: record.get("name") as string,
+          actor_type: record.get("actor_type") as GraphSnapshot["threat_actors"][number]["actor_type"],
+          description: (record.get("description") as string | null) ?? undefined,
+          boundary_ids: ((record.get("boundary_ids") as unknown[]) ?? []).map((value) => String(value))
+        })),
+        boundary_interfaces: result.interfacesRes.records.map((record) => {
+          const properties = record.get("bi").properties as Record<string, unknown>;
+          return {
+            interface_id: String(properties.interface_id),
+            name: (properties.name as string | undefined) ?? undefined,
+            interface_class: (properties.interface_class as string | undefined) ?? undefined,
+            external_entity: (properties.external_entity as string | undefined) ?? undefined,
+            access_object: (properties.access_object as string | undefined) ?? undefined,
+            physical_interconnect: (properties.physical_interconnect as string | undefined) ?? undefined,
+            logical_protocol: (properties.logical_protocol as string | undefined) ?? undefined,
+            direction: (properties.direction as string | undefined) ?? undefined,
+            boundary_id: (properties.boundary_id as string | undefined) ?? undefined,
+            description: (properties.description as string | undefined) ?? undefined
+          };
         })
       };
     } finally {
@@ -180,10 +239,22 @@ export class GraphRepository {
         for (const assetId of changeSet.asset_nodes.delete) {
           await tx.run("MATCH (a:AssetNode {asset_id: $asset_id}) DETACH DELETE a", { asset_id: assetId });
         }
+        for (const functionId of changeSet.function_nodes?.delete ?? []) {
+          await tx.run("MATCH (f:FunctionNode {function_id: $function_id}) DETACH DELETE f", { function_id: functionId });
+        }
+        for (const boundaryId of changeSet.trust_boundaries?.delete ?? []) {
+          await tx.run("MATCH (sb:TrustBoundary {boundary_id: $boundary_id}) DETACH DELETE sb", { boundary_id: boundaryId });
+        }
+        for (const actorId of changeSet.threat_actors?.delete ?? []) {
+          await tx.run("MATCH (ta:ThreatActor {actor_id: $actor_id}) DETACH DELETE ta", { actor_id: actorId });
+        }
+        for (const interfaceId of changeSet.boundary_interfaces?.delete ?? []) {
+          await tx.run("MATCH (bi:BoundaryInterface {interface_id: $interface_id}) DETACH DELETE bi", { interface_id: interfaceId });
+        }
 
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
           await tx.run(
-            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source",
+            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id",
             {
               ...asset,
               security_domain: asset.security_domain ?? null,
@@ -191,8 +262,95 @@ export class GraphRepository {
               data_classification: asset.data_classification ?? null,
               tags: asset.tags ?? [],
               is_placeholder: asset.is_placeholder ?? false,
-              source: asset.source ?? null
+              source: asset.source ?? null,
+              business_id: asset.business_id ?? null,
+              data_flow_type: asset.data_flow_type ?? null,
+              bdf_ids: asset.bdf_ids ?? [],
+              enters_internal_propagation: asset.enters_internal_propagation ?? null,
+              boundary_interface_id: asset.boundary_interface_id ?? null
             }
+          );
+        }
+
+        for (const fn of [...(changeSet.function_nodes?.add ?? []), ...(changeSet.function_nodes?.update ?? [])]) {
+          await tx.run(
+            "MERGE (f:FunctionNode {function_id: $function_id}) SET f.name = $name, f.description = $description",
+            { ...fn, description: fn.description ?? null }
+          );
+        }
+
+        for (const boundary of [
+          ...(changeSet.trust_boundaries?.add ?? []),
+          ...(changeSet.trust_boundaries?.update ?? [])
+        ]) {
+          await tx.run(
+            "MERGE (sb:TrustBoundary {boundary_id: $boundary_id}) SET sb.name = $name, sb.description = $description, sb.enters_internal_propagation = $enters_internal_propagation WITH sb OPTIONAL MATCH (sb)-[old:HAS_INTERFACE|COVERS_DOMAIN]->() DELETE old",
+            {
+              boundary_id: boundary.boundary_id,
+              name: boundary.name,
+              description: boundary.description ?? null,
+              enters_internal_propagation: boundary.enters_internal_propagation ?? null
+            }
+          );
+          await tx.run(
+            "MATCH (sb:TrustBoundary {boundary_id: $boundary_id}) UNWIND $domain_asset_ids AS did MATCH (d:AssetNode {asset_id: did}) MERGE (sb)-[:COVERS_DOMAIN]->(d)",
+            { boundary_id: boundary.boundary_id, domain_asset_ids: boundary.domain_asset_ids ?? [] }
+          );
+        }
+
+        for (const bi of [
+          ...(changeSet.boundary_interfaces?.add ?? []),
+          ...(changeSet.boundary_interfaces?.update ?? [])
+        ]) {
+          await tx.run(
+            "MERGE (bi:BoundaryInterface {interface_id: $interface_id}) SET bi.name = $name, bi.interface_class = $interface_class, bi.external_entity = $external_entity, bi.access_object = $access_object, bi.physical_interconnect = $physical_interconnect, bi.logical_protocol = $logical_protocol, bi.direction = $direction, bi.boundary_id = $boundary_id, bi.description = $description WITH bi OPTIONAL MATCH (bi)-[old:CARRIES_FLOW]->() DELETE old WITH bi OPTIONAL MATCH (sb:TrustBoundary)-[oldhi:HAS_INTERFACE]->(bi) DELETE oldhi",
+            {
+              interface_id: bi.interface_id,
+              name: bi.name ?? null,
+              interface_class: bi.interface_class ?? null,
+              external_entity: bi.external_entity ?? null,
+              access_object: bi.access_object ?? null,
+              physical_interconnect: bi.physical_interconnect ?? null,
+              logical_protocol: bi.logical_protocol ?? null,
+              direction: bi.direction ?? null,
+              boundary_id: bi.boundary_id ?? null,
+              description: bi.description ?? null
+            }
+          );
+          if (bi.boundary_id) {
+            await tx.run(
+              "MATCH (bi:BoundaryInterface {interface_id: $interface_id}), (sb:TrustBoundary {boundary_id: $boundary_id}) MERGE (sb)-[:HAS_INTERFACE]->(bi)",
+              { interface_id: bi.interface_id, boundary_id: bi.boundary_id }
+            );
+          }
+        }
+
+        // Link each BDF interface asset to the boundary interface it flows over.
+        for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
+          if (!asset.boundary_interface_id) {
+            continue;
+          }
+          await tx.run(
+            "MATCH (bi:BoundaryInterface {interface_id: $interface_id}), (a:AssetNode {asset_id: $asset_id}) MERGE (bi)-[:CARRIES_FLOW]->(a)",
+            { interface_id: asset.boundary_interface_id, asset_id: asset.asset_id }
+          );
+        }
+
+        for (const actor of [...(changeSet.threat_actors?.add ?? []), ...(changeSet.threat_actors?.update ?? [])]) {
+          await tx.run(
+            "MERGE (ta:ThreatActor {actor_id: $actor_id}) SET ta.name = $name, ta.actor_type = $actor_type, ta.description = $description WITH ta OPTIONAL MATCH (ta)-[old:THREATENS]->() DELETE old",
+            { actor_id: actor.actor_id, name: actor.name, actor_type: actor.actor_type, description: actor.description ?? null }
+          );
+          await tx.run(
+            "MATCH (ta:ThreatActor {actor_id: $actor_id}) UNWIND $boundary_ids AS bid MATCH (sb:TrustBoundary {boundary_id: bid}) MERGE (ta)-[:THREATENS]->(sb)",
+            { actor_id: actor.actor_id, boundary_ids: actor.boundary_ids ?? [] }
+          );
+        }
+
+        for (const link of changeSet.function_links ?? []) {
+          await tx.run(
+            "MATCH (a:AssetNode {asset_id: $asset_id}), (f:FunctionNode {function_id: $function_id}) MERGE (a)-[:SUPPORTS_FUNCTION]->(f)",
+            { asset_id: link.asset_id, function_id: link.function_id }
           );
         }
 
@@ -294,6 +452,111 @@ export class GraphRepository {
       analysis_paths,
       do326a_links
     };
+  }
+
+  /** vol3 §4.2 信任边界汇总表: SB | 说明 | 对应接口(BI) | 相关威胁主体(TA). */
+  async getTrustBoundaryReport(): Promise<TrustBoundaryReportRow[]> {
+    const session = getDriver().session();
+    try {
+      const result = await session.executeRead((tx) =>
+        tx.run(
+          `MATCH (sb:TrustBoundary)
+           OPTIONAL MATCH (sb)-[:HAS_INTERFACE]->(bi:BoundaryInterface)
+           OPTIONAL MATCH (ta:ThreatActor)-[:THREATENS]->(sb)
+           RETURN sb.boundary_id AS boundary_id, sb.name AS name, sb.description AS description,
+                  collect(DISTINCT bi.interface_id) AS interfaces,
+                  collect(DISTINCT ta.actor_id) AS threat_actors
+           ORDER BY boundary_id`
+        )
+      );
+      return result.records.map((record) => ({
+        boundary_id: record.get("boundary_id") as string,
+        name: record.get("name") as string,
+        description: (record.get("description") as string | null) ?? undefined,
+        interfaces: ((record.get("interfaces") as unknown[]) ?? [])
+          .filter((value) => value !== null && value !== undefined)
+          .map((value) => String(value))
+          .sort(),
+        threat_actors: ((record.get("threat_actors") as unknown[]) ?? [])
+          .filter((value) => value !== null && value !== undefined)
+          .map((value) => String(value))
+          .sort()
+      }));
+    } finally {
+      await session.close();
+    }
+  }
+
+  /** vol3 §4.3.x 边界数据流分析表: 数据流类型 | 典型接口(BI) | 关联BDF | 关联功能(F) | 是否进入内部传播. */
+  async getBoundaryDataFlowReport(): Promise<BoundaryDataFlowReportRow[]> {
+    const session = getDriver().session();
+    try {
+      const result = await session.executeRead((tx) =>
+        tx.run(
+          `MATCH (sb:TrustBoundary)-[:HAS_INTERFACE]->(bi:BoundaryInterface)-[:CARRIES_FLOW]->(bdf:AssetNode)
+           OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+           RETURN sb.boundary_id AS boundary_id, sb.name AS boundary_name,
+                  bi.interface_id AS interface_id,
+                  bdf.business_id AS bdf_id,
+                  coalesce(bdf.data_flow_type, 'UNSPECIFIED') AS data_flow_type,
+                  coalesce(bdf.enters_internal_propagation, sb.enters_internal_propagation, false) AS enters_internal_propagation,
+                  collect(DISTINCT f.function_id) AS function_ids
+           ORDER BY boundary_id, data_flow_type, interface_id, bdf_id`
+        )
+      );
+
+      // Aggregate per (boundary, data_flow_type) in JS.
+      const groups = new Map<string, BoundaryDataFlowReportRow>();
+      for (const record of result.records) {
+        const boundaryId = record.get("boundary_id") as string;
+        const dataFlowType = record.get("data_flow_type") as string;
+        const key = `${boundaryId} ${dataFlowType}`;
+        const row =
+          groups.get(key) ??
+          ({
+            boundary_id: boundaryId,
+            boundary_name: record.get("boundary_name") as string,
+            data_flow_type: dataFlowType,
+            interfaces: [],
+            bdf_ids: [],
+            function_ids: [],
+            enters_internal_propagation: false
+          } satisfies BoundaryDataFlowReportRow);
+
+        const interfaceId = record.get("interface_id") as string | null;
+        if (interfaceId) {
+          row.interfaces.push(String(interfaceId));
+        }
+        const bdfId = record.get("bdf_id") as string | null;
+        if (bdfId) {
+          row.bdf_ids.push(String(bdfId));
+        }
+        for (const fn of (record.get("function_ids") as unknown[]) ?? []) {
+          if (fn !== null && fn !== undefined) {
+            row.function_ids.push(String(fn));
+          }
+        }
+        if ((record.get("enters_internal_propagation") as boolean | null) === true) {
+          row.enters_internal_propagation = true;
+        }
+        groups.set(key, row);
+      }
+
+      return Array.from(groups.values())
+        .map((row) => ({
+          ...row,
+          interfaces: Array.from(new Set(row.interfaces)).sort(),
+          bdf_ids: Array.from(new Set(row.bdf_ids)).sort(),
+          function_ids: Array.from(new Set(row.function_ids)).sort()
+        }))
+        .sort((a, b) =>
+          a.boundary_id === b.boundary_id
+            ? a.data_flow_type.localeCompare(b.data_flow_type)
+            : a.boundary_id.localeCompare(b.boundary_id)
+        );
+    } finally {
+      await session.close();
+    }
   }
 
   async persistAttackPaths(paths: AttackPath[]): Promise<number> {

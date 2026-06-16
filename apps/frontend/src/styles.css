@@ -386,6 +386,27 @@ p {
   padding-right: 4px;
 }
 
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 4px 0 12px;
+}
+
+.report-table th,
+.report-table td {
+  border: 1px solid rgba(126, 149, 191, 0.34);
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.report-table th {
+  background: rgba(43, 108, 176, 0.12);
+  font-weight: 600;
+}
+
 .changeset-header {
   display: flex;
   justify-content: space-between;

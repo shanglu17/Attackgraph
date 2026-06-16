@@ -14,7 +14,9 @@ import "reactflow/dist/style.css";
 import {
   commitChangeSet,
   exportModelingResult,
+  getBoundaryDataFlowReport,
   getGraph,
+  getTrustBoundaryReport,
   persistPaths,
   runAnalysis,
   seedGenericData,
@@ -26,11 +28,13 @@ import type {
   AssetEdge,
   AssetNode,
   AttackPath,
+  BoundaryDataFlowReportRow,
   ChangeSet,
   DO326ALink,
   GraphChangeSet,
   GraphData,
-  ThreatPoint
+  ThreatPoint,
+  TrustBoundaryReportRow
 } from "./types";
 
 type EntityType = Exclude<keyof GraphChangeSet, "graph_version">;
@@ -228,6 +232,42 @@ function downloadJson(payload: unknown, fileName: string): void {
   window.URL.revokeObjectURL(url);
 }
 
+async function exportChapter4Workbook(
+  boundaryRows: TrustBoundaryReportRow[],
+  dataFlowRows: BoundaryDataFlowReportRow[]
+): Promise<void> {
+  const xlsx = await import("xlsx");
+  const wb = xlsx.utils.book_new();
+
+  const sheet42 = [
+    ["信任边界", "边界名称", "边界说明", "对应接口(BI)", "相关威胁主体(TA)"],
+    ...boundaryRows.map((row) => [
+      row.boundary_id,
+      row.name,
+      row.description ?? "",
+      row.interfaces.join("、"),
+      row.threat_actors.join("、")
+    ])
+  ];
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(sheet42), "4.2 信任边界汇总");
+
+  const sheet43 = [
+    ["信任边界", "数据流类型", "典型接口(BI)", "关联BDF", "关联功能(F)", "是否进入内部传播"],
+    ...dataFlowRows.map((row) => [
+      row.boundary_id,
+      row.data_flow_type,
+      row.interfaces.join("、"),
+      row.bdf_ids.join("、"),
+      row.function_ids.join("、"),
+      row.enters_internal_propagation ? "是" : "否"
+    ])
+  ];
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(sheet43), "4.3 边界数据流分析");
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  xlsx.writeFile(wb, `vol3-chapter4-report-${timestamp}.xlsx`);
+}
+
 function getEntityItems(graph: GraphData | null, entityType: EntityType): EditableEntity[] {
   if (!graph) {
     return [];
@@ -415,6 +455,9 @@ export function App() {
   const [selectedExistingId, setSelectedExistingId] = useState("");
   const [editorValue, setEditorValue] = useState("");
   const [formState, setFormState] = useState<FormState>(createFormState("asset_nodes", null));
+  const [boundaryReport, setBoundaryReport] = useState<TrustBoundaryReportRow[]>([]);
+  const [dataFlowReport, setDataFlowReport] = useState<BoundaryDataFlowReportRow[]>([]);
+  const [reportLoaded, setReportLoaded] = useState(false);
 
   const selectedPath = useMemo(
     () => (selectedPathId ? paths.find((item) => item.path_id === selectedPathId) ?? null : null),
@@ -809,6 +852,36 @@ export function App() {
     }
   }
 
+  async function handleLoadChapter4Report() {
+    try {
+      setBusy(true);
+      const [tb, bdf] = await Promise.all([getTrustBoundaryReport(), getBoundaryDataFlowReport()]);
+      setBoundaryReport(tb.rows);
+      setDataFlowReport(bdf.rows);
+      setReportLoaded(true);
+      setMessage(`第四章报告已加载：信任边界 ${tb.rows.length} 行，边界数据流 ${bdf.rows.length} 行`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to load chapter 4 report");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExportChapter4() {
+    try {
+      setBusy(true);
+      const [tb, bdf] = reportLoaded
+        ? [{ rows: boundaryReport }, { rows: dataFlowReport }]
+        : await Promise.all([getTrustBoundaryReport(), getBoundaryDataFlowReport()]);
+      await exportChapter4Workbook(tb.rows, bdf.rows);
+      setMessage("第四章报告已导出为 Excel 文件");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to export chapter 4 report");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const kpi = {
     assets: graph?.asset_nodes.length ?? 0,
     threats: graph?.threat_points.length ?? 0,
@@ -950,6 +1023,75 @@ export function App() {
               {paths.length === 0 ? <div className="item vertical">Run analysis to populate attack paths.</div> : null}
             </div>
           </div>
+
+          <h3>第四章报告 (vol3)</h3>
+          <div className="toolbar wrap">
+            <button className="button" onClick={handleLoadChapter4Report} disabled={busy}>
+              加载报告
+            </button>
+            <button className="button" onClick={handleExportChapter4} disabled={busy}>
+              导出 Excel
+            </button>
+          </div>
+          {reportLoaded ? (
+            <div className="scroll-panel">
+              <h4>4.2 信任边界汇总</h4>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>信任边界</th>
+                    <th>对应接口(BI)</th>
+                    <th>相关威胁主体(TA)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {boundaryReport.map((row) => (
+                    <tr key={row.boundary_id}>
+                      <td>{row.boundary_id} {row.name}</td>
+                      <td>{row.interfaces.join("、") || "—"}</td>
+                      <td>{row.threat_actors.join("、") || "—"}</td>
+                    </tr>
+                  ))}
+                  {boundaryReport.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>无信任边界数据（导入含信任边界表的模板后可见）。</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+
+              <h4>4.3 边界数据流分析</h4>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>边界</th>
+                    <th>数据流类型</th>
+                    <th>典型接口(BI)</th>
+                    <th>关联BDF</th>
+                    <th>关联功能(F)</th>
+                    <th>内部传播</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataFlowReport.map((row) => (
+                    <tr key={`${row.boundary_id}-${row.data_flow_type}`}>
+                      <td>{row.boundary_id}</td>
+                      <td>{row.data_flow_type}</td>
+                      <td>{row.interfaces.join("、") || "—"}</td>
+                      <td>{row.bdf_ids.join("、") || "—"}</td>
+                      <td>{row.function_ids.join("、") || "—"}</td>
+                      <td>{row.enters_internal_propagation ? "是" : "否"}</td>
+                    </tr>
+                  ))}
+                  {dataFlowReport.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>无边界数据流数据。</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </aside>
 
         <footer className="panel bottom">

@@ -14,7 +14,12 @@ export const assetNodeSchema = z
     data_classification: z.enum(["Public", "Internal", "Sensitive", "Restricted"]).optional(),
     tags: z.array(z.string().min(1)).optional(),
     is_placeholder: z.boolean().optional(),
-    source: z.enum(["manual", "excel_import", "auto_generated"]).optional()
+    source: z.enum(["manual", "excel_import", "auto_generated"]).optional(),
+    business_id: z.string().min(1).optional(),
+    data_flow_type: z.string().min(1).optional(),
+    bdf_ids: z.array(z.string().min(1)).optional(),
+    enters_internal_propagation: z.boolean().optional(),
+    boundary_interface_id: z.string().min(1).optional()
   })
   .superRefine((value, ctx) => {
     if (value.asset_type === "Data" && !value.data_classification) {
@@ -118,12 +123,58 @@ const changeSetSchema = <T extends z.ZodTypeAny>(schema: T) =>
     delete: z.array(z.string())
   });
 
+export const functionNodeSchema = z.object({
+  function_id: z.string().min(1).max(32),
+  name: z.string().min(1).max(64),
+  description: z.string().max(200).optional()
+});
+
+export const trustBoundarySchema = z.object({
+  boundary_id: z.string().min(1).max(32),
+  name: z.string().min(1).max(64),
+  description: z.string().max(200).optional(),
+  enters_internal_propagation: z.boolean().optional(),
+  interface_asset_ids: z.array(z.string().regex(assetIdPattern)).optional(),
+  domain_asset_ids: z.array(z.string().regex(assetIdPattern)).optional()
+});
+
+export const threatActorSchema = z.object({
+  actor_id: z.string().min(1).max(32),
+  name: z.string().min(1).max(64),
+  actor_type: z.enum(["external", "internal", "third-party"]),
+  description: z.string().max(200).optional(),
+  boundary_ids: z.array(z.string().min(1)).optional()
+});
+
+export const boundaryInterfaceSchema = z.object({
+  interface_id: z.string().min(1).max(32),
+  name: z.string().max(64).optional(),
+  interface_class: z.string().max(64).optional(),
+  external_entity: z.string().max(64).optional(),
+  access_object: z.string().max(64).optional(),
+  physical_interconnect: z.string().max(64).optional(),
+  logical_protocol: z.string().max(64).optional(),
+  direction: z.string().max(32).optional(),
+  boundary_id: z.string().max(32).optional(),
+  description: z.string().max(200).optional()
+});
+
+export const functionLinkSchema = z.object({
+  asset_id: z.string().regex(assetIdPattern),
+  function_id: z.string().min(1).max(32)
+});
+
 export const graphChangeSetSchema = z.object({
   graph_version: z.string().min(1),
   asset_nodes: changeSetSchema(assetNodeSchema),
   asset_edges: changeSetSchema(assetEdgeSchema),
   threat_points: changeSetSchema(threatPointSchema),
-  do326a_links: changeSetSchema(do326aLinkSchema)
+  do326a_links: changeSetSchema(do326aLinkSchema),
+  function_nodes: changeSetSchema(functionNodeSchema).optional(),
+  trust_boundaries: changeSetSchema(trustBoundarySchema).optional(),
+  threat_actors: changeSetSchema(threatActorSchema).optional(),
+  boundary_interfaces: changeSetSchema(boundaryInterfaceSchema).optional(),
+  function_links: z.array(functionLinkSchema).optional()
 });
 
 export const runAnalysisSchema = z.object({
@@ -217,7 +268,40 @@ export const cxfInterfaceAssetSchema = z.object({
   network_domain: z.string().optional(),
   zone: z.string().optional(),
   purpose: z.string().optional(),
-  target_function: z.string().optional()
+  target_function: z.string().optional(),
+  boundary_id: z.string().optional(),
+  bdf_ids: z.array(z.string().min(1)).optional(),
+  enters_internal_propagation: z.boolean().optional(),
+  boundary_interface_id: z.string().optional()
+});
+
+export const cxfBoundaryInterfaceSchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().optional(),
+  interface_class: z.string().optional(),
+  external_entity: z.string().optional(),
+  access_object: z.string().optional(),
+  physical_interconnect: z.string().optional(),
+  logical_protocol: z.string().optional(),
+  direction: z.string().optional(),
+  boundary_id: z.string().optional(),
+  description: z.string().optional()
+});
+
+export const cxfTrustBoundarySchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().min(1),
+  description: z.string().optional(),
+  covered_domain_ids: z.array(z.string().min(1)).optional(),
+  threat_actor_ids: z.array(z.string().min(1)).optional(),
+  enters_internal_propagation: z.boolean().optional()
+});
+
+export const cxfThreatActorSchema = z.object({
+  ...cxfRowBaseSchema,
+  name: z.string().min(1),
+  actor_type: z.string().optional(),
+  description: z.string().optional()
 });
 
 export const cxfSupportAssetSchema = z.object({
@@ -254,7 +338,10 @@ export const cxfImportRequestSchema = z.object({
     interface_assets: z.array(cxfInterfaceAssetSchema),
     support_assets: z.array(cxfSupportAssetSchema),
     data_assets: z.array(cxfDataAssetSchema),
-    domain_properties: z.array(cxfDomainPropertySchema).default([])
+    domain_properties: z.array(cxfDomainPropertySchema).default([]),
+    trust_boundaries: z.array(cxfTrustBoundarySchema).default([]),
+    threat_actors: z.array(cxfThreatActorSchema).default([]),
+    boundary_interfaces: z.array(cxfBoundaryInterfaceSchema).default([])
   })
 });
 

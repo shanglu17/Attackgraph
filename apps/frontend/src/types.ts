@@ -1,6 +1,14 @@
 export type PriorityLabel = "High" | "Medium" | "Low";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
-export type CxfSheetName = "functional_assets" | "interface_assets" | "support_assets" | "data_assets" | "domain_properties";
+export type CxfSheetName =
+  | "functional_assets"
+  | "interface_assets"
+  | "support_assets"
+  | "data_assets"
+  | "domain_properties"
+  | "trust_boundaries"
+  | "threat_actors"
+  | "boundary_interfaces";
 
 export interface AssetNode {
   asset_id: string;
@@ -13,6 +21,47 @@ export interface AssetNode {
   tags?: string[];
   is_placeholder?: boolean;
   source?: "manual" | "excel_import" | "auto_generated";
+  business_id?: string;
+  data_flow_type?: string;
+  bdf_ids?: string[];
+  enters_internal_propagation?: boolean;
+  boundary_interface_id?: string;
+}
+
+export interface BoundaryInterface {
+  interface_id: string;
+  name?: string;
+  interface_class?: string;
+  external_entity?: string;
+  access_object?: string;
+  physical_interconnect?: string;
+  logical_protocol?: string;
+  direction?: string;
+  boundary_id?: string;
+  description?: string;
+}
+
+export interface FunctionNode {
+  function_id: string;
+  name: string;
+  description?: string;
+}
+
+export interface TrustBoundary {
+  boundary_id: string;
+  name: string;
+  description?: string;
+  enters_internal_propagation?: boolean;
+  interface_asset_ids?: string[];
+  domain_asset_ids?: string[];
+}
+
+export interface ThreatActor {
+  actor_id: string;
+  name: string;
+  actor_type: "external" | "internal" | "third-party";
+  description?: string;
+  boundary_ids?: string[];
 }
 
 export interface AssetEdge {
@@ -89,6 +138,10 @@ export interface GraphData {
   asset_edges: AssetEdge[];
   threat_points: ThreatPoint[];
   do326a_links: DO326ALink[];
+  function_nodes?: FunctionNode[];
+  trust_boundaries?: TrustBoundary[];
+  threat_actors?: ThreatActor[];
+  boundary_interfaces?: BoundaryInterface[];
 }
 
 export interface ChangeSet<T> {
@@ -150,6 +203,42 @@ export interface CxfInterfaceAssetRow {
   zone?: string;
   purpose?: string;
   target_function?: string;
+  boundary_id?: string;
+  bdf_ids?: string[];
+  enters_internal_propagation?: boolean;
+  boundary_interface_id?: string;
+  excel_row?: number;
+}
+
+export interface CxfBoundaryInterfaceRow {
+  id: string;
+  name?: string;
+  interface_class?: string;
+  external_entity?: string;
+  access_object?: string;
+  physical_interconnect?: string;
+  logical_protocol?: string;
+  direction?: string;
+  boundary_id?: string;
+  description?: string;
+  excel_row?: number;
+}
+
+export interface CxfTrustBoundaryRow {
+  id: string;
+  name: string;
+  description?: string;
+  covered_domain_ids?: string[];
+  threat_actor_ids?: string[];
+  enters_internal_propagation?: boolean;
+  excel_row?: number;
+}
+
+export interface CxfThreatActorRow {
+  id: string;
+  name: string;
+  actor_type?: string;
+  description?: string;
   excel_row?: number;
 }
 
@@ -196,6 +285,9 @@ export interface CxfImportRequest {
     support_assets: CxfSupportAssetRow[];
     data_assets: CxfDataAssetRow[];
     domain_properties: CxfDomainPropertyRow[];
+    trust_boundaries: CxfTrustBoundaryRow[];
+    threat_actors: CxfThreatActorRow[];
+    boundary_interfaces: CxfBoundaryInterfaceRow[];
   };
 }
 
@@ -243,4 +335,22 @@ export interface CxfImportCommitResult extends CxfImportPreviewResult {
   committed: boolean;
   commit_id?: string;
   new_version?: string;
+}
+
+export interface TrustBoundaryReportRow {
+  boundary_id: string;
+  name: string;
+  description?: string;
+  interfaces: string[];
+  threat_actors: string[];
+}
+
+export interface BoundaryDataFlowReportRow {
+  boundary_id: string;
+  boundary_name: string;
+  data_flow_type: string;
+  interfaces: string[];
+  bdf_ids: string[];
+  function_ids: string[];
+  enters_internal_propagation: boolean;
 }

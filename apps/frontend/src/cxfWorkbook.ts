@@ -1,12 +1,15 @@
 import type { WorkBook } from "xlsx";
 import type {
+  CxfBoundaryInterfaceRow,
   CxfDataAssetRow,
   CxfDomainPropertyRow,
   CxfFunctionalAssetRow,
   CxfImportRequest,
   CxfInterfaceAssetRow,
   CxfSheetName,
-  CxfSupportAssetRow
+  CxfSupportAssetRow,
+  CxfThreatActorRow,
+  CxfTrustBoundaryRow
 } from "./types";
 
 const templateVersion = "cxf_asset_inventory_v1";
@@ -17,23 +20,32 @@ const sheetNames: Record<CxfSheetName, string> = {
   interface_assets: "接口资产",
   support_assets: "支持资产",
   data_assets: "数据资产",
-  domain_properties: "域属性表"
+  domain_properties: "域属性表",
+  trust_boundaries: "信任边界表",
+  threat_actors: "威胁主体表",
+  boundary_interfaces: "边界接口表"
 };
 
 const sheetHeaders: Record<CxfSheetName, string[]> = {
   functional_assets: ["编号", "功能资产名称", "资产说明"],
-  interface_assets: ["接口编号", "产生者", "用户", "数据流描述", "数据流类型", "物理接口", "逻辑接口", "网络域", "区域", "目的"],
+  interface_assets: ["接口编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口"],
   support_assets: ["编号", "名称", "交联接口"],
   data_assets: ["编号", "数据名称", "数据类型", "数据流类型", "对应接口", "所属域", "说明"],
-  domain_properties: ["域编号", "域名称", "信任程度", "安全域", "描述"]
+  domain_properties: ["域编号", "域名称", "信任程度", "安全域", "描述"],
+  trust_boundaries: ["边界编号", "边界名称", "边界说明"],
+  threat_actors: ["主体编号", "名称", "类型"],
+  boundary_interfaces: ["接口编号", "接口类别", "外部实体"]
 };
 
 const sheetIdPatterns: Record<CxfSheetName, RegExp> = {
   functional_assets: /^[A-Z]{2,4}\.?[A-Z0-9]+$/i,
-  interface_assets: /^(SI|BI|SD|ACD|BD|SSD|ACI)\.?[A-Z0-9]+$/i,
+  interface_assets: /^(SI|BI|SD|SDF|ACD|BD|BDF|SSD|ACI)\.?[A-Z0-9]+$/i,
   support_assets: /^(ASA|SSA)\.?\d+$/i,
   data_assets: /^[A-Z]{2,4}\.?[A-Z0-9]+$/i,
-  domain_properties: /^D\.?\d+$/i
+  domain_properties: /^D\.?\d+$/i,
+  trust_boundaries: /^SB-?[A-Z0-9]+$/i,
+  threat_actors: /^TA-?[EI]?-?[A-Z0-9]+$/i,
+  boundary_interfaces: /^BI\.?\d+$/i
 };
 
 let xlsxModule: typeof import("xlsx") | null = null;
@@ -63,6 +75,9 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
   const supportAssets = tryParseSheet(workbook, "support_assets", parseSupportAssets);
   const dataAssets = parseDataAssets(workbook);
   const domainProperties = tryParseSheet(workbook, "domain_properties", parseDomainProperties);
+  const trustBoundaries = tryParseSheet(workbook, "trust_boundaries", parseTrustBoundaries);
+  const threatActors = tryParseSheet(workbook, "threat_actors", parseThreatActors);
+  const boundaryInterfaces = tryParseSheet(workbook, "boundary_interfaces", parseBoundaryInterfaces);
 
   return {
     payload: {
@@ -78,7 +93,10 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
         interface_assets: interfaceAssets,
         support_assets: supportAssets,
         data_assets: dataAssets,
-        domain_properties: domainProperties
+        domain_properties: domainProperties,
+        trust_boundaries: trustBoundaries,
+        threat_actors: threatActors,
+        boundary_interfaces: boundaryInterfaces
       }
     },
     sheet_counts: {
@@ -86,7 +104,10 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
       interface_assets: interfaceAssets.length,
       support_assets: supportAssets.length,
       data_assets: dataAssets.length,
-      domain_properties: domainProperties.length
+      domain_properties: domainProperties.length,
+      trust_boundaries: trustBoundaries.length,
+      threat_actors: threatActors.length,
+      boundary_interfaces: boundaryInterfaces.length
     }
   };
 }
@@ -124,12 +145,54 @@ function parseInterfaceAssets(workbook: WorkBook): CxfInterfaceAssetRow[] {
       consumer: requiredCell(row, 2, "interface_assets", index + 2, "consumer"),
       data_flow_description: cell(row, 3),
       data_flow_type: cell(row, 4),
-      physical_interface: cell(row, 5),
-      logical_interface: cell(row, 6),
-      network_domain: cell(row, 7),
-      zone: cell(row, 8),
-      purpose: cell(row, 9),
-      target_function: cell(row, 10),
+      target_function: cell(row, 5),
+      boundary_interface_id: cell(row, 6),
+      excel_row: index + 2
+    })
+  );
+}
+
+function parseBoundaryInterfaces(workbook: WorkBook): CxfBoundaryInterfaceRow[] {
+  const rows = readSheetRows(workbook, "boundary_interfaces");
+  return rows.map((row, index) =>
+    cleanObject<CxfBoundaryInterfaceRow>({
+      id: requiredCell(row, 0, "boundary_interfaces", index + 2, "id"),
+      interface_class: cell(row, 1),
+      external_entity: cell(row, 2),
+      access_object: cell(row, 3),
+      physical_interconnect: cell(row, 4),
+      logical_protocol: cell(row, 5),
+      direction: cell(row, 6),
+      boundary_id: cell(row, 7),
+      description: cell(row, 8),
+      excel_row: index + 2
+    })
+  );
+}
+
+function parseTrustBoundaries(workbook: WorkBook): CxfTrustBoundaryRow[] {
+  const rows = readSheetRows(workbook, "trust_boundaries");
+  return rows.map((row, index) =>
+    cleanObject<CxfTrustBoundaryRow>({
+      id: requiredCell(row, 0, "trust_boundaries", index + 2, "id"),
+      name: requiredCell(row, 1, "trust_boundaries", index + 2, "name"),
+      description: cell(row, 2),
+      covered_domain_ids: splitRefs(cell(row, 3)),
+      threat_actor_ids: splitRefs(cell(row, 4)),
+      enters_internal_propagation: parseBool(cell(row, 5)),
+      excel_row: index + 2
+    })
+  );
+}
+
+function parseThreatActors(workbook: WorkBook): CxfThreatActorRow[] {
+  const rows = readSheetRows(workbook, "threat_actors");
+  return rows.map((row, index) =>
+    cleanObject<CxfThreatActorRow>({
+      id: requiredCell(row, 0, "threat_actors", index + 2, "id"),
+      name: requiredCell(row, 1, "threat_actors", index + 2, "name"),
+      actor_type: cell(row, 2),
+      description: cell(row, 3),
       excel_row: index + 2
     })
   );
@@ -241,6 +304,32 @@ function normalizeCell(value: unknown): string {
     return "";
   }
   return String(value).trim();
+}
+
+function parseBool(value: string | undefined): boolean | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (["是", "yes", "y", "true", "1", "✓"].includes(normalized)) {
+    return true;
+  }
+  if (["否", "no", "n", "false", "0", "×"].includes(normalized)) {
+    return false;
+  }
+  return undefined;
+}
+
+/** Split on list separators only (keeps hyphens/dots), e.g. "TA-E-01;TA-I-01" -> ["TA-E-01","TA-I-01"]. */
+function splitRefs(value: string | undefined): string[] | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const items = value
+    .split(/[,，;；、\s]+/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  return items.length > 0 ? items : undefined;
 }
 
 function splitInterfaceRefs(value: string | undefined): string[] | undefined {

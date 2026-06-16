@@ -6,7 +6,18 @@ import {
   threatPointSchema,
   type CxfImportRequest
 } from "../types/api.js";
-import type { AssetEdge, AssetNode, GraphChangeSet, ThreatPoint } from "../types/domain.js";
+import type {
+  AssetEdge,
+  AssetNode,
+  BoundaryInterface,
+  FunctionLink,
+  FunctionNode,
+  GraphChangeSet,
+  ThreatActor,
+  ThreatActorType,
+  ThreatPoint,
+  TrustBoundary
+} from "../types/domain.js";
 
 type CxfSheetName = keyof CxfImportRequest["workbook"];
 type ImportErrorCategory = "field" | "binding";
@@ -24,7 +35,10 @@ const sheetLabels: Record<CxfSheetName, string> = {
   interface_assets: "接口资产",
   support_assets: "支持资产",
   data_assets: "数据资产",
-  domain_properties: "域属性表"
+  domain_properties: "域属性表",
+  trust_boundaries: "信任边界表",
+  threat_actors: "威胁主体表",
+  boundary_interfaces: "边界接口表"
 };
 
 const autoThreatProfiles: Array<{
@@ -150,6 +164,10 @@ export class CxfImportService {
     const functionalAssetIdsToDelete = new Set<string>();
     const legacyImportedAssetIdsToDelete = new Set<string>();
     const autoThreatIdsToDelete = new Set<string>();
+    const functionNodes = new Map<string, FunctionNode>();
+    const functionLinks: FunctionLink[] = [];
+    const interfaceAssetIdsByBoundary = new Map<string, Set<string>>();
+    const domainIdToAssetIdGlobal = new Map<string, string>();
 
     const hasAmsReferences = this.scanInputForAmsReferences(input);
 
@@ -163,8 +181,18 @@ export class CxfImportService {
         continue;
       }
 
+      // Legacy imports may have created SYS- AssetNodes for functions; keep cleaning those up.
       functionalAssetIdsToDelete.add(this.toInternalAssetId("SYS", row.id));
       functionalAssetIdsToDelete.add(this.toLegacyInternalAssetId("SYS", row.id));
+
+      const functionId = this.normalizeFunctionId(row.id);
+      if (functionId && !functionNodes.has(functionId)) {
+        functionNodes.set(functionId, {
+          function_id: functionId,
+          name: this.sanitizeAssetName(row.name, "Function"),
+          description: row.description
+        });
+      }
       accepted.functional_assets += 1;
     }
 
@@ -184,7 +212,8 @@ export class CxfImportService {
         asset_type: "Terminal",
         criticality: "Medium",
         security_domain: "External",
-        source: "excel_import"
+        source: "excel_import",
+        business_id: businessId
       };
       if (!this.registerAsset(assets, candidate, errors, "support_assets", row.excel_row)) {
         continue;
@@ -219,11 +248,15 @@ export class CxfImportService {
           row.description,
           row.target_function ? `F:${row.target_function}` : undefined
         ),
-        source: "excel_import"
+        source: "excel_import",
+        business_id: businessId,
+        data_flow_type: row.data_flow_type ? row.data_flow_type.toUpperCase() : undefined
       };
       if (!this.registerAsset(assets, candidate, errors, "data_assets", row.excel_row)) {
         continue;
       }
+
+      this.collectFunctionLinks(assetId, row.target_function, functionNodes, functionLinks);
 
       registeredDataAssets.push({
         asset_id: assetId,
@@ -260,13 +293,15 @@ export class CxfImportService {
           ? row.security_domain : "Shared",
         description: this.buildDescription("Domain property", row.description),
         source: "excel_import",
-        tags: ["domain_property"]
+        tags: ["domain_property"],
+        business_id: businessId
       };
       if (!this.registerAsset(assets, candidate, errors, "domain_properties", row.excel_row)) {
         continue;
       }
 
       domainIdToAssetId.set(businessId, assetId);
+      domainIdToAssetIdGlobal.set(businessId, assetId);
       businessIdToAssetId.set(businessId, assetId);
       this.registerNameAlias(nameRegistry, row.name, assetId);
       accepted.domain_properties += 1;
@@ -296,7 +331,12 @@ export class CxfImportService {
           row.purpose,
           row.target_function ? `F:${row.target_function}` : undefined
         ),
-        source: "excel_import"
+        source: "excel_import",
+        business_id: businessId,
+        data_flow_type: row.data_flow_type ? row.data_flow_type.toUpperCase() : undefined,
+        bdf_ids: row.bdf_ids && row.bdf_ids.length > 0 ? row.bdf_ids : undefined,
+        enters_internal_propagation: row.enters_internal_propagation,
+        boundary_interface_id: row.boundary_interface_id ? this.normalizeBusinessId(row.boundary_interface_id) : undefined
       };
       if (!this.registerAsset(assets, candidate, errors, "interface_assets", row.excel_row)) {
         continue;
@@ -306,8 +346,23 @@ export class CxfImportService {
       businessIdToAssetId.set(businessId, assetId);
       this.registerNameAlias(nameRegistry, row.id, assetId);
       interfaceAssetIds.add(assetId);
+      this.collectFunctionLinks(assetId, row.target_function, functionNodes, functionLinks);
+      if (row.boundary_id) {
+        const boundaryKey = this.normalizeBusinessId(row.boundary_id);
+        const set = interfaceAssetIdsByBoundary.get(boundaryKey) ?? new Set<string>();
+        set.add(assetId);
+        interfaceAssetIdsByBoundary.set(boundaryKey, set);
+      }
       accepted.interface_assets += 1;
     }
+
+    const boundaryInterfaces = this.buildBoundaryInterfaces(input.workbook.boundary_interfaces ?? []);
+    const trustBoundaries = this.buildTrustBoundaries(
+      input.workbook.trust_boundaries ?? [],
+      interfaceAssetIdsByBoundary,
+      domainIdToAssetIdGlobal
+    );
+    const threatActors = this.buildThreatActors(input.workbook.threat_actors ?? [], input.workbook.trust_boundaries ?? []);
 
     for (const row of supportRows) {
       const supportAssetId = businessIdToAssetId.get(this.normalizeBusinessId(row.id));
@@ -379,7 +434,13 @@ export class CxfImportService {
       }
 
       const protocolOrMedium = this.truncate(
-        this.firstNonEmpty(row.logical_interface, row.physical_interface, row.network_domain),
+        this.firstNonEmpty(
+          row.logical_interface,
+          row.physical_interface,
+          row.network_domain,
+          row.data_flow_type,
+          "DataFlow"
+        ),
         64
       );
       const description = this.buildDescription(row.data_flow_description, row.purpose, row.zone);
@@ -471,7 +532,7 @@ export class CxfImportService {
     summary.auto_placeholder_assets_to_add = placeholderAssetIds.size;
     if (accepted.functional_assets > 0) {
       summary.warnings.push(
-        `Accepted ${accepted.functional_assets} functional rows as metadata only; no functional nodes are added to the attack graph.`
+        `Created ${functionNodes.size} FunctionNode(s) and ${functionLinks.length} SUPPORTS_FUNCTION link(s) from functional/target_function references.`
       );
     }
     if (unresolvedEndpointNames.size > 0) {
@@ -507,7 +568,28 @@ export class CxfImportService {
         update: [],
         delete: Array.from(autoThreatIdsToDelete).sort()
       },
-      do326a_links: { add: [], update: [], delete: [] }
+      do326a_links: { add: [], update: [], delete: [] },
+      function_nodes: {
+        add: Array.from(functionNodes.values()).sort((a, b) => a.function_id.localeCompare(b.function_id)),
+        update: [],
+        delete: []
+      },
+      trust_boundaries: {
+        add: trustBoundaries.sort((a, b) => a.boundary_id.localeCompare(b.boundary_id)),
+        update: [],
+        delete: []
+      },
+      threat_actors: {
+        add: threatActors.sort((a, b) => a.actor_id.localeCompare(b.actor_id)),
+        update: [],
+        delete: []
+      },
+      boundary_interfaces: {
+        add: boundaryInterfaces.sort((a, b) => a.interface_id.localeCompare(b.interface_id)),
+        update: [],
+        delete: []
+      },
+      function_links: functionLinks
     };
 
     const parsedChangeSet = graphChangeSetSchema.safeParse(changeSetCandidate);
@@ -617,6 +699,139 @@ export class CxfImportService {
     for (const edge of minimalEdges) {
       this.registerEdge(edges, edgeSequenceByPair, edge, errors);
     }
+  }
+
+  /** Canonical function id: extract F-number (F1..Fn) from a raw id/token; else normalized alphanumerics. */
+  private normalizeFunctionId(raw: string | undefined): string | undefined {
+    if (!raw) return undefined;
+    const upper = raw.trim().toUpperCase();
+    const match = upper.match(/F\d+/);
+    if (match) return match[0];
+    const normalized = upper.replace(/[^A-Z0-9]/g, "");
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  /** Parse comma/space-separated target_function tokens into SUPPORTS_FUNCTION links, auto-creating missing FunctionNodes. */
+  private collectFunctionLinks(
+    assetId: string,
+    rawTargetFunction: string | undefined,
+    functionNodes: Map<string, FunctionNode>,
+    functionLinks: FunctionLink[]
+  ): void {
+    if (!rawTargetFunction) return;
+    const tokens = rawTargetFunction
+      .split(/[,，;；\s]+/)
+      .map((token) => this.normalizeFunctionId(token))
+      .filter((token): token is string => Boolean(token));
+    for (const functionId of new Set(tokens)) {
+      if (!functionNodes.has(functionId)) {
+        functionNodes.set(functionId, { function_id: functionId, name: functionId });
+      }
+      functionLinks.push({ asset_id: assetId, function_id: functionId });
+    }
+  }
+
+  private splitRefs(raw: string | undefined): string[] {
+    if (!raw) return [];
+    return raw
+      .split(/[,，;；\s]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0);
+  }
+
+  private buildBoundaryInterfaces(
+    rows: CxfImportRequest["workbook"]["boundary_interfaces"]
+  ): BoundaryInterface[] {
+    const interfaces: BoundaryInterface[] = [];
+    const seen = new Set<string>();
+    for (const row of rows ?? []) {
+      const interfaceId = this.normalizeBusinessId(row.id);
+      if (!interfaceId || seen.has(interfaceId)) continue;
+      seen.add(interfaceId);
+      interfaces.push({
+        interface_id: interfaceId,
+        name: row.name,
+        interface_class: row.interface_class,
+        external_entity: row.external_entity,
+        access_object: row.access_object,
+        physical_interconnect: row.physical_interconnect,
+        logical_protocol: row.logical_protocol,
+        direction: row.direction,
+        boundary_id: row.boundary_id ? this.normalizeBusinessId(row.boundary_id) : undefined,
+        description: row.description
+      });
+    }
+    return interfaces;
+  }
+
+  private buildTrustBoundaries(
+    rows: CxfImportRequest["workbook"]["trust_boundaries"],
+    interfaceAssetIdsByBoundary: Map<string, Set<string>>,
+    domainIdToAssetId: Map<string, string>
+  ): TrustBoundary[] {
+    const boundaries: TrustBoundary[] = [];
+    const seen = new Set<string>();
+    for (const row of rows ?? []) {
+      const boundaryId = this.normalizeBusinessId(row.id);
+      if (!boundaryId || seen.has(boundaryId)) continue;
+      seen.add(boundaryId);
+
+      const interfaceAssetIds = Array.from(interfaceAssetIdsByBoundary.get(boundaryId) ?? []).sort();
+      const domainAssetIds = (row.covered_domain_ids ?? [])
+        .map((id) => domainIdToAssetId.get(this.normalizeBusinessId(id)))
+        .filter((id): id is string => Boolean(id));
+
+      boundaries.push({
+        boundary_id: boundaryId,
+        name: this.sanitizeAssetName(row.name, "Trust Boundary"),
+        description: row.description,
+        enters_internal_propagation: row.enters_internal_propagation,
+        interface_asset_ids: interfaceAssetIds,
+        domain_asset_ids: Array.from(new Set(domainAssetIds)).sort()
+      });
+    }
+    return boundaries;
+  }
+
+  private buildThreatActors(
+    actorRows: CxfImportRequest["workbook"]["threat_actors"],
+    boundaryRows: CxfImportRequest["workbook"]["trust_boundaries"]
+  ): ThreatActor[] {
+    // Reverse-map TA -> boundaries from each boundary row's threat_actor_ids list.
+    const boundaryIdsByActor = new Map<string, Set<string>>();
+    for (const boundary of boundaryRows ?? []) {
+      const boundaryId = this.normalizeBusinessId(boundary.id);
+      for (const actorRef of boundary.threat_actor_ids ?? []) {
+        const actorKey = this.normalizeBusinessId(actorRef);
+        const set = boundaryIdsByActor.get(actorKey) ?? new Set<string>();
+        set.add(boundaryId);
+        boundaryIdsByActor.set(actorKey, set);
+      }
+    }
+
+    const actors: ThreatActor[] = [];
+    const seen = new Set<string>();
+    for (const row of actorRows ?? []) {
+      const actorId = this.normalizeBusinessId(row.id);
+      if (!actorId || seen.has(actorId)) continue;
+      seen.add(actorId);
+      actors.push({
+        actor_id: actorId,
+        name: this.sanitizeAssetName(row.name, "Threat Actor"),
+        actor_type: this.resolveThreatActorType(row.actor_type, actorId),
+        description: row.description,
+        boundary_ids: Array.from(boundaryIdsByActor.get(actorId) ?? []).sort()
+      });
+    }
+    return actors;
+  }
+
+  private resolveThreatActorType(raw: string | undefined, actorId: string): ThreatActorType {
+    const value = (raw ?? "").toLowerCase();
+    if (value.includes("外部") || value.includes("external") || /TA-?E/i.test(actorId)) return "external";
+    if (value.includes("内部") || value.includes("internal") || /TA-?I/i.test(actorId)) return "internal";
+    if (value.includes("第三") || value.includes("third") || value.includes("供应")) return "third-party";
+    return "external";
   }
 
   private registerDataOwnershipEdges(

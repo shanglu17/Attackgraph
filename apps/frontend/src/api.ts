@@ -1,5 +1,6 @@
 import type {
   AttackPath,
+  BoundaryDataFlowReportRow,
   CxfImportCommitResult,
   CxfImportPreviewResult,
   CxfImportRequest,
@@ -7,7 +8,8 @@ import type {
   GraphChangeSet,
   GraphData,
   ModelingExportData,
-  ReviewStatus
+  ReviewStatus,
+  TrustBoundaryReportRow
 } from "./types";
 
 const baseUrl = "http://localhost:4000";
@@ -132,6 +134,18 @@ export async function persistPaths(paths: AttackPath[]): Promise<{ persisted: nu
     body: JSON.stringify({ paths })
   });
   await ensureOk(response, "Failed to persist paths");
+  return response.json();
+}
+
+export async function getTrustBoundaryReport(): Promise<{ count: number; rows: TrustBoundaryReportRow[] }> {
+  const response = await fetch(`${baseUrl}/reports/chapter4/trust-boundaries`);
+  await ensureOk(response, "Failed to load trust boundary report");
+  return response.json();
+}
+
+export async function getBoundaryDataFlowReport(): Promise<{ count: number; rows: BoundaryDataFlowReportRow[] }> {
+  const response = await fetch(`${baseUrl}/reports/chapter4/boundary-data-flows`);
+  await ensureOk(response, "Failed to load boundary data flow report");
   return response.json();
 }
 

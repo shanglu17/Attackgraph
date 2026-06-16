@@ -323,6 +323,24 @@ router.get("/exports/modeling-result", async (req, res, next) => {
   }
 });
 
+router.get("/reports/chapter4/trust-boundaries", async (_req, res, next) => {
+  try {
+    const rows = await graphRepo.getTrustBoundaryReport();
+    return res.json({ count: rows.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/reports/chapter4/boundary-data-flows", async (_req, res, next) => {
+  try {
+    const rows = await graphRepo.getBoundaryDataFlowReport();
+    return res.json({ count: rows.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/compliance/do326a-links", async (_req, res, next) => {
   try {
     const links = await graphRepo.getDo326ALinks();

@@ -38,6 +38,16 @@ export interface AssetNode {
   tags?: string[];
   is_placeholder?: boolean;
   source?: AssetSource;
+  /** Original business identifier from import (e.g. BI01, SD01, F2, D.1) — enables reverse-mapping to report tables. */
+  business_id?: string;
+  /** Data flow type for interface/data assets (CMD/CONFIG/STATE/DATA/LOAD/ALERT/SENSOR). */
+  data_flow_type?: string;
+  /** Boundary data flow ids carried by this interface asset (e.g. BDF08, BDF12). */
+  bdf_ids?: string[];
+  /** Whether this interface's data flows enter internal propagation analysis. */
+  enters_internal_propagation?: boolean;
+  /** For a BDF interface asset: the boundary interface (BI) it flows over (e.g. BI02). */
+  boundary_interface_id?: string;
 }
 
 export interface AssetEdge {
@@ -102,6 +112,58 @@ export interface DO326ALink {
   mapping_version?: string;
 }
 
+export type ThreatActorType = "external" | "internal" | "third-party";
+
+/** Functional asset (F1..Fn) — promoted to a first-class node so report tables can reference it. */
+export interface FunctionNode {
+  function_id: string;
+  name: string;
+  description?: string;
+}
+
+/** Trust boundary (SB-01..) from vol3 §4.2. Many-to-many with D.x security domains. */
+export interface TrustBoundary {
+  boundary_id: string;
+  name: string;
+  description?: string;
+  enters_internal_propagation?: boolean;
+  /** Resolved asset_ids of interface assets (BI) inside this boundary. */
+  interface_asset_ids?: string[];
+  /** Resolved asset_ids of domain-property assets (D.x) covered by this boundary. */
+  domain_asset_ids?: string[];
+}
+
+/** Boundary interface (BI01..) from vol1 表7-1 — the security-boundary crossing point (aircraft ↔ external). */
+export interface BoundaryInterface {
+  interface_id: string;
+  name?: string;
+  interface_class?: string;
+  external_entity?: string;
+  access_object?: string;
+  physical_interconnect?: string;
+  logical_protocol?: string;
+  direction?: string;
+  /** boundary_id of the TrustBoundary (SB) this interface belongs to. */
+  boundary_id?: string;
+  description?: string;
+}
+
+/** Threat actor/source (TA-E-xx / TA-I-xx) associated with trust boundaries. */
+export interface ThreatActor {
+  actor_id: string;
+  name: string;
+  actor_type: ThreatActorType;
+  description?: string;
+  /** boundary_ids of TrustBoundary nodes this actor threatens. */
+  boundary_ids?: string[];
+}
+
+/** Asset → Function relationship (SUPPORTS_FUNCTION). */
+export interface FunctionLink {
+  asset_id: string;
+  function_id: string;
+}
+
 export interface ChangeSet<T> {
   add: T[];
   update: T[];
@@ -114,6 +176,12 @@ export interface GraphChangeSet {
   asset_edges: ChangeSet<AssetEdge>;
   threat_points: ChangeSet<ThreatPoint>;
   do326a_links: ChangeSet<DO326ALink>;
+  function_nodes?: ChangeSet<FunctionNode>;
+  trust_boundaries?: ChangeSet<TrustBoundary>;
+  threat_actors?: ChangeSet<ThreatActor>;
+  boundary_interfaces?: ChangeSet<BoundaryInterface>;
+  /** SUPPORTS_FUNCTION links to (re)create; old ones cleared when assets are DETACH DELETEd on re-import. */
+  function_links?: FunctionLink[];
 }
 
 export interface GraphSnapshot {
@@ -122,12 +190,42 @@ export interface GraphSnapshot {
   asset_edges: AssetEdge[];
   threat_points: ThreatPoint[];
   do326a_links: DO326ALink[];
+  function_nodes: FunctionNode[];
+  trust_boundaries: TrustBoundary[];
+  threat_actors: ThreatActor[];
+  boundary_interfaces: BoundaryInterface[];
 }
 
 export interface ModelingExportBundle {
   graph: GraphSnapshot;
   analysis_paths: AttackPath[];
   do326a_links: DO326ALink[];
+}
+
+/** vol3 §4.2 信任边界汇总表 — one row per trust boundary. */
+export interface TrustBoundaryReportRow {
+  boundary_id: string;
+  name: string;
+  description?: string;
+  /** 对应接口(BI) business_ids. */
+  interfaces: string[];
+  /** 相关威胁主体(TA) actor_ids. */
+  threat_actors: string[];
+}
+
+/** vol3 §4.3.x 边界数据流分析表 — one row per (boundary, data_flow_type). */
+export interface BoundaryDataFlowReportRow {
+  boundary_id: string;
+  boundary_name: string;
+  data_flow_type: string;
+  /** 典型接口(BI) business_ids. */
+  interfaces: string[];
+  /** 关联BDF ids. */
+  bdf_ids: string[];
+  /** 关联功能(F) function_ids. */
+  function_ids: string[];
+  /** 是否进入内部传播分析. */
+  enters_internal_propagation: boolean;
 }
 
 export interface AuditRecord {
