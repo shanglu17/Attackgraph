@@ -1,12 +1,12 @@
 """
-Generate docs/资产清单_v3_可导入.xlsx
+Generate docs/资产清单_v4_可导入.xlsx
 
 Source of truth = ZG-ONE vol1 (BI/BDF) + vol3 第四章 (SB/TA/F).
-接口资产 = vol1 表A-1 边界数据流 (BDF01-BDF81, 航空器↔外部, 含 Producer/Consumer/类型/功能 + 所属BI)
+边界数据流表 = vol1 表A-1 边界数据流 (BDF01-BDF81, 航空器↔外部, 含 Producer/Consumer/类型/功能 + 所属BI)
 边界接口表 = vol1 表7-1 边界接口清单 (BI01-BI21, 含 安保边界SB)
 信任边界表 / 威胁主体表 = vol3 表4-1 + vol1 表5-4
 功能资产 F1-F13, 域属性表 D.1-D.6 = vol1/vol3
-模型: SB(信任边界) → BI(边界接口) → BDF(边界数据流=接口资产)
+模型: SB(信任边界) → BI(边界接口) → BDF(边界数据流)
 """
 import re
 from openpyxl import Workbook
@@ -197,15 +197,15 @@ bdf_rows = [
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Sheet 1: 接口资产  ←  BDF (边界数据流, 航空器↔外部)
-# cols: 接口编号(BDF) | 产生者 | 用户 | 数据流描述 | 数据流类型 | 目标功能 | 所属边界接口(BI)
+# Sheet 1: 边界数据流表  ←  BDF (边界数据流, 航空器↔外部)
+# cols: 边界数据流编号(BDF) | 产生者 | 用户 | 数据流描述 | 数据流类型 | 目标功能 | 所属边界接口(BI)
 # (物理/逻辑接口在「边界接口表」, SB 由 BI 自动推出, 故不在此重复)
 # ─────────────────────────────────────────────────────────────────────────────
-IF_H = ["接口编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口"]
-IF_W = [10, 14, 14, 42, 12, 18, 12]
+IF_H = ["边界数据流编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口"]
+IF_W = [14, 14, 14, 42, 12, 18, 12]
 
 ws1 = wb.active
-ws1.title = "接口资产"
+ws1.title = "边界数据流表"
 apply_hdr(ws1, IF_H, IF_W, "FF2B6CB0")
 
 dv1 = DataValidation(type="list",
@@ -216,7 +216,7 @@ dv1.sqref = "E2:E500"
 
 rows_if = []
 for bdf, bi, prod, cons, content, dft, rawf in bdf_rows:
-    # [接口编号=BDF, 产生者, 用户, 描述, 类型, 目标功能, 所属边界接口BI]
+    # [边界数据流编号=BDF, 产生者, 用户, 描述, 类型, 目标功能, 所属边界接口BI]
     rows_if.append([bdf, prod, cons, content, dft, clean_funcs(rawf), bi])
 rows_if.append([STOP] + [""] * (len(IF_H) - 1))
 
@@ -320,20 +320,45 @@ freeze(ws4)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sheet 6: 支持资产  (BDF 的 producer/consumer 实体, 名称须与 BDF 中完全一致)
+# 安全域/关键性 ← vol1 表5-3(信任域) + 表5-1(飞行安全关键性)
+# 机载核心信任域(D.5)=Internal/High; 机载边界域(D.3)=Shared; 地面/外部=External
 # ─────────────────────────────────────────────────────────────────────────────
 ws5 = wb.create_sheet("支持资产")
-SA_H = ["编号", "名称", "交联接口"]
-SA_W = [10, 22, 36]
+SA_H = ["编号", "名称", "交联接口", "安全域", "关键性"]
+SA_W = [10, 22, 30, 12, 10]
 apply_hdr(ws5, SA_H, SA_W, "FF975A16")
 
-# distinct producer/consumer names across BDF
+dv5a = DataValidation(type="list", formula1='"Internal,External,DMZ,Shared"', allow_blank=True)
+ws5.add_data_validation(dv5a)
+dv5a.sqref = "D2:D100"
+dv5b = DataValidation(type="list", formula1='"High,Medium,Low"', allow_blank=True)
+ws5.add_data_validation(dv5b)
+dv5b.sqref = "E2:E100"
+
+# subsystem → (security_domain, criticality)  per vol1 表5-3 / 表5-1
+ONBOARD_CORE = {"ICP", "EPS", "PACKS", "HVDS", "NAVS", "DAAS", "PES"}  # 机载核心信任域 → Internal/High
+
+
+def classify(name):
+    if name in ONBOARD_CORE:
+        return ("Internal", "High")
+    if name == "DLS":
+        return ("Shared", "High")    # 空地数据链骨干 (C2)
+    if name == "AVCS":
+        return ("Shared", "Medium")  # 音视频通信 (支撑)
+    return ("External", "Medium")    # 地面/外部实体
+
+
 entities = []
 for _, _, prod, cons, *_ in bdf_rows:
     for n in (prod, cons):
         if n not in entities:
             entities.append(n)
-rows_sa = [[f"ASA.{i:02d}", name, ""] for i, name in enumerate(entities, 1)]
-rows_sa.append([STOP, "", ""])
+rows_sa = []
+for i, name in enumerate(entities, 1):
+    dom, crit = classify(name)
+    rows_sa.append([f"ASA.{i:02d}", name, "", dom, crit])
+rows_sa.append([STOP, "", "", "", ""])
 add_rows(ws5, rows_sa, len(SA_H))
 freeze(ws5)
 
@@ -425,14 +450,91 @@ add_rows(ws8, rows_ta, len(TA_H))
 freeze(ws8)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Finalize
+# Sheet 10: 系统数据流表  ←  vol3 附录E (SDF01-SDF55, 航空器内部 producer→consumer)
+# cols: 数据流编号 | 产生者 | 用户 | 内容 | 数据流类型 | 目标功能
 # ─────────────────────────────────────────────────────────────────────────────
-wb._sheets = [ws1, ws_bi, ws2, ws3, ws4, ws5, ws6, ws7, ws8]
+ws9 = wb.create_sheet("系统数据流表")
+SDF_H = ["数据流编号", "产生者", "用户", "内容", "数据流类型", "目标功能"]
+SDF_W = [12, 10, 10, 50, 12, 16]
+apply_hdr(ws9, SDF_H, SDF_W, "FF0F766E")
 
-out = r"E:/document/airness/project/Attackgraph/docs/资产清单_v3_可导入.xlsx"
+dv9 = DataValidation(type="list", formula1='"CMD,CONFIG,STATE,DATA,LOAD,ALERT,SENSOR"', allow_blank=True, showDropDown=False)
+ws9.add_data_validation(dv9)
+dv9.sqref = "E2:E200"
+
+# (sdf, producer, consumer, content, type, raw_func)
+sdf_rows = [
+    ("SDF01", "RCS", "DLS", "电子围栏、航线、备降点信息", "CONFIG", "F3"),
+    ("SDF02", "RCS", "DLS", "起飞、悬停、恢复任务、备降、上下电、低压配电盒通道开关及复位、电源变换器复位等控制指令", "CMD", "F5"),
+    ("SDF03", "RCS", "DLS", "飞行机组语音", "DATA", "F8"),
+    ("SDF04", "DLS", "RCS", "飞机运行状态", "STATE", "F7"),
+    ("SDF05", "DLS", "RCS", "飞机告警信息", "ALERT", "F5,F7"),
+    ("SDF06", "DLS", "RCS", "音视频数据", "DATA", "F7"),
+    ("SDF07", "DLS", "IMS", "电子围栏、航线、备降点信息", "CONFIG", "F3"),
+    ("SDF08", "DLS", "IMS", "起飞、悬停、恢复任务、备降、上下电、低压配电盒通道开关及复位、电源变换器复位等控制指令", "CMD", "F5"),
+    ("SDF09", "IMS", "DLS", "飞机运行状态", "STATE", "F7"),
+    ("SDF10", "IMS", "DLS", "飞机告警信息", "ALERT", "F5,F7"),
+    ("SDF11", "AVCS", "DLS", "乘客语音", "DATA", "F8"),
+    ("SDF12", "AVCS", "DLS", "舱内摄像头视频流", "DATA", "F7"),
+    ("SDF13", "AVCS", "DLS", "下视摄像头视频流", "DATA", "F7"),
+    ("SDF14", "DLS", "AVCS", "飞行机组语音", "DATA", "F8"),
+    ("SDF15", "DAAS", "DLS", "叠加探测信息的视频流", "DATA", "F7"),
+    ("SDF16", "DAAS", "IMS", "障碍物类型、距离等状态", "STATE", "F13"),
+    ("SDF17", "DAAS", "IMS", "障碍物类型、距离等告警；刹停告警建议", "ALERT", "F13"),
+    ("SDF18", "IMS", "DAAS", "姿态角、飞行速度等数据", "STATE", "F4"),
+    ("SDF19", "EPS", "IMS", "转速等状态信息", "STATE", "F1,F2,F3,F7"),
+    ("SDF20", "EPS", "IMS", "温度、电压、电流等状态信息", "STATE", "F1,F3,F7"),
+    ("SDF21", "EPS", "IMS", "转速、温度、电压、电流、故障代码等告警信息", "ALERT", "F1,F2,F7"),
+    ("SDF22", "IMS", "EPS", "转速控制指令", "CMD", "F1,F2"),
+    ("SDF23", "ES", "IMS", "电源变换器、低压配电盒、应急配电盒、应急电池状态信息", "STATE", "F2,F3,F7,F9"),
+    ("SDF24", "ES", "IMS", "电源变换器、低压配电盒、应急配电盒、应急电池告警信息", "ALERT", "F2,F7,F9"),
+    ("SDF25", "IMS", "ES", "复位/通道通断指令", "CMD", "F2,F9"),
+    ("SDF26", "HVDS", "IMS", "高压配电盒状态信息", "STATE", "F1,F2,F3,F7,F9"),
+    ("SDF27", "HVDS", "IMS", "高压配电盒告警信息", "ALERT", "F1,F2,F7,F9"),
+    ("SDF28", "IMS", "HVDS", "空地状态、电机电压、动力电池电压电流值等信息", "STATE", "F1,F9"),
+    ("SDF29", "PACKS", "IMS", "电池电压、电流、温度等状态信息", "STATE", "F1,F2,F3,F7,F9"),
+    ("SDF30", "PACKS", "IMS", "电池电压、电流、温度等告警信息", "ALERT", "F1,F2,F7,F9"),
+    ("SDF31", "IMS", "PACKS", "高压上下电指令", "CMD", "F1,F2,F3,F9"),
+    ("SDF32", "IMS", "PACKS", "航空器空地状态、高压配电盒支路继电器状态", "STATE", "F1,F9"),
+    ("SDF33", "NAVS", "IMS", "导航计算机、卫星接收机、卫星天线、三轴陀螺、三轴加速度计等状态信息", "STATE", "F2,F3,F4,F7"),
+    ("SDF34", "NAVS", "IMS", "航向、姿态、速度、加速度、位置等数据信息", "STATE", "F2,F3,F4,F7"),
+    ("SDF35", "NAVS", "IMS", "航向、姿态、速度、加速度、GNSS位置等告警信息", "ALERT", "F2,F3,F4,F7"),
+    ("SDF36", "IMS", "NAVS", "RTCM纠偏数据", "DATA", "F2,F3,F4,F7"),
+    ("SDF37", "PES", "IMS", "状态信息", "STATE", "F5,F7"),
+    ("SDF38", "PES", "IMS", "告警信息", "ALERT", "F5,F7"),
+    ("SDF39", "IMS", "PES", "开伞指令", "CMD", "F5,F2"),
+    ("SDF40", "IMS", "PES", "加解锁指令", "CMD", "F5"),
+    ("SDF41", "IMS", "FCS", "导航数据", "CONFIG", "F2,F3,F4,F7"),
+    ("SDF42", "IMS", "FCS", "备降点数据", "CONFIG", "F2,F3,F5,F7"),
+    ("SDF43", "IMS", "FCS", "电子围栏数据", "CONFIG", "F2,F3,F7"),
+    ("SDF44", "IMS", "FCS", "应急降落微调指令数据", "CMD", "F2,F3,F5,F7"),
+    ("SDF45", "FCS", "IMS", "转速控制指令", "CMD", "F1,F2,F7"),
+    ("SDF46", "FCS", "IMS", "内外环控制量，当前飞行状态及模式", "STATE", "F2,F7"),
+    ("SDF47", "FCS", "IMS", "飞行包线告警信息，电子围栏告警信息", "ALERT", "F2,F3,F5,F7"),
+    ("SDF48", "IMS", "FMS", "导航数据", "STATE", "F3,F4,F7"),
+    ("SDF49", "IMS", "FMS", "探测与避让系统数据", "STATE", "F3,F7,F13"),
+    ("SDF50", "IMS", "FMS", "飞行航线数据", "CONFIG", "F3,F7"),
+    ("SDF51", "IMS", "FMS", "动力电池电量、功率数据", "STATE", "F1,F3,F7"),
+    ("SDF52", "FMS", "IMS", "待飞时间和待飞航程，剩余续航时间和续航里程", "STATE", "F2,F3,F5,F7"),
+    ("SDF53", "FMS", "IMS", "当前飞行状态", "STATE", "F2,F3,F5,F7"),
+    ("SDF54", "FMS", "IMS", "避让告警信息", "ALERT", "F2,F3,F5,F7,F13"),
+    ("SDF55", "FMS", "FCS", "制导指令", "CMD", "F2,F3,F7"),
+]
+rows_sdf = [[sdf, prod, cons, content, dft, clean_funcs(rawf)] for sdf, prod, cons, content, dft, rawf in sdf_rows]
+rows_sdf.append([STOP] + [""] * (len(SDF_H) - 1))
+add_rows(ws9, rows_sdf, len(SDF_H))
+freeze(ws9)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Finalize
+# 注: 功能传播路径(FP, 表4-5)不再手填 —— 由后端 FpAnalysisService 从 BDF+SDF 自动归并生成。
+# ─────────────────────────────────────────────────────────────────────────────
+wb._sheets = [ws1, ws_bi, ws2, ws3, ws4, ws5, ws6, ws7, ws8, ws9]
+
+out = r"E:/document/airness/project/Attackgraph/docs/资产清单_v4_可导入.xlsx"
 wb.save(out)
 print("Saved:", out)
-print(f"  接口资产(BDF) rows: {len(rows_if) - 1}")
+print(f"  边界数据流表(BDF) rows: {len(rows_if) - 1}")
 print(f"  边界接口表(BI) rows: {len(rows_bi) - 1}")
 print(f"  数据资产 rows: {len(rows_da) - 1}")
 print(f"  域属性表 rows: {len(rows_dm) - 1}")
@@ -440,3 +542,4 @@ print(f"  功能资产 rows: {len(rows_fn) - 1}")
 print(f"  支持资产 rows: {len(rows_sa) - 1}")
 print(f"  信任边界表 rows: {len(rows_tb) - 1}")
 print(f"  威胁主体表 rows: {len(rows_ta) - 1}")
+print(f"  系统数据流表(SDF) rows: {len(rows_sdf) - 1}")

@@ -77,7 +77,7 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
       setParsedWorkbook(parsed);
       setPreview(null);
       updateMessage(
-        `Workbook parsed: 功能 ${parsed.sheet_counts.functional_assets}, 接口 ${parsed.sheet_counts.interface_assets}, 支持 ${parsed.sheet_counts.support_assets}, 数据 ${parsed.sheet_counts.data_assets}, 域 ${parsed.sheet_counts.domain_properties}`
+        `Workbook parsed: 功能 ${parsed.sheet_counts.functional_assets}, BDF ${parsed.sheet_counts.interface_assets}, 支持 ${parsed.sheet_counts.support_assets}, 数据 ${parsed.sheet_counts.data_assets}, 域 ${parsed.sheet_counts.domain_properties}, SDF ${parsed.sheet_counts.system_data_flows}`
       );
     } catch (error) {
       const normalized =
@@ -151,7 +151,11 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
     interface_assets: 0,
     support_assets: 0,
     data_assets: 0,
-    domain_properties: 0
+    domain_properties: 0,
+    trust_boundaries: 0,
+    threat_actors: 0,
+    boundary_interfaces: 0,
+    system_data_flows: 0
   };
   const importDisabled = disabled || busy;
 
@@ -210,9 +214,10 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
           <strong>Workbook Parse</strong>
           <div className="import-kpi-grid">
             <span className="pill">功能 {sheetCounts.functional_assets}</span>
-            <span className="pill">接口 {sheetCounts.interface_assets}</span>
+            <span className="pill">BDF {sheetCounts.interface_assets}</span>
             <span className="pill">支持 {sheetCounts.support_assets}</span>
             <span className="pill">数据 {sheetCounts.data_assets}</span>
+            <span className="pill">SDF {sheetCounts.system_data_flows}</span>
           </div>
           {selectedFile ? <p className="muted">{selectedFile.name}</p> : <p className="muted">No workbook selected.</p>}
           {fileError ? (
@@ -236,7 +241,7 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
               </div>
               <div className="import-kpi-grid">
                 <span className="pill">Accepted 功能 {preview.accepted.functional_assets}</span>
-                <span className="pill">Accepted 接口 {preview.accepted.interface_assets}</span>
+                <span className="pill">Accepted BDF {preview.accepted.interface_assets}</span>
                 <span className="pill">Accepted 支持 {preview.accepted.support_assets}</span>
                 <span className="pill">Accepted 数据 {preview.accepted.data_assets}</span>
               </div>

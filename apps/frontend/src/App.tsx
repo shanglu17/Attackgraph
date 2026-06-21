@@ -15,10 +15,13 @@ import {
   commitChangeSet,
   exportModelingResult,
   getBoundaryDataFlowReport,
+  getFunctionPropagationReport,
   getGraph,
   getTrustBoundaryReport,
   persistPaths,
   runAnalysis,
+  runFunctionPropagationAnalysis,
+  type FpGroupBy,
   seedGenericData,
   seedSampleData,
   validateChangeSet
@@ -31,6 +34,7 @@ import type {
   BoundaryDataFlowReportRow,
   ChangeSet,
   DO326ALink,
+  FunctionPropagationReportRow,
   GraphChangeSet,
   GraphData,
   ThreatPoint,
@@ -234,7 +238,8 @@ function downloadJson(payload: unknown, fileName: string): void {
 
 async function exportChapter4Workbook(
   boundaryRows: TrustBoundaryReportRow[],
-  dataFlowRows: BoundaryDataFlowReportRow[]
+  dataFlowRows: BoundaryDataFlowReportRow[],
+  propagationRows: FunctionPropagationReportRow[]
 ): Promise<void> {
   const xlsx = await import("xlsx");
   const wb = xlsx.utils.book_new();
@@ -263,6 +268,20 @@ async function exportChapter4Workbook(
     ])
   ];
   xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(sheet43), "4.3 边界数据流分析");
+
+  const sheet45 = [
+    ["FP编号", "数据类型", "入口BI", "关联BDF", "关联SDF", "系统传播路径", "影响功能"],
+    ...propagationRows.map((row) => [
+      row.fp_id,
+      row.data_type,
+      row.entry_bis.join("、"),
+      row.bdf_ids.join("、"),
+      row.sdf_ids.length > 0 ? row.sdf_ids.join("、") : row.sdf_note ?? "",
+      row.system_path,
+      row.function_ids.join("、")
+    ])
+  ];
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(sheet45), "4.5 功能传播路径");
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   xlsx.writeFile(wb, `vol3-chapter4-report-${timestamp}.xlsx`);
@@ -457,6 +476,8 @@ export function App() {
   const [formState, setFormState] = useState<FormState>(createFormState("asset_nodes", null));
   const [boundaryReport, setBoundaryReport] = useState<TrustBoundaryReportRow[]>([]);
   const [dataFlowReport, setDataFlowReport] = useState<BoundaryDataFlowReportRow[]>([]);
+  const [propagationReport, setPropagationReport] = useState<FunctionPropagationReportRow[]>([]);
+  const [fpGroupBy, setFpGroupBy] = useState<FpGroupBy>("boundary");
   const [reportLoaded, setReportLoaded] = useState(false);
 
   const selectedPath = useMemo(
@@ -855,13 +876,34 @@ export function App() {
   async function handleLoadChapter4Report() {
     try {
       setBusy(true);
-      const [tb, bdf] = await Promise.all([getTrustBoundaryReport(), getBoundaryDataFlowReport()]);
+      const [tb, bdf, fp] = await Promise.all([
+        getTrustBoundaryReport(),
+        getBoundaryDataFlowReport(),
+        getFunctionPropagationReport()
+      ]);
       setBoundaryReport(tb.rows);
       setDataFlowReport(bdf.rows);
+      setPropagationReport(fp.rows);
       setReportLoaded(true);
-      setMessage(`第四章报告已加载：信任边界 ${tb.rows.length} 行，边界数据流 ${bdf.rows.length} 行`);
+      setMessage(
+        `第四章报告已加载：信任边界 ${tb.rows.length} 行，边界数据流 ${bdf.rows.length} 行，功能传播路径 ${fp.rows.length} 行`
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to load chapter 4 report");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRunFpAnalysis() {
+    try {
+      setBusy(true);
+      const result = await runFunctionPropagationAnalysis({ groupBy: fpGroupBy });
+      setPropagationReport(result.rows);
+      setReportLoaded(true);
+      setMessage(`FP 分析完成（按 ${fpGroupBy} 归并）：由 BDF+SDF 归并出 ${result.fp_count} 条功能传播路径`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to run FP analysis");
     } finally {
       setBusy(false);
     }
@@ -870,10 +912,10 @@ export function App() {
   async function handleExportChapter4() {
     try {
       setBusy(true);
-      const [tb, bdf] = reportLoaded
-        ? [{ rows: boundaryReport }, { rows: dataFlowReport }]
-        : await Promise.all([getTrustBoundaryReport(), getBoundaryDataFlowReport()]);
-      await exportChapter4Workbook(tb.rows, bdf.rows);
+      const [tb, bdf, fp] = reportLoaded
+        ? [{ rows: boundaryReport }, { rows: dataFlowReport }, { rows: propagationReport }]
+        : await Promise.all([getTrustBoundaryReport(), getBoundaryDataFlowReport(), getFunctionPropagationReport()]);
+      await exportChapter4Workbook(tb.rows, bdf.rows, fp.rows);
       setMessage("第四章报告已导出为 Excel 文件");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to export chapter 4 report");
@@ -1029,6 +1071,20 @@ export function App() {
             <button className="button" onClick={handleLoadChapter4Report} disabled={busy}>
               加载报告
             </button>
+            <select
+              className="input-field"
+              value={fpGroupBy}
+              onChange={(event) => setFpGroupBy(event.target.value as FpGroupBy)}
+              disabled={busy}
+              title="FP 归并粒度"
+            >
+              <option value="boundary">按信任边界(SB)</option>
+              <option value="function">按影响功能集合</option>
+              <option value="type">按数据类型</option>
+            </select>
+            <button className="button" onClick={handleRunFpAnalysis} disabled={busy}>
+              分析生成FP
+            </button>
             <button className="button" onClick={handleExportChapter4} disabled={busy}>
               导出 Excel
             </button>
@@ -1086,6 +1142,39 @@ export function App() {
                   {dataFlowReport.length === 0 ? (
                     <tr>
                       <td colSpan={6}>无边界数据流数据。</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+
+              <h4>4.5 功能传播路径 (FP)</h4>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>FP编号</th>
+                    <th>数据类型</th>
+                    <th>入口BI</th>
+                    <th>关联BDF</th>
+                    <th>关联SDF</th>
+                    <th>系统传播路径</th>
+                    <th>影响功能</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {propagationReport.map((row) => (
+                    <tr key={row.fp_id}>
+                      <td>{row.fp_id}</td>
+                      <td>{row.data_type || "—"}</td>
+                      <td>{row.entry_bis.join("、") || "—"}</td>
+                      <td>{row.bdf_ids.join("、") || "—"}</td>
+                      <td>{row.sdf_ids.length > 0 ? row.sdf_ids.join("、") : row.sdf_note || "—"}</td>
+                      <td>{row.system_path || "—"}</td>
+                      <td>{row.function_ids.join("、") || "—"}</td>
+                    </tr>
+                  ))}
+                  {propagationReport.length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>无功能传播路径数据（导入含系统数据流表/功能传播路径表的模板后可见）。</td>
                     </tr>
                   ) : null}
                 </tbody>

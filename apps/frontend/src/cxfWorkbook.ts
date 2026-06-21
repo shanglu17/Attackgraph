@@ -8,6 +8,7 @@ import type {
   CxfInterfaceAssetRow,
   CxfSheetName,
   CxfSupportAssetRow,
+  CxfSystemDataFlowRow,
   CxfThreatActorRow,
   CxfTrustBoundaryRow
 } from "./types";
@@ -17,24 +18,26 @@ const stopMarkers = ["以下是样例", "填写要求", "填表要求", "注"];
 
 const sheetNames: Record<CxfSheetName, string> = {
   functional_assets: "功能资产",
-  interface_assets: "接口资产",
+  interface_assets: "边界数据流表",
   support_assets: "支持资产",
   data_assets: "数据资产",
   domain_properties: "域属性表",
   trust_boundaries: "信任边界表",
   threat_actors: "威胁主体表",
-  boundary_interfaces: "边界接口表"
+  boundary_interfaces: "边界接口表",
+  system_data_flows: "系统数据流表"
 };
 
 const sheetHeaders: Record<CxfSheetName, string[]> = {
   functional_assets: ["编号", "功能资产名称", "资产说明"],
-  interface_assets: ["接口编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口"],
+  interface_assets: ["边界数据流编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口"],
   support_assets: ["编号", "名称", "交联接口"],
   data_assets: ["编号", "数据名称", "数据类型", "数据流类型", "对应接口", "所属域", "说明"],
   domain_properties: ["域编号", "域名称", "信任程度", "安全域", "描述"],
   trust_boundaries: ["边界编号", "边界名称", "边界说明"],
   threat_actors: ["主体编号", "名称", "类型"],
-  boundary_interfaces: ["接口编号", "接口类别", "外部实体"]
+  boundary_interfaces: ["接口编号", "接口类别", "外部实体"],
+  system_data_flows: ["数据流编号", "产生者", "用户"]
 };
 
 const sheetIdPatterns: Record<CxfSheetName, RegExp> = {
@@ -45,7 +48,8 @@ const sheetIdPatterns: Record<CxfSheetName, RegExp> = {
   domain_properties: /^D\.?\d+$/i,
   trust_boundaries: /^SB-?[A-Z0-9]+$/i,
   threat_actors: /^TA-?[EI]?-?[A-Z0-9]+$/i,
-  boundary_interfaces: /^BI\.?\d+$/i
+  boundary_interfaces: /^BI\.?\d+$/i,
+  system_data_flows: /^SDF\.?\d+$/i
 };
 
 let xlsxModule: typeof import("xlsx") | null = null;
@@ -78,6 +82,7 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
   const trustBoundaries = tryParseSheet(workbook, "trust_boundaries", parseTrustBoundaries);
   const threatActors = tryParseSheet(workbook, "threat_actors", parseThreatActors);
   const boundaryInterfaces = tryParseSheet(workbook, "boundary_interfaces", parseBoundaryInterfaces);
+  const systemDataFlows = tryParseSheet(workbook, "system_data_flows", parseSystemDataFlows);
 
   return {
     payload: {
@@ -96,7 +101,8 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
         domain_properties: domainProperties,
         trust_boundaries: trustBoundaries,
         threat_actors: threatActors,
-        boundary_interfaces: boundaryInterfaces
+        boundary_interfaces: boundaryInterfaces,
+        system_data_flows: systemDataFlows
       }
     },
     sheet_counts: {
@@ -107,7 +113,8 @@ export async function parseCxfWorkbook(file: File, aircraftModel: string): Promi
       domain_properties: domainProperties.length,
       trust_boundaries: trustBoundaries.length,
       threat_actors: threatActors.length,
-      boundary_interfaces: boundaryInterfaces.length
+      boundary_interfaces: boundaryInterfaces.length,
+      system_data_flows: systemDataFlows.length
     }
   };
 }
@@ -198,6 +205,21 @@ function parseThreatActors(workbook: WorkBook): CxfThreatActorRow[] {
   );
 }
 
+function parseSystemDataFlows(workbook: WorkBook): CxfSystemDataFlowRow[] {
+  const rows = readSheetRows(workbook, "system_data_flows");
+  return rows.map((row, index) =>
+    cleanObject<CxfSystemDataFlowRow>({
+      id: requiredCell(row, 0, "system_data_flows", index + 2, "id"),
+      producer: cell(row, 1),
+      consumer: cell(row, 2),
+      content: cell(row, 3),
+      data_flow_type: cell(row, 4),
+      target_function: cell(row, 5),
+      excel_row: index + 2
+    })
+  );
+}
+
 function parseSupportAssets(workbook: WorkBook): CxfSupportAssetRow[] {
   const rows = readSheetRows(workbook, "support_assets");
   return rows.map((row, index) =>
@@ -205,6 +227,8 @@ function parseSupportAssets(workbook: WorkBook): CxfSupportAssetRow[] {
       id: requiredCell(row, 0, "support_assets", index + 2, "id"),
       name: requiredCell(row, 1, "support_assets", index + 2, "name"),
       linked_interfaces: splitInterfaceRefs(cell(row, 2)),
+      security_domain: cell(row, 3),
+      criticality: cell(row, 4),
       excel_row: index + 2
     })
   );

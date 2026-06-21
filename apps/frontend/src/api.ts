@@ -5,6 +5,7 @@ import type {
   CxfImportPreviewResult,
   CxfImportRequest,
   DO326ALink,
+  FunctionPropagationReportRow,
   GraphChangeSet,
   GraphData,
   ModelingExportData,
@@ -146,6 +147,33 @@ export async function getTrustBoundaryReport(): Promise<{ count: number; rows: T
 export async function getBoundaryDataFlowReport(): Promise<{ count: number; rows: BoundaryDataFlowReportRow[] }> {
   const response = await fetch(`${baseUrl}/reports/chapter4/boundary-data-flows`);
   await ensureOk(response, "Failed to load boundary data flow report");
+  return response.json();
+}
+
+export async function getFunctionPropagationReport(): Promise<{ count: number; rows: FunctionPropagationReportRow[] }> {
+  const response = await fetch(`${baseUrl}/reports/chapter4/function-propagation`);
+  await ensureOk(response, "Failed to load function propagation report");
+  return response.json();
+}
+
+export type FpGroupBy = "function" | "boundary" | "type";
+
+export async function runFunctionPropagationAnalysis(
+  options?: { groupBy?: FpGroupBy; maxHops?: number }
+): Promise<{ count: number; fp_count: number; rows: FunctionPropagationReportRow[] }> {
+  const body: Record<string, unknown> = {};
+  if (options?.groupBy) {
+    body.group_by = options.groupBy;
+  }
+  if (options?.maxHops) {
+    body.max_hops = options.maxHops;
+  }
+  const response = await fetch(`${baseUrl}/analysis/function-propagation/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  await ensureOk(response, "Failed to run function propagation analysis");
   return response.json();
 }
 

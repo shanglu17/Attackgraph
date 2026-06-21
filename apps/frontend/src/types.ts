@@ -8,7 +8,8 @@ export type CxfSheetName =
   | "domain_properties"
   | "trust_boundaries"
   | "threat_actors"
-  | "boundary_interfaces";
+  | "boundary_interfaces"
+  | "system_data_flows";
 
 export interface AssetNode {
   asset_id: string;
@@ -62,6 +63,26 @@ export interface ThreatActor {
   actor_type: "external" | "internal" | "third-party";
   description?: string;
   boundary_ids?: string[];
+}
+
+export interface SystemDataFlow {
+  sdf_id: string;
+  producer?: string;
+  consumer?: string;
+  content?: string;
+  data_flow_type?: string;
+  function_ids?: string[];
+  description?: string;
+}
+
+export interface FunctionPropagationPath {
+  fp_id: string;
+  data_type_label?: string;
+  system_path_text?: string;
+  sdf_note?: string;
+  bdf_ids?: string[];
+  sdf_ids?: string[];
+  description?: string;
 }
 
 export interface AssetEdge {
@@ -142,6 +163,8 @@ export interface GraphData {
   trust_boundaries?: TrustBoundary[];
   threat_actors?: ThreatActor[];
   boundary_interfaces?: BoundaryInterface[];
+  system_data_flows?: SystemDataFlow[];
+  function_propagation_paths?: FunctionPropagationPath[];
 }
 
 export interface ChangeSet<T> {
@@ -242,10 +265,22 @@ export interface CxfThreatActorRow {
   excel_row?: number;
 }
 
+export interface CxfSystemDataFlowRow {
+  id: string;
+  producer?: string;
+  consumer?: string;
+  content?: string;
+  data_flow_type?: string;
+  target_function?: string;
+  excel_row?: number;
+}
+
 export interface CxfSupportAssetRow {
   id: string;
   name: string;
   linked_interfaces?: string[];
+  security_domain?: string;
+  criticality?: string;
   excel_row?: number;
 }
 
@@ -288,6 +323,7 @@ export interface CxfImportRequest {
     trust_boundaries: CxfTrustBoundaryRow[];
     threat_actors: CxfThreatActorRow[];
     boundary_interfaces: CxfBoundaryInterfaceRow[];
+    system_data_flows: CxfSystemDataFlowRow[];
   };
 }
 
@@ -353,4 +389,15 @@ export interface BoundaryDataFlowReportRow {
   bdf_ids: string[];
   function_ids: string[];
   enters_internal_propagation: boolean;
+}
+
+export interface FunctionPropagationReportRow {
+  fp_id: string;
+  data_type: string;
+  entry_bis: string[];
+  bdf_ids: string[];
+  sdf_ids: string[];
+  sdf_note?: string;
+  system_path: string;
+  function_ids: string[];
 }

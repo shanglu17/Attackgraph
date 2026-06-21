@@ -13,6 +13,7 @@ import type {
   FunctionLink,
   FunctionNode,
   GraphChangeSet,
+  SystemDataFlow,
   ThreatActor,
   ThreatActorType,
   ThreatPoint,
@@ -32,13 +33,14 @@ const warningKeywords = ["以下是样例", "填写要求", "填表要求", "注
 
 const sheetLabels: Record<CxfSheetName, string> = {
   functional_assets: "功能资产",
-  interface_assets: "接口资产",
+  interface_assets: "边界数据流表",
   support_assets: "支持资产",
   data_assets: "数据资产",
   domain_properties: "域属性表",
   trust_boundaries: "信任边界表",
   threat_actors: "威胁主体表",
-  boundary_interfaces: "边界接口表"
+  boundary_interfaces: "边界接口表",
+  system_data_flows: "系统数据流表"
 };
 
 const autoThreatProfiles: Array<{
@@ -206,12 +208,23 @@ export class CxfImportService {
       legacyImportedAssetIdsToDelete.add(this.toLegacyInternalAssetId("EXT", row.id));
 
       const assetId = this.toInternalAssetId("EXT", row.id);
+      const securityDomain =
+        row.security_domain === "Internal" ||
+        row.security_domain === "External" ||
+        row.security_domain === "DMZ" ||
+        row.security_domain === "Shared"
+          ? row.security_domain
+          : "External";
+      const criticality =
+        row.criticality === "High" || row.criticality === "Medium" || row.criticality === "Low"
+          ? row.criticality
+          : "Medium";
       const candidate: AssetNode = {
         asset_id: assetId,
         asset_name: this.sanitizeAssetName(row.name, "Support Asset"),
         asset_type: "Terminal",
-        criticality: "Medium",
-        security_domain: "External",
+        criticality,
+        security_domain: securityDomain,
         source: "excel_import",
         business_id: businessId
       };
@@ -363,6 +376,7 @@ export class CxfImportService {
       domainIdToAssetIdGlobal
     );
     const threatActors = this.buildThreatActors(input.workbook.threat_actors ?? [], input.workbook.trust_boundaries ?? []);
+    const systemDataFlows = this.buildSystemDataFlows(input.workbook.system_data_flows ?? [], functionNodes);
 
     for (const row of supportRows) {
       const supportAssetId = businessIdToAssetId.get(this.normalizeBusinessId(row.id));
@@ -586,6 +600,11 @@ export class CxfImportService {
       },
       boundary_interfaces: {
         add: boundaryInterfaces.sort((a, b) => a.interface_id.localeCompare(b.interface_id)),
+        update: [],
+        delete: []
+      },
+      system_data_flows: {
+        add: systemDataFlows.sort((a, b) => a.sdf_id.localeCompare(b.sdf_id)),
         update: [],
         delete: []
       },
@@ -824,6 +843,40 @@ export class CxfImportService {
       });
     }
     return actors;
+  }
+
+  private buildSystemDataFlows(
+    rows: CxfImportRequest["workbook"]["system_data_flows"],
+    functionNodes: Map<string, FunctionNode>
+  ): SystemDataFlow[] {
+    const flows: SystemDataFlow[] = [];
+    const seen = new Set<string>();
+    for (const row of rows ?? []) {
+      const sdfId = this.normalizeBusinessId(row.id);
+      if (!sdfId || seen.has(sdfId)) continue;
+      seen.add(sdfId);
+      const functionIds = Array.from(
+        new Set(
+          this.splitRefs(row.target_function)
+            .map((token) => this.normalizeFunctionId(token))
+            .filter((token): token is string => Boolean(token))
+        )
+      );
+      for (const functionId of functionIds) {
+        if (!functionNodes.has(functionId)) {
+          functionNodes.set(functionId, { function_id: functionId, name: functionId });
+        }
+      }
+      flows.push({
+        sdf_id: sdfId,
+        producer: row.producer,
+        consumer: row.consumer,
+        content: row.content,
+        data_flow_type: row.data_flow_type ? row.data_flow_type.trim().toUpperCase() : undefined,
+        function_ids: functionIds
+      });
+    }
+    return flows;
   }
 
   private resolveThreatActorType(raw: string | undefined, actorId: string): ThreatActorType {

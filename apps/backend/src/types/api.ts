@@ -164,6 +164,26 @@ export const functionLinkSchema = z.object({
   function_id: z.string().min(1).max(32)
 });
 
+export const systemDataFlowSchema = z.object({
+  sdf_id: z.string().min(1).max(32),
+  producer: z.string().max(64).optional(),
+  consumer: z.string().max(64).optional(),
+  content: z.string().max(500).optional(),
+  data_flow_type: z.string().max(32).optional(),
+  function_ids: z.array(z.string().min(1).max(32)).optional(),
+  description: z.string().max(500).optional()
+});
+
+export const functionPropagationPathSchema = z.object({
+  fp_id: z.string().min(1).max(32),
+  data_type_label: z.string().max(64).optional(),
+  system_path_text: z.string().max(500).optional(),
+  sdf_note: z.string().max(200).optional(),
+  bdf_ids: z.array(z.string().min(1).max(32)).optional(),
+  sdf_ids: z.array(z.string().min(1).max(32)).optional(),
+  description: z.string().max(500).optional()
+});
+
 export const graphChangeSetSchema = z.object({
   graph_version: z.string().min(1),
   asset_nodes: changeSetSchema(assetNodeSchema),
@@ -174,6 +194,8 @@ export const graphChangeSetSchema = z.object({
   trust_boundaries: changeSetSchema(trustBoundarySchema).optional(),
   threat_actors: changeSetSchema(threatActorSchema).optional(),
   boundary_interfaces: changeSetSchema(boundaryInterfaceSchema).optional(),
+  system_data_flows: changeSetSchema(systemDataFlowSchema).optional(),
+  function_propagation_paths: changeSetSchema(functionPropagationPathSchema).optional(),
   function_links: z.array(functionLinkSchema).optional()
 });
 
@@ -183,6 +205,11 @@ export const runAnalysisSchema = z.object({
   generated_by: z.string().min(1),
   scope_asset_ids: z.array(z.string().regex(assetIdPattern)).optional(),
   dps_hop_decay: z.number().min(0.8).max(1).optional()
+});
+
+export const runFpAnalysisSchema = z.object({
+  max_hops: z.number().int().min(1).max(12).default(5),
+  group_by: z.enum(["function", "boundary", "type"]).default("boundary")
 });
 
 export const persistPathsSchema = z.object({
@@ -307,7 +334,9 @@ export const cxfThreatActorSchema = z.object({
 export const cxfSupportAssetSchema = z.object({
   ...cxfRowBaseSchema,
   name: z.string().min(1),
-  linked_interfaces: z.array(z.string().min(1)).optional()
+  linked_interfaces: z.array(z.string().min(1)).optional(),
+  security_domain: z.string().optional(),
+  criticality: z.string().optional()
 });
 
 export const cxfDomainPropertySchema = z.object({
@@ -316,6 +345,15 @@ export const cxfDomainPropertySchema = z.object({
   trust_level: z.string().min(1),
   security_domain: z.string().min(1),
   description: z.string().optional()
+});
+
+export const cxfSystemDataFlowSchema = z.object({
+  ...cxfRowBaseSchema,
+  producer: z.string().optional(),
+  consumer: z.string().optional(),
+  content: z.string().optional(),
+  data_flow_type: z.string().optional(),
+  target_function: z.string().optional()
 });
 
 export const cxfDataAssetSchema = z.object({
@@ -341,7 +379,8 @@ export const cxfImportRequestSchema = z.object({
     domain_properties: z.array(cxfDomainPropertySchema).default([]),
     trust_boundaries: z.array(cxfTrustBoundarySchema).default([]),
     threat_actors: z.array(cxfThreatActorSchema).default([]),
-    boundary_interfaces: z.array(cxfBoundaryInterfaceSchema).default([])
+    boundary_interfaces: z.array(cxfBoundaryInterfaceSchema).default([]),
+    system_data_flows: z.array(cxfSystemDataFlowSchema).default([])
   })
 });
 

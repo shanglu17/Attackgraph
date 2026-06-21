@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
+import { FpAnalysisService } from "../services/fpAnalysisService.js";
 import { CxfImportService, type CxfImportSummary } from "../services/cxfImportService.js";
 import { ImportService } from "../services/importService.js";
 import {
@@ -11,12 +12,14 @@ import {
   modelingExportQuerySchema,
   persistPathsSchema,
   runAnalysisSchema,
+  runFpAnalysisSchema,
   singleSheetImportRequestSchema
 } from "../types/api.js";
 
 const router = Router();
 const graphRepo = new GraphRepository();
 const analysisService = new AnalysisService();
+const fpAnalysisService = new FpAnalysisService();
 const importService = new ImportService();
 const cxfImportService = new CxfImportService();
 
@@ -336,6 +339,31 @@ router.get("/reports/chapter4/boundary-data-flows", async (_req, res, next) => {
   try {
     const rows = await graphRepo.getBoundaryDataFlowReport();
     return res.json({ count: rows.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/reports/chapter4/function-propagation", async (_req, res, next) => {
+  try {
+    const rows = await graphRepo.getFunctionPropagationReport();
+    return res.json({ count: rows.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/analysis/function-propagation/run", async (req, res, next) => {
+  try {
+    const parsed = runFpAnalysisSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const inputs = await graphRepo.getFunctionPropagationInputs();
+    const fps = fpAnalysisService.run({ ...inputs, max_hops: parsed.data.max_hops, group_by: parsed.data.group_by });
+    await graphRepo.replaceFunctionPropagationPaths(fps);
+    const rows = await graphRepo.getFunctionPropagationReport();
+    return res.json({ count: rows.length, fp_count: fps.length, rows });
   } catch (error) {
     return next(error);
   }

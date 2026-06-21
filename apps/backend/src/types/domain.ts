@@ -164,6 +164,34 @@ export interface FunctionLink {
   function_id: string;
 }
 
+/** System data flow (SDF01..) from vol3 附录E — an internal flow between two onboard subsystems. */
+export interface SystemDataFlow {
+  sdf_id: string;
+  producer?: string;
+  consumer?: string;
+  content?: string;
+  data_flow_type?: string;
+  /** function_ids (F1..) this SDF supports — drives the 影响功能 derivation in table 4-5. */
+  function_ids?: string[];
+  description?: string;
+}
+
+/** Function propagation path (FP01..) from vol3 表4-5 — expert grouping of BDFs into a propagation chain. */
+export interface FunctionPropagationPath {
+  fp_id: string;
+  /** Data-type label with semantic suffix, e.g. "CMD（飞行控制）". */
+  data_type_label?: string;
+  /** Subsystem-level propagation chain text, e.g. "RCS → DLS → IMS → FMS → FCS". */
+  system_path_text?: string;
+  /** Free-text shown in the 关联SDF column when no SDF ids apply (e.g. "无直接对应SDF"). */
+  sdf_note?: string;
+  /** BDF business_ids included in this path (INCLUDES_BDF). */
+  bdf_ids?: string[];
+  /** SDF ids included in this path (INCLUDES_SDF). */
+  sdf_ids?: string[];
+  description?: string;
+}
+
 export interface ChangeSet<T> {
   add: T[];
   update: T[];
@@ -180,6 +208,8 @@ export interface GraphChangeSet {
   trust_boundaries?: ChangeSet<TrustBoundary>;
   threat_actors?: ChangeSet<ThreatActor>;
   boundary_interfaces?: ChangeSet<BoundaryInterface>;
+  system_data_flows?: ChangeSet<SystemDataFlow>;
+  function_propagation_paths?: ChangeSet<FunctionPropagationPath>;
   /** SUPPORTS_FUNCTION links to (re)create; old ones cleared when assets are DETACH DELETEd on re-import. */
   function_links?: FunctionLink[];
 }
@@ -194,6 +224,8 @@ export interface GraphSnapshot {
   trust_boundaries: TrustBoundary[];
   threat_actors: ThreatActor[];
   boundary_interfaces: BoundaryInterface[];
+  system_data_flows: SystemDataFlow[];
+  function_propagation_paths: FunctionPropagationPath[];
 }
 
 export interface ModelingExportBundle {
@@ -226,6 +258,25 @@ export interface BoundaryDataFlowReportRow {
   function_ids: string[];
   /** 是否进入内部传播分析. */
   enters_internal_propagation: boolean;
+}
+
+/** vol3 表4-5 功能传播路径（FP）识别结果 — one row per FP. */
+export interface FunctionPropagationReportRow {
+  fp_id: string;
+  /** 数据类型 label, e.g. "CMD（飞行控制）". */
+  data_type: string;
+  /** 入口BI — derived from each BDF's boundary interface. */
+  entry_bis: string[];
+  /** 关联BDF business_ids. */
+  bdf_ids: string[];
+  /** 关联SDF ids (empty when sdf_note is used instead). */
+  sdf_ids: string[];
+  /** Free-text fallback for the 关联SDF column when no SDF ids apply. */
+  sdf_note?: string;
+  /** 系统传播路径 chain text. */
+  system_path: string;
+  /** 影响功能 — derived from the union of BDF and SDF SUPPORTS_FUNCTION links. */
+  function_ids: string[];
 }
 
 export interface AuditRecord {

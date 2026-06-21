@@ -6,14 +6,29 @@ import type {
   AuditRecord,
   BoundaryDataFlowReportRow,
   DO326ALink,
+  FunctionPropagationPath,
+  FunctionPropagationReportRow,
   GraphChangeSet,
   GraphSnapshot,
   ModelingExportBundle,
   ReviewStatus,
   TrustBoundaryReportRow
 } from "../types/domain.js";
+import type { FpAnalysisInput } from "../services/fpAnalysisService.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
+
+/** Sort ids like F1, F2, F10 or BDF2, BDF10 by their trailing number, deduplicating. */
+function sortByTrailingNumber(ids: string[]): string[] {
+  const trailingNumber = (id: string): number => {
+    const match = id.match(/(\d+)\s*$/);
+    return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+  };
+  return Array.from(new Set(ids)).sort((a, b) => {
+    const diff = trailingNumber(a) - trailingNumber(b);
+    return diff !== 0 ? diff : a.localeCompare(b);
+  });
+}
 
 interface QueryRunner {
   run: (query: string, parameters?: Record<string, unknown>) => Promise<QueryResult>;
@@ -42,6 +57,8 @@ export class GraphRepository {
       await session.run("CREATE CONSTRAINT trust_boundary_unique IF NOT EXISTS FOR (sb:TrustBoundary) REQUIRE sb.boundary_id IS UNIQUE");
       await session.run("CREATE CONSTRAINT threat_actor_unique IF NOT EXISTS FOR (ta:ThreatActor) REQUIRE ta.actor_id IS UNIQUE");
       await session.run("CREATE CONSTRAINT boundary_interface_unique IF NOT EXISTS FOR (bi:BoundaryInterface) REQUIRE bi.interface_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT system_data_flow_unique IF NOT EXISTS FOR (sdf:SystemDataFlow) REQUIRE sdf.sdf_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT function_propagation_unique IF NOT EXISTS FOR (fp:FunctionPropagationPath) REQUIRE fp.fp_id IS UNIQUE");
       await session.run("DROP CONSTRAINT path_unique IF EXISTS");
       await session.run(
         `MATCH (p:AttackPath)
@@ -67,7 +84,19 @@ export class GraphRepository {
     const session = getDriver().session();
     try {
       const result = await session.executeRead(async (tx) => {
-        const [versionRes, assetsRes, edgesRes, threatsRes, linksRes, functionsRes, boundariesRes, actorsRes, interfacesRes] =
+        const [
+          versionRes,
+          assetsRes,
+          edgesRes,
+          threatsRes,
+          linksRes,
+          functionsRes,
+          boundariesRes,
+          actorsRes,
+          interfacesRes,
+          sdfRes,
+          fpRes
+        ] =
           await Promise.all([
             tx.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS graph_version", { id: graphVersionNodeId }),
             tx.run("MATCH (a:AssetNode) RETURN a ORDER BY a.asset_id"),
@@ -85,9 +114,27 @@ export class GraphRepository {
             tx.run(
               "MATCH (ta:ThreatActor) OPTIONAL MATCH (ta)-[:THREATENS]->(sb:TrustBoundary) RETURN ta.actor_id AS actor_id, ta.name AS name, ta.actor_type AS actor_type, ta.description AS description, collect(DISTINCT sb.boundary_id) AS boundary_ids ORDER BY actor_id"
             ),
-            tx.run("MATCH (bi:BoundaryInterface) RETURN bi ORDER BY bi.interface_id")
+            tx.run("MATCH (bi:BoundaryInterface) RETURN bi ORDER BY bi.interface_id"),
+            tx.run(
+              "MATCH (sdf:SystemDataFlow) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id"
+            ),
+            tx.run(
+              "MATCH (fp:FunctionPropagationPath) OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode) OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow) RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type_label, fp.system_path_text AS system_path_text, fp.sdf_note AS sdf_note, fp.description AS description, collect(DISTINCT bdf.business_id) AS bdf_ids, collect(DISTINCT sdf.sdf_id) AS sdf_ids ORDER BY fp_id"
+            )
           ]);
-        return { versionRes, assetsRes, edgesRes, threatsRes, linksRes, functionsRes, boundariesRes, actorsRes, interfacesRes };
+        return {
+          versionRes,
+          assetsRes,
+          edgesRes,
+          threatsRes,
+          linksRes,
+          functionsRes,
+          boundariesRes,
+          actorsRes,
+          interfacesRes,
+          sdfRes,
+          fpRes
+        };
       });
 
       return {
@@ -196,7 +243,25 @@ export class GraphRepository {
             boundary_id: (properties.boundary_id as string | undefined) ?? undefined,
             description: (properties.description as string | undefined) ?? undefined
           };
-        })
+        }),
+        system_data_flows: result.sdfRes.records.map((record) => ({
+          sdf_id: record.get("sdf_id") as string,
+          producer: (record.get("producer") as string | null) ?? undefined,
+          consumer: (record.get("consumer") as string | null) ?? undefined,
+          content: (record.get("content") as string | null) ?? undefined,
+          data_flow_type: (record.get("data_flow_type") as string | null) ?? undefined,
+          description: (record.get("description") as string | null) ?? undefined,
+          function_ids: ((record.get("function_ids") as unknown[]) ?? []).map((value) => String(value))
+        })),
+        function_propagation_paths: result.fpRes.records.map((record) => ({
+          fp_id: record.get("fp_id") as string,
+          data_type_label: (record.get("data_type_label") as string | null) ?? undefined,
+          system_path_text: (record.get("system_path_text") as string | null) ?? undefined,
+          sdf_note: (record.get("sdf_note") as string | null) ?? undefined,
+          description: (record.get("description") as string | null) ?? undefined,
+          bdf_ids: ((record.get("bdf_ids") as unknown[]) ?? []).map((value) => String(value)),
+          sdf_ids: ((record.get("sdf_ids") as unknown[]) ?? []).map((value) => String(value))
+        }))
       };
     } finally {
       await session.close();
@@ -250,6 +315,12 @@ export class GraphRepository {
         }
         for (const interfaceId of changeSet.boundary_interfaces?.delete ?? []) {
           await tx.run("MATCH (bi:BoundaryInterface {interface_id: $interface_id}) DETACH DELETE bi", { interface_id: interfaceId });
+        }
+        for (const sdfId of changeSet.system_data_flows?.delete ?? []) {
+          await tx.run("MATCH (sdf:SystemDataFlow {sdf_id: $sdf_id}) DETACH DELETE sdf", { sdf_id: sdfId });
+        }
+        for (const fpId of changeSet.function_propagation_paths?.delete ?? []) {
+          await tx.run("MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) DETACH DELETE fp", { fp_id: fpId });
         }
 
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
@@ -344,6 +415,51 @@ export class GraphRepository {
           await tx.run(
             "MATCH (ta:ThreatActor {actor_id: $actor_id}) UNWIND $boundary_ids AS bid MATCH (sb:TrustBoundary {boundary_id: bid}) MERGE (ta)-[:THREATENS]->(sb)",
             { actor_id: actor.actor_id, boundary_ids: actor.boundary_ids ?? [] }
+          );
+        }
+
+        for (const sdf of [
+          ...(changeSet.system_data_flows?.add ?? []),
+          ...(changeSet.system_data_flows?.update ?? [])
+        ]) {
+          await tx.run(
+            "MERGE (sdf:SystemDataFlow {sdf_id: $sdf_id}) SET sdf.producer = $producer, sdf.consumer = $consumer, sdf.content = $content, sdf.data_flow_type = $data_flow_type, sdf.description = $description WITH sdf OPTIONAL MATCH (sdf)-[old:SUPPORTS_FUNCTION]->() DELETE old",
+            {
+              sdf_id: sdf.sdf_id,
+              producer: sdf.producer ?? null,
+              consumer: sdf.consumer ?? null,
+              content: sdf.content ?? null,
+              data_flow_type: sdf.data_flow_type ?? null,
+              description: sdf.description ?? null
+            }
+          );
+          await tx.run(
+            "MATCH (sdf:SystemDataFlow {sdf_id: $sdf_id}) UNWIND $function_ids AS fid MATCH (f:FunctionNode {function_id: fid}) MERGE (sdf)-[:SUPPORTS_FUNCTION]->(f)",
+            { sdf_id: sdf.sdf_id, function_ids: sdf.function_ids ?? [] }
+          );
+        }
+
+        for (const fp of [
+          ...(changeSet.function_propagation_paths?.add ?? []),
+          ...(changeSet.function_propagation_paths?.update ?? [])
+        ]) {
+          await tx.run(
+            "MERGE (fp:FunctionPropagationPath {fp_id: $fp_id}) SET fp.data_type_label = $data_type_label, fp.system_path_text = $system_path_text, fp.sdf_note = $sdf_note, fp.description = $description WITH fp OPTIONAL MATCH (fp)-[old:INCLUDES_BDF|INCLUDES_SDF]->() DELETE old",
+            {
+              fp_id: fp.fp_id,
+              data_type_label: fp.data_type_label ?? null,
+              system_path_text: fp.system_path_text ?? null,
+              sdf_note: fp.sdf_note ?? null,
+              description: fp.description ?? null
+            }
+          );
+          await tx.run(
+            "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $bdf_ids AS bid MATCH (a:AssetNode {business_id: bid}) MERGE (fp)-[:INCLUDES_BDF]->(a)",
+            { fp_id: fp.fp_id, bdf_ids: fp.bdf_ids ?? [] }
+          );
+          await tx.run(
+            "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $sdf_ids AS sid MATCH (sdf:SystemDataFlow {sdf_id: sid}) MERGE (fp)-[:INCLUDES_SDF]->(sdf)",
+            { fp_id: fp.fp_id, sdf_ids: fp.sdf_ids ?? [] }
           );
         }
 
@@ -554,6 +670,142 @@ export class GraphRepository {
             ? a.data_flow_type.localeCompare(b.data_flow_type)
             : a.boundary_id.localeCompare(b.boundary_id)
         );
+    } finally {
+      await session.close();
+    }
+  }
+
+  /** vol3 表4-5 功能传播路径(FP): FP | 数据类型 | 入口BI | 关联BDF | 关联SDF | 系统传播路径 | 影响功能. */
+  async getFunctionPropagationReport(): Promise<FunctionPropagationReportRow[]> {
+    const session = getDriver().session();
+    try {
+      const result = await session.executeRead((tx) =>
+        tx.run(
+          `MATCH (fp:FunctionPropagationPath)
+           OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode)
+           OPTIONAL MATCH (bi:BoundaryInterface)-[:CARRIES_FLOW]->(bdf)
+           OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(fb:FunctionNode)
+           OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow)
+           OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(fs:FunctionNode)
+           RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type,
+                  fp.system_path_text AS system_path, fp.sdf_note AS sdf_note,
+                  collect(DISTINCT bi.interface_id) AS entry_bis,
+                  collect(DISTINCT bdf.business_id) AS bdf_ids,
+                  collect(DISTINCT sdf.sdf_id) AS sdf_ids,
+                  collect(DISTINCT fb.function_id) AS bdf_function_ids,
+                  collect(DISTINCT fs.function_id) AS sdf_function_ids
+           ORDER BY fp_id`
+        )
+      );
+
+      const toIds = (value: unknown): string[] =>
+        ((value as unknown[]) ?? []).filter((item) => item !== null && item !== undefined).map((item) => String(item));
+
+      return result.records.map((record) => {
+        const functionIds = sortByTrailingNumber([
+          ...toIds(record.get("bdf_function_ids")),
+          ...toIds(record.get("sdf_function_ids"))
+        ]);
+        return {
+          fp_id: record.get("fp_id") as string,
+          data_type: (record.get("data_type") as string | null) ?? "",
+          entry_bis: sortByTrailingNumber(toIds(record.get("entry_bis"))),
+          bdf_ids: sortByTrailingNumber(toIds(record.get("bdf_ids"))),
+          sdf_ids: sortByTrailingNumber(toIds(record.get("sdf_ids"))),
+          sdf_note: (record.get("sdf_note") as string | null) ?? undefined,
+          system_path: (record.get("system_path") as string | null) ?? "",
+          function_ids: functionIds
+        } satisfies FunctionPropagationReportRow;
+      });
+    } finally {
+      await session.close();
+    }
+  }
+
+  /** Reads BDF start points (with entry subsystem from BI) + SDF edges for FP analysis. */
+  async getFunctionPropagationInputs(): Promise<FpAnalysisInput> {
+    const session = getDriver().session();
+    try {
+      const { bdfRes, sdfRes } = await session.executeRead(async (tx) => {
+        const [bdfRes, sdfRes] = await Promise.all([
+          tx.run(
+            `MATCH (bdf:AssetNode) WHERE bdf.boundary_interface_id IS NOT NULL
+             OPTIONAL MATCH (bi:BoundaryInterface {interface_id: bdf.boundary_interface_id})
+             OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+             RETURN bdf.business_id AS business_id, bdf.data_flow_type AS data_flow_type,
+                    bdf.boundary_interface_id AS boundary_interface_id,
+                    bi.access_object AS entry_subsystem, bi.external_entity AS external_entity,
+                    bi.boundary_id AS entry_boundary,
+                    collect(DISTINCT f.function_id) AS function_ids
+             ORDER BY business_id`
+          ),
+          tx.run(
+            `MATCH (sdf:SystemDataFlow)
+             OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+             RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer,
+                    sdf.data_flow_type AS data_flow_type, collect(DISTINCT f.function_id) AS function_ids
+             ORDER BY sdf_id`
+          )
+        ]);
+        return { bdfRes, sdfRes };
+      });
+
+      const toIds = (value: unknown): string[] =>
+        ((value as unknown[]) ?? []).filter((item) => item !== null && item !== undefined).map((item) => String(item));
+
+      return {
+        bdfs: bdfRes.records
+          .filter((record) => record.get("business_id"))
+          .map((record) => ({
+            business_id: String(record.get("business_id")),
+            data_flow_type: (record.get("data_flow_type") as string | null) ?? undefined,
+            boundary_interface_id: (record.get("boundary_interface_id") as string | null) ?? undefined,
+            entry_subsystem: (record.get("entry_subsystem") as string | null) ?? undefined,
+            external_entity: (record.get("external_entity") as string | null) ?? undefined,
+            entry_boundary: (record.get("entry_boundary") as string | null) ?? undefined,
+            function_ids: toIds(record.get("function_ids"))
+          })),
+        sdfs: sdfRes.records.map((record) => ({
+          sdf_id: String(record.get("sdf_id")),
+          producer: (record.get("producer") as string | null) ?? undefined,
+          consumer: (record.get("consumer") as string | null) ?? undefined,
+          data_flow_type: (record.get("data_flow_type") as string | null) ?? undefined,
+          function_ids: toIds(record.get("function_ids"))
+        }))
+      };
+    } finally {
+      await session.close();
+    }
+  }
+
+  /** Replaces all FunctionPropagationPath nodes (and their INCLUDES_* links) with the computed set. */
+  async replaceFunctionPropagationPaths(paths: FunctionPropagationPath[]): Promise<number> {
+    const session = getDriver().session();
+    try {
+      await session.executeWrite(async (tx) => {
+        await tx.run("MATCH (fp:FunctionPropagationPath) DETACH DELETE fp");
+        for (const fp of paths) {
+          await tx.run(
+            "MERGE (fp:FunctionPropagationPath {fp_id: $fp_id}) SET fp.data_type_label = $data_type_label, fp.system_path_text = $system_path_text, fp.sdf_note = $sdf_note, fp.description = $description",
+            {
+              fp_id: fp.fp_id,
+              data_type_label: fp.data_type_label ?? null,
+              system_path_text: fp.system_path_text ?? null,
+              sdf_note: fp.sdf_note ?? null,
+              description: fp.description ?? null
+            }
+          );
+          await tx.run(
+            "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $bdf_ids AS bid MATCH (a:AssetNode {business_id: bid}) MERGE (fp)-[:INCLUDES_BDF]->(a)",
+            { fp_id: fp.fp_id, bdf_ids: fp.bdf_ids ?? [] }
+          );
+          await tx.run(
+            "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $sdf_ids AS sid MATCH (sdf:SystemDataFlow {sdf_id: sid}) MERGE (fp)-[:INCLUDES_SDF]->(sdf)",
+            { fp_id: fp.fp_id, sdf_ids: fp.sdf_ids ?? [] }
+          );
+        }
+      });
+      return paths.length;
     } finally {
       await session.close();
     }
