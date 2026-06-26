@@ -353,6 +353,15 @@ router.get("/reports/chapter4/function-propagation", async (_req, res, next) => 
   }
 });
 
+router.get("/reports/chapter4/internal-data-flows", async (_req, res, next) => {
+  try {
+    const rows = await graphRepo.getInternalDataFlowReport();
+    return res.json({ count: rows.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/analysis/function-propagation/run", async (req, res, next) => {
   try {
     const parsed = runFpAnalysisSchema.safeParse(req.body ?? {});

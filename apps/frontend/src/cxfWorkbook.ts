@@ -154,6 +154,7 @@ function parseInterfaceAssets(workbook: WorkBook): CxfInterfaceAssetRow[] {
       data_flow_type: cell(row, 4),
       target_function: cell(row, 5),
       boundary_interface_id: cell(row, 6),
+      enters_internal_propagation: parseBool(cell(row, 7)),
       excel_row: index + 2
     })
   );

@@ -235,3 +235,66 @@ export class FpAnalysisService {
     });
   }
 }
+
+/**
+ * Boundary-reachability of SDF edges: the set of sdf_ids reachable from any BDF entry via
+ * same-type (type-channel) propagation. Mirrors the edge-collection in FpAnalysisService.traverse()
+ * but returns only the reached sdf_id set — used by the internal-data-flow report to flag which
+ * internal flows are NOT reachable from any boundary (the "pure internal" flows). Read-only: this
+ * does not affect run()/FP output.
+ */
+export function collectBoundaryReachableSdfIds(input: FpAnalysisInput): Set<string> {
+  const maxHops = input.max_hops ?? defaultMaxHops;
+  const normName = (v: string | undefined): string => (v ?? "").trim().replace(/\s+/g, " ").toUpperCase();
+  const normType = (v: string | undefined): string => {
+    const t = (v ?? "").trim().toUpperCase();
+    return t.length > 0 ? t : "UNSPECIFIED";
+  };
+  const splitNames = (v: string | undefined): string[] =>
+    (v ?? "")
+      .split(/[、,，/\n\r;；]+/)
+      .map((p) => normName(p))
+      .filter(Boolean);
+
+  const adjacency = new Map<string, Array<{ sdf_id: string; to: string; type: string }>>();
+  for (const sdf of input.sdfs) {
+    const from = normName(sdf.producer);
+    const to = normName(sdf.consumer);
+    if (!from || !to) {
+      continue;
+    }
+    const outgoing = adjacency.get(from) ?? [];
+    outgoing.push({ sdf_id: sdf.sdf_id, to, type: normType(sdf.data_flow_type) });
+    adjacency.set(from, outgoing);
+  }
+
+  const reached = new Set<string>();
+  for (const bdf of input.bdfs) {
+    const type = normType(bdf.data_flow_type);
+    const candidates = splitNames(bdf.entry_subsystem);
+    const entry = candidates.find((c) => adjacency.has(c)) ?? candidates[0] ?? normName(bdf.external_entity);
+    if (!entry) {
+      continue;
+    }
+    const visited = new Set<string>([entry]);
+    const dfs = (node: string, hops: number): void => {
+      if (hops >= maxHops) {
+        return;
+      }
+      for (const edge of adjacency.get(node) ?? []) {
+        if (edge.type !== type) {
+          continue;
+        }
+        reached.add(edge.sdf_id);
+        if (visited.has(edge.to)) {
+          continue;
+        }
+        visited.add(edge.to);
+        dfs(edge.to, hops + 1);
+        visited.delete(edge.to);
+      }
+    };
+    dfs(entry, 0);
+  }
+  return reached;
+}

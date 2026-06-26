@@ -1,11 +1,15 @@
 """
 Convert the real ZG-ONE source workbook into the v4 importable template format.
 
-Source: 零重力/网络安保资产_边界及系统_接口和数据流清单20260616(1).xlsx
+Source: 零重力/网络安保资产_边界及系统_接口和数据流清单_0623.xlsx
+        (0623 revision: 操控员 manual-control flows dropped; remote-controller 遥控器→RCS CMD
+        is the manual-control boundary flow instead.)
 Output: docs/资产清单_v4_真实数据.xlsx  (same sheet names/headers/order as 资产清单_v4_可导入.xlsx)
 
 Rules (confirmed with user):
-- Operational systems (指挥控制系统/大数据中心 — 不在审查范围) are EXCLUDED.
+- Operational systems (指挥控制系统/大数据中心 — 不在审查范围) are excluded as MODELED NODES
+  (not in the support-asset inventory), but a boundary data flow crossing into the in-scope
+  system at RCS is kept (the C2 system is the external entity behind the RCS boundary interface).
 - Sheets absent from the source (域属性表/信任边界表/威胁主体表/STRIDE映射表/数据资产)
   reuse the standard v4 reference content.
 - Derived: BI ids (BI01..), BDF ids (BDF01..), SDF ids (SDF01..); 安保边界(SB) from 接口类别;
@@ -20,7 +24,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 import sys
 SRC = sys.argv[1] if len(sys.argv) > 1 else \
-    r"D:/program download/weixin/xwechat_files/wxid_k5k44kfijop622_8d83/msg/file/2026-06/网络安保资产_边界及系统_接口和数据流清单_0618(1).xlsx"
+    r"D:/program download/weixin/xwechat_files/wxid_k5k44kfijop622_8d83/msg/file/2026-06/网络安保资产_边界及系统_接口和数据流清单_0623.xlsx"
 OUT = r"E:/document/airness/project/Attackgraph/docs/资产清单_v4_真实数据.xlsx"
 STOP = "以下是样例，请勿填写此行以下内容"
 
@@ -178,6 +182,12 @@ def match_bi(prod, cons, dest):
     return ""
 
 # ── Sheet: 边界数据流表 (from 边界数据流) ─────────────────────────────────────
+# Operational back-office systems (command-control center / big-data center). These are
+# out of review scope as MODELED NODES (excluded from the support-asset inventory below),
+# but a boundary flow that crosses into the in-scope system at RCS is still a real boundary
+# data flow and must be kept — only when it is the external entity behind the RCS boundary
+# interface (BI 网络通信: ext=指挥控制系统, access=RCS). So we skip a flow only when BOTH
+# endpoints are operational systems (a purely back-office flow, e.g. 指挥控制系统↔大数据中心).
 OOS = {norm(x) for x in ("指挥控制系统", "大数据中心", "大数据平台")}
 # 关联功能(col 5) uses merged cells in the source → expand it, else continuation rows read blank.
 bdf_raw = [r for r in sheet_rows_expanded("边界数据流", [5])[1:] if any(c.strip() for c in r)]
@@ -189,11 +199,13 @@ for r in bdf_raw:
     prod, cons, dest, desc, typ, func = r[0], r[1], r[2], r[3], r[4], r[5]
     if not desc.strip():
         continue
-    if norm(prod) in OOS or norm(cons) in OOS:
+    if norm(prod) in OOS and norm(cons) in OOS:
         continue
     fcodes = fnums(func)
-    if not fcodes and "人工控制输入" in desc:
-        fcodes = "F7"  # 操控员 manual control input = HMI interaction (F7), per review
+    if not fcodes and "遥控器" in (prod + cons):
+        fcodes = "F7"  # 遥控器 manual control input to RCS = flight-crew interface (F7), per review
+    if not fcodes and ("指挥控制系统" in (prod + cons)):
+        fcodes = "F3"  # C2↔RCS exchange (航线/围栏/备降点/在线状态/操作记录) = 飞行管理 (F3), per review
     # A multi-subsystem consumer ("IMS、FMS、FCS") becomes one BDF per subsystem.
     cons_parts = [p.strip() for p in re.split(r"[、,，/\n\r]+", cons) if p.strip()]
     if len(cons_parts) <= 1:
@@ -204,6 +216,21 @@ for r in bdf_raw:
         if not bid:
             unmatched += 1
         bdf_list.append([f"BDF{n:02d}", clean_name(prod), clean_name(cpart), desc, typ.upper(), fcodes, bid])
+
+# ── split the C2→RCS DATA flow into CONFIG + DATA ─────────────────────────────
+# 指挥控制系统→RCS bundles 航线/电子围栏/备降点 (config pushed toward 飞控) together with
+# login/fault/camera/weather/flight/audio (true DATA). They behave differently downstream:
+# the config sub-flow follows the CONFIG SDF channel (RCS→DLS→IMS→FCS/FMS), the rest the
+# DATA channel. Split into two BDFs so FP propagation is type-correct. Same interface (BI01).
+C2_CONFIG_DESC = "航空器航线、电子围栏、备降点数据"
+C2_DATA_DESC = "用户登录结果、故障信息管理、摄像头数据流地址管理、气象信息管、飞行数据、音频数据"
+for idx, row in enumerate(bdf_list):
+    if norm(row[1]) == norm("指挥控制系统") and norm(row[2]) == "RCS" and row[4] == "DATA":
+        bdf_list[idx:idx + 1] = [
+            [row[0], row[1], row[2], C2_CONFIG_DESC, "CONFIG", row[5], row[6]],
+            [row[0], row[1], row[2], C2_DATA_DESC, "DATA", row[5], row[6]],
+        ]
+        break
 
 # ── Sheet: 系统数据流表 (from 系统间数据流) ───────────────────────────────────
 sdf_raw = [r for r in sheet_rows_expanded("系统间数据流", [5])[1:] if any(c.strip() for c in r)]
@@ -216,6 +243,18 @@ for r in sdf_raw:
         continue
     m += 1
     sdf_list.append([f"SDF{m:02d}", clean_name(prod), clean_name(cons), content, typ.upper(), fnums(func)])
+
+# ── backfill internal flows the 系统间数据流 sheet missed but 系统间接口 declares ──
+# Cross-checking 系统间接口 (directional prose) against the SDF source revealed two internal
+# flows omitted from 系统间数据流: IMS→HVDS 高压上下电指令 (a CMD — only STATE was recorded)
+# and PACKS→HVDS battery status (missing entirely). Append them so the internal-flow picture
+# (esp. IMS-originated CMDs) is complete. Ids are assigned after consolidation/renumbering.
+for prod, cons, content, typ, func in (
+    ("IMS", "HVDS", "12个电动发电机高压上下电指令", "CMD", "F9"),
+    ("PACKS", "HVDS", "1#和2#动力电池状态信息", "STATE", "F9"),
+):
+    m += 1
+    sdf_list.append([f"SDF{m:02d}", prod, cons, content, typ, func])
 
 # ── consolidate STATE / DATA flows sharing (producer, consumer, type) into one ──
 # CMD/CONFIG/LOAD/ALERT/SENSOR are kept separate (per review); only STATE & DATA merge.
@@ -257,6 +296,21 @@ for i, row in enumerate(bdf_list, 1):
 sdf_list = consolidate(sdf_list, 1, 2, 4, 3, 5)
 for i, row in enumerate(sdf_list, 1):
     row[0] = f"SDF{i:02d}"
+
+# ── 是否进入内部传播 (per BDF) ────────────────────────────────────────────────
+# A boundary flow enters internal propagation only if it INJECTS into the aircraft
+# (external entity is the producer = 入站). A read-out / 上行 flow whose external entity
+# is the consumer (子系统→维护设备/指挥控制系统) carries data OUT and does NOT seed internal
+# propagation → 否. Auto-derived from the BI's external_entity; hand-override in Excel if needed.
+bid2ext = {bid: ext for bid, ext, _ in bi_lookup}
+for row in bdf_list:
+    ext = bid2ext.get(row[6], "")
+    if ext and canon(row[1]) == ext:
+        row.append("是")        # external entity is producer → inbound injection
+    elif ext and canon(row[2]) == ext:
+        row.append("否")        # external entity is consumer → outbound read-out
+    else:
+        row.append("是")        # default: treat as inbound when undetermined
 
 # ── Sheet: 功能资产 (from 系统功能) ───────────────────────────────────────────
 CRIT_BY_FN = {"安全关键": "High", "安全相关": "Medium", "运行支撑": "Low"}
@@ -353,8 +407,8 @@ def make(title, headers, widths, color, data, dv=None):
     return ws
 
 ws1 = make("边界数据流表",
-           ["边界数据流编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口"],
-           [14, 16, 16, 44, 12, 16, 12], "FF2B6CB0", bdf_list, dv=("E", '"CMD,CONFIG,STATE,DATA,LOAD,ALERT,SENSOR"'))
+           ["边界数据流编号", "产生者", "用户", "数据流描述", "数据流类型", "目标功能", "所属边界接口", "是否进入内部传播"],
+           [14, 16, 16, 44, 12, 16, 12, 16], "FF2B6CB0", bdf_list, dv=("E", '"CMD,CONFIG,STATE,DATA,LOAD,ALERT,SENSOR"'))
 wb.remove(wb["Sheet"])  # drop default
 make("边界接口表",
      ["接口编号", "接口类别", "外部实体", "边界接入对象", "物理互连类型", "逻辑协议", "方向性", "安保边界", "接口说明"],

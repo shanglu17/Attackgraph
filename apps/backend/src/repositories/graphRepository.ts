@@ -10,11 +10,13 @@ import type {
   FunctionPropagationReportRow,
   GraphChangeSet,
   GraphSnapshot,
+  InternalDataFlowReportRow,
   ModelingExportBundle,
   ReviewStatus,
   TrustBoundaryReportRow
 } from "../types/domain.js";
 import type { FpAnalysisInput } from "../services/fpAnalysisService.js";
+import { collectBoundaryReachableSdfIds } from "../services/fpAnalysisService.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
 
@@ -603,7 +605,12 @@ export class GraphRepository {
     }
   }
 
-  /** vol3 §4.3.x 边界数据流分析表: 数据流类型 | 典型接口(BI) | 关联BDF | 关联功能(F) | 是否进入内部传播. */
+  /**
+   * vol3 §4.3.x 边界数据流分析表: 数据流类型 | 典型接口(BI) | 关联BDF | 关联功能(F) | 是否进入内部传播.
+   * Grouped by (boundary, data_flow_type, enters_internal_propagation) so that a mixed group —
+   * e.g. SB-01 DATA carrying both an inbound 是 flow and outbound 否 read-outs — splits into a 是
+   * row and a 否 row instead of collapsing to one 是 row.
+   */
   async getBoundaryDataFlowReport(): Promise<BoundaryDataFlowReportRow[]> {
     const session = getDriver().session();
     try {
@@ -621,12 +628,13 @@ export class GraphRepository {
         )
       );
 
-      // Aggregate per (boundary, data_flow_type) in JS.
+      // Aggregate per (boundary, data_flow_type, enters_internal_propagation) in JS.
       const groups = new Map<string, BoundaryDataFlowReportRow>();
       for (const record of result.records) {
         const boundaryId = record.get("boundary_id") as string;
         const dataFlowType = record.get("data_flow_type") as string;
-        const key = `${boundaryId} ${dataFlowType}`;
+        const entersInternal = (record.get("enters_internal_propagation") as boolean | null) === true;
+        const key = `${boundaryId} ${dataFlowType} ${entersInternal}`;
         const row =
           groups.get(key) ??
           ({
@@ -636,7 +644,7 @@ export class GraphRepository {
             interfaces: [],
             bdf_ids: [],
             function_ids: [],
-            enters_internal_propagation: false
+            enters_internal_propagation: entersInternal
           } satisfies BoundaryDataFlowReportRow);
 
         const interfaceId = record.get("interface_id") as string | null;
@@ -652,9 +660,6 @@ export class GraphRepository {
             row.function_ids.push(String(fn));
           }
         }
-        if ((record.get("enters_internal_propagation") as boolean | null) === true) {
-          row.enters_internal_propagation = true;
-        }
         groups.set(key, row);
       }
 
@@ -665,11 +670,16 @@ export class GraphRepository {
           bdf_ids: Array.from(new Set(row.bdf_ids)).sort(),
           function_ids: Array.from(new Set(row.function_ids)).sort()
         }))
-        .sort((a, b) =>
-          a.boundary_id === b.boundary_id
-            ? a.data_flow_type.localeCompare(b.data_flow_type)
-            : a.boundary_id.localeCompare(b.boundary_id)
-        );
+        .sort((a, b) => {
+          if (a.boundary_id !== b.boundary_id) {
+            return a.boundary_id.localeCompare(b.boundary_id);
+          }
+          if (a.data_flow_type !== b.data_flow_type) {
+            return a.data_flow_type.localeCompare(b.data_flow_type);
+          }
+          // 是 (enters internal propagation) before 否
+          return a.enters_internal_propagation === b.enters_internal_propagation ? 0 : a.enters_internal_propagation ? -1 : 1;
+        });
     } finally {
       await session.close();
     }
@@ -722,6 +732,86 @@ export class GraphRepository {
     }
   }
 
+  /**
+   * Internal data flow analysis (IMS-centric): one row per SystemDataFlow, flagging which flows
+   * are NOT reachable from any boundary entry (pure internal flows). Reuses the FP traversal logic
+   * (collectBoundaryReachableSdfIds) for the reachable set; does not change FP/report output.
+   */
+  async getInternalDataFlowReport(): Promise<InternalDataFlowReportRow[]> {
+    const isIms = (name: string): boolean => name.trim().toUpperCase() === "IMS";
+    const session = getDriver().session();
+    let sdfRows: Array<{
+      sdf_id: string;
+      producer: string;
+      consumer: string;
+      data_flow_type: string;
+      content?: string;
+      function_ids: string[];
+    }>;
+    try {
+      const result = await session.executeRead((tx) =>
+        tx.run(
+          `MATCH (sdf:SystemDataFlow)
+           OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+           RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer,
+                  sdf.data_flow_type AS data_flow_type, sdf.content AS content,
+                  collect(DISTINCT f.function_id) AS function_ids
+           ORDER BY sdf_id`
+        )
+      );
+      const toIds = (value: unknown): string[] =>
+        ((value as unknown[]) ?? []).filter((item) => item !== null && item !== undefined).map((item) => String(item));
+      sdfRows = result.records.map((record) => ({
+        sdf_id: String(record.get("sdf_id")),
+        producer: (record.get("producer") as string | null) ?? "",
+        consumer: (record.get("consumer") as string | null) ?? "",
+        data_flow_type: (record.get("data_flow_type") as string | null) ?? "",
+        content: (record.get("content") as string | null) ?? undefined,
+        function_ids: sortByTrailingNumber(toIds(record.get("function_ids")))
+      }));
+    } finally {
+      await session.close();
+    }
+
+    const inputs = await this.getFunctionPropagationInputs();
+    const reachable = collectBoundaryReachableSdfIds(inputs);
+
+    const originClass = (producer: string, consumer: string): string => {
+      if (isIms(producer)) {
+        return "IMS发起";
+      }
+      if (isIms(consumer)) {
+        return "汇入IMS";
+      }
+      return "其他内部";
+    };
+    const orderRank = (originClass: string): number =>
+      originClass === "IMS发起" ? 0 : originClass === "汇入IMS" ? 1 : 2;
+    const trailingNumber = (id: string): number => {
+      const match = id.match(/(\d+)\s*$/);
+      return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+    };
+
+    return sdfRows
+      .map((row) => ({
+        sdf_id: row.sdf_id,
+        producer: row.producer,
+        consumer: row.consumer,
+        data_flow_type: row.data_flow_type,
+        content: row.content,
+        function_ids: row.function_ids,
+        origin_class: originClass(row.producer, row.consumer),
+        boundary_reachable: reachable.has(row.sdf_id)
+      } satisfies InternalDataFlowReportRow))
+      .sort((a, b) => {
+        const rankDiff = orderRank(a.origin_class) - orderRank(b.origin_class);
+        if (rankDiff !== 0) {
+          return rankDiff;
+        }
+        return trailingNumber(a.sdf_id) - trailingNumber(b.sdf_id);
+      });
+  }
+
   /** Reads BDF start points (with entry subsystem from BI) + SDF edges for FP analysis. */
   async getFunctionPropagationInputs(): Promise<FpAnalysisInput> {
     const session = getDriver().session();
@@ -731,11 +821,13 @@ export class GraphRepository {
           tx.run(
             `MATCH (bdf:AssetNode) WHERE bdf.boundary_interface_id IS NOT NULL
              OPTIONAL MATCH (bi:BoundaryInterface {interface_id: bdf.boundary_interface_id})
+             OPTIONAL MATCH (sb:TrustBoundary {boundary_id: bi.boundary_id})
              OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
              RETURN bdf.business_id AS business_id, bdf.data_flow_type AS data_flow_type,
                     bdf.boundary_interface_id AS boundary_interface_id,
                     bi.access_object AS entry_subsystem, bi.external_entity AS external_entity,
                     bi.boundary_id AS entry_boundary,
+                    coalesce(bdf.enters_internal_propagation, sb.enters_internal_propagation) AS enters_internal_propagation,
                     collect(DISTINCT f.function_id) AS function_ids
              ORDER BY business_id`
           ),
@@ -756,6 +848,11 @@ export class GraphRepository {
       return {
         bdfs: bdfRes.records
           .filter((record) => record.get("business_id"))
+          // A BDF only seeds internal propagation if it injects inward. Outbound read-out flows
+          // marked 否 (enters_internal_propagation=false, on the BDF or its SB) are excluded as
+          // start points — so they no longer drive FP or boundary-reachability. Unset → included
+          // (backward compatible with templates that lack the column).
+          .filter((record) => record.get("enters_internal_propagation") !== false)
           .map((record) => ({
             business_id: String(record.get("business_id")),
             data_flow_type: (record.get("data_flow_type") as string | null) ?? undefined,

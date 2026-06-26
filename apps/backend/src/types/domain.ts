@@ -279,6 +279,25 @@ export interface FunctionPropagationReportRow {
   function_ids: string[];
 }
 
+/**
+ * Internal data flow analysis row — one per SystemDataFlow (SDF), organized IMS-centric.
+ * Surfaces flows that do NOT enter from a boundary: `boundary_reachable=false` marks a
+ * "pure internal" flow that no boundary entry can reach via type-channel propagation.
+ */
+export interface InternalDataFlowReportRow {
+  sdf_id: string;
+  producer: string;
+  consumer: string;
+  data_flow_type: string;
+  content?: string;
+  /** 影响功能 — F-ids this SDF supports. */
+  function_ids: string[];
+  /** 以 IMS 为核心的归类: "IMS发起" | "汇入IMS" | "其他内部". */
+  origin_class: string;
+  /** false = 纯内部流（任何边界入口都到不了）. */
+  boundary_reachable: boolean;
+}
+
 export interface AuditRecord {
   commit_id: string;
   user_id: string;

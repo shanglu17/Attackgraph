@@ -1,0 +1,217 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram name="第 1 页" id="n4CuXFx2lztqf-GX6PKP">
+    <mxGraphModel dx="1427" dy="974" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-115" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="Ground Maintenance Equipment" vertex="1">
+          <mxGeometry height="78" width="260" x="1150" y="397" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-116" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="Debug Equipment" vertex="1">
+          <mxGeometry height="54" width="186" x="1160" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-117" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="UPS" vertex="1">
+          <mxGeometry height="54" width="87" x="1200" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-118" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="ICP" vertex="1">
+          <mxGeometry height="38" width="38" x="1616" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-119" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="DLS" vertex="1">
+          <mxGeometry height="41" width="41" x="1615" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-120" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="EPS" vertex="1">
+          <mxGeometry height="40" width="40" x="1615" y="199" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-121" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="PACKS" vertex="1">
+          <mxGeometry height="58" width="58" x="1606" y="289" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-122" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="HVDS" vertex="1">
+          <mxGeometry height="52" width="52" x="1609" y="397" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-123" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="DAAS" vertex="1">
+          <mxGeometry height="51" width="51" x="1609" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-124" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="AVCS" vertex="1">
+          <mxGeometry height="50" width="50" x="1610" y="601" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-125" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="NAVS" vertex="1">
+          <mxGeometry height="50" width="50" x="1610" y="701" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-126" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="PES" vertex="1">
+          <mxGeometry height="40" width="40" x="1615" y="801" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-127" parent="1" style="ellipse;aspect=fixed;strokeWidth=2;whiteSpace=wrap;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);" value="RCS" vertex="1">
+          <mxGeometry height="42" width="42" x="1614" y="904" as="geometry" />
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-128" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.58;exitY=0;entryX=0;entryY=0.47;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-118" value="BI10 CAN_ETH接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="30" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-129" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-118" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.65;entryX=0.59;entryY=0;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI10 CAN_ETH发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="75" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-130" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.61;exitY=0;entryX=-0.01;entryY=0.47;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-119" value="BI11 ETH接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="119" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-131" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-119" style="curved=1;startArrow=none;endArrow=block;exitX=-0.01;exitY=0.64;entryX=0.63;entryY=0;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI11 ETH发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="164" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-132" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.65;exitY=0;entryX=0;entryY=0.46;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-120" value="BI12 CAN接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="208" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-133" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-120" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.66;entryX=0.69;entryY=0;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI12 CAN发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="259" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-134" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.76;exitY=0;entryX=0;entryY=0.45;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-121" value="BI13 CAN接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="303" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-135" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-121" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.67;entryX=0.96;entryY=0;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI13 CAN发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="361" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-136" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=1;exitY=0.28;entryX=0;entryY=0.44;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-122" value="BI14 CAN接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-137" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-122" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.67;entryX=1;entryY=0.71;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI14 CAN发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="465" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-138" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.97;exitY=1;entryX=0.01;entryY=0.43;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-123" value="BI15 USB3接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="509" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-139" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-123" style="curved=1;startArrow=none;endArrow=block;exitX=0.01;exitY=0.66;entryX=0.76;entryY=1;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI15 USB3发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="566" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-140" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.7;exitY=1;entryX=0;entryY=0.44;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-124" value="BI16 RS232_ETH接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="610" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-141" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-124" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.66;entryX=0.65;entryY=1;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI16 RS232_ETH发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="666" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-142" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.62;exitY=1;entryX=0;entryY=0.44;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-125" value="BI17 RS422接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="710" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-143" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-125" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.65;entryX=0.6;entryY=1;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI17 RS422发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="764" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-144" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-115" style="curved=1;startArrow=none;endArrow=block;exitX=0.59;exitY=1;entryX=0;entryY=0.45;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-126" value="BI18 RS232接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="808" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-145" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-126" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=0.65;entryX=0.58;entryY=1;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-115" value="BI18 RS232发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="857" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-146" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-116" style="curved=1;startArrow=none;endArrow=block;exitX=1;exitY=0.32;entryX=0.01;entryY=0.4;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-127" value="BI19 RS422接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1560" y="850" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-147" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-127" style="curved=1;startArrow=none;endArrow=block;exitX=0.01;exitY=0.58;entryX=1;entryY=0.66;rounded=0;" target="fDAPsRQ8Ur9svstqqIji-116" value="BI19 RS422发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1508" y="870" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-148" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-117" style="curved=1;startArrow=none;endArrow=block;exitX=1;exitY=0.75;entryX=0.5;entryY=1;rounded=0;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" target="fDAPsRQ8Ur9svstqqIji-127" value="BI20 RS232接收">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1460" y="946" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-149" edge="1" parent="1" source="fDAPsRQ8Ur9svstqqIji-127" style="curved=1;startArrow=none;endArrow=block;exitX=0;exitY=1;entryX=1;entryY=0.25;rounded=0;entryDx=0;entryDy=0;exitDx=0;exitDy=0;" target="fDAPsRQ8Ur9svstqqIji-117" value="BI20 RS232发送">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1470" y="870" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-151" edge="1" parent="1" style="curved=1;endArrow=none;html=1;rounded=0;endFill=0;strokeWidth=2;dashed=1;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="1540" y="550" />
+            </Array>
+            <mxPoint x="1340" y="950" as="sourcePoint" />
+            <mxPoint x="1330" y="50" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fDAPsRQ8Ur9svstqqIji-153" connectable="0" parent="fDAPsRQ8Ur9svstqqIji-151" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;b&gt;SB03&lt;span style=&quot;font-size: 9.5pt; font-family: 宋体;&quot;&gt;维护与物理接入边界&lt;/span&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.879" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -401,3 +401,14 @@ export interface FunctionPropagationReportRow {
   system_path: string;
   function_ids: string[];
 }
+
+export interface InternalDataFlowReportRow {
+  sdf_id: string;
+  producer: string;
+  consumer: string;
+  data_flow_type: string;
+  content?: string;
+  function_ids: string[];
+  origin_class: string;
+  boundary_reachable: boolean;
+}

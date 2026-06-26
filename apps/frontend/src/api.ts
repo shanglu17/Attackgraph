@@ -8,6 +8,7 @@ import type {
   FunctionPropagationReportRow,
   GraphChangeSet,
   GraphData,
+  InternalDataFlowReportRow,
   ModelingExportData,
   ReviewStatus,
   TrustBoundaryReportRow
@@ -153,6 +154,12 @@ export async function getBoundaryDataFlowReport(): Promise<{ count: number; rows
 export async function getFunctionPropagationReport(): Promise<{ count: number; rows: FunctionPropagationReportRow[] }> {
   const response = await fetch(`${baseUrl}/reports/chapter4/function-propagation`);
   await ensureOk(response, "Failed to load function propagation report");
+  return response.json();
+}
+
+export async function getInternalDataFlowReport(): Promise<{ count: number; rows: InternalDataFlowReportRow[] }> {
+  const response = await fetch(`${baseUrl}/reports/chapter4/internal-data-flows`);
+  await ensureOk(response, "Failed to load internal data flow report");
   return response.json();
 }
 

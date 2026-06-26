@@ -17,6 +17,7 @@ import {
   getBoundaryDataFlowReport,
   getFunctionPropagationReport,
   getGraph,
+  getInternalDataFlowReport,
   getTrustBoundaryReport,
   persistPaths,
   runAnalysis,
@@ -35,6 +36,7 @@ import type {
   ChangeSet,
   DO326ALink,
   FunctionPropagationReportRow,
+  InternalDataFlowReportRow,
   GraphChangeSet,
   GraphData,
   ThreatPoint,
@@ -239,7 +241,8 @@ function downloadJson(payload: unknown, fileName: string): void {
 async function exportChapter4Workbook(
   boundaryRows: TrustBoundaryReportRow[],
   dataFlowRows: BoundaryDataFlowReportRow[],
-  propagationRows: FunctionPropagationReportRow[]
+  propagationRows: FunctionPropagationReportRow[],
+  internalRows: InternalDataFlowReportRow[]
 ): Promise<void> {
   const xlsx = await import("xlsx");
   const wb = xlsx.utils.book_new();
@@ -268,6 +271,21 @@ async function exportChapter4Workbook(
     ])
   ];
   xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(sheet43), "4.3 边界数据流分析");
+
+  const sheet44 = [
+    ["SDF编号", "产生者", "用户", "数据流类型", "内容", "影响功能", "起点归类", "是否边界可达"],
+    ...internalRows.map((row) => [
+      row.sdf_id,
+      row.producer,
+      row.consumer,
+      row.data_flow_type,
+      row.content ?? "",
+      row.function_ids.join("、"),
+      row.origin_class,
+      row.boundary_reachable ? "是" : "否（纯内部）"
+    ])
+  ];
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(sheet44), "4.4 内部数据流分析");
 
   const sheet45 = [
     ["FP编号", "数据类型", "入口BI", "关联BDF", "关联SDF", "系统传播路径", "影响功能"],
@@ -477,6 +495,7 @@ export function App() {
   const [boundaryReport, setBoundaryReport] = useState<TrustBoundaryReportRow[]>([]);
   const [dataFlowReport, setDataFlowReport] = useState<BoundaryDataFlowReportRow[]>([]);
   const [propagationReport, setPropagationReport] = useState<FunctionPropagationReportRow[]>([]);
+  const [internalFlowReport, setInternalFlowReport] = useState<InternalDataFlowReportRow[]>([]);
   const [fpGroupBy, setFpGroupBy] = useState<FpGroupBy>("boundary");
   const [reportLoaded, setReportLoaded] = useState(false);
 
@@ -876,17 +895,20 @@ export function App() {
   async function handleLoadChapter4Report() {
     try {
       setBusy(true);
-      const [tb, bdf, fp] = await Promise.all([
+      const [tb, bdf, fp, idf] = await Promise.all([
         getTrustBoundaryReport(),
         getBoundaryDataFlowReport(),
-        getFunctionPropagationReport()
+        getFunctionPropagationReport(),
+        getInternalDataFlowReport()
       ]);
       setBoundaryReport(tb.rows);
       setDataFlowReport(bdf.rows);
       setPropagationReport(fp.rows);
+      setInternalFlowReport(idf.rows);
       setReportLoaded(true);
+      const pureInternal = idf.rows.filter((row) => !row.boundary_reachable).length;
       setMessage(
-        `第四章报告已加载：信任边界 ${tb.rows.length} 行，边界数据流 ${bdf.rows.length} 行，功能传播路径 ${fp.rows.length} 行`
+        `第四章报告已加载：信任边界 ${tb.rows.length} 行，边界数据流 ${bdf.rows.length} 行，功能传播路径 ${fp.rows.length} 行，内部数据流 ${idf.rows.length} 行（纯内部 ${pureInternal} 条）`
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to load chapter 4 report");
@@ -912,10 +934,15 @@ export function App() {
   async function handleExportChapter4() {
     try {
       setBusy(true);
-      const [tb, bdf, fp] = reportLoaded
-        ? [{ rows: boundaryReport }, { rows: dataFlowReport }, { rows: propagationReport }]
-        : await Promise.all([getTrustBoundaryReport(), getBoundaryDataFlowReport(), getFunctionPropagationReport()]);
-      await exportChapter4Workbook(tb.rows, bdf.rows, fp.rows);
+      const [tb, bdf, fp, idf] = reportLoaded
+        ? [{ rows: boundaryReport }, { rows: dataFlowReport }, { rows: propagationReport }, { rows: internalFlowReport }]
+        : await Promise.all([
+            getTrustBoundaryReport(),
+            getBoundaryDataFlowReport(),
+            getFunctionPropagationReport(),
+            getInternalDataFlowReport()
+          ]);
+      await exportChapter4Workbook(tb.rows, bdf.rows, fp.rows, idf.rows);
       setMessage("第四章报告已导出为 Excel 文件");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to export chapter 4 report");
