@@ -66,19 +66,25 @@ npm workspaces 单仓（`apps/*`）+ Neo4j：
 ## 快速启动
 
 ```bash
-# 1. 启动 Neo4j
+# 1. 配置 Neo4j 凭据（自行设置一个密码）
+cp apps/backend/.env.example apps/backend/.env
+#   编辑 apps/backend/.env，把 NEO4J_PASSWORD 改成你自己的密码
+#   docker compose 会读取根目录 .env 里的 NEO4J_PASSWORD，二者保持一致：
+echo "NEO4J_PASSWORD=你的密码" > .env
+
+# 2. 启动 Neo4j（用上面设置的密码初始化）
 docker compose up -d
 
-# 2. 安装依赖
+# 3. 安装依赖
 npm install
 
-# 3. 启动后端（tsx watch）
+# 4. 启动后端（tsx watch）
 npm run dev
 
-# 4. 启动前端（另开终端）
+# 5. 启动前端（另开终端）
 npm run dev:frontend
 
-# 5. 写入示例数据（另开终端，可选）
+# 6. 写入示例数据（另开终端，可选）
 npm run seed:sample      # DO-356A 示例
 npm run seed:generic     # 通用示例
 ```
@@ -151,7 +157,7 @@ npm run exp:do356a:baseline# 运行 DO-356A 基线实验
 |---|---|
 | Neo4j URI | `bolt://localhost:7687` |
 | Neo4j User | `neo4j` |
-| Neo4j Password | `YB52013140402hh`（可用 `NEO4J_PASSWORD` 覆盖）|
+| Neo4j Password | 自行设置（在 `apps/backend/.env` 与根目录 `.env` 里配置 `NEO4J_PASSWORD`，二者一致） |
 | Backend | `http://localhost:4000`（可用 `PORT` 覆盖）|
 | Frontend | `http://localhost:5173` |
 
