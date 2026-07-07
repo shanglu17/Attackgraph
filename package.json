@@ -12,6 +12,7 @@
     "clear": "npm run clear -w @attackgraph/backend",
     "seed:sample": "npm run seed:sample -w @attackgraph/backend",
     "seed:generic": "npm run seed:generic -w @attackgraph/backend",
+    "standard:f3532:import": "npm run standard:f3532:import -w @attackgraph/backend",
     "exp:do356a:baseline": "npm run exp:do356a:baseline -w @attackgraph/backend"
   },
   "dependencies": {

@@ -1,27 +1,34 @@
 import { Router } from "express";
 import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
+import { StandardRepository } from "../repositories/standardRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
 import { FpAnalysisService } from "../services/fpAnalysisService.js";
 import { CxfImportService, type CxfImportSummary } from "../services/cxfImportService.js";
+import { F3532InputImportService, type F3532InputImportSummary } from "../services/f3532InputImportService.js";
 import { ImportService } from "../services/importService.js";
 import {
   cxfImportRequestSchema,
   do326aLinkSchema,
   do326aReviewSchema,
+  f3532InputImportRequestSchema,
+  f3532StandardImportRequestSchema,
   graphChangeSetSchema,
   modelingExportQuerySchema,
   persistPathsSchema,
   runAnalysisSchema,
   runFpAnalysisSchema,
-  singleSheetImportRequestSchema
+  singleSheetImportRequestSchema,
+  standardMappingRequestSchema
 } from "../types/api.js";
 
 const router = Router();
 const graphRepo = new GraphRepository();
+const standardRepo = new StandardRepository();
 const analysisService = new AnalysisService();
 const fpAnalysisService = new FpAnalysisService();
 const importService = new ImportService();
 const cxfImportService = new CxfImportService();
+const f3532InputImportService = new F3532InputImportService();
 
 const emptyImportSummary = {
   asset_nodes: 0,
@@ -45,6 +52,27 @@ const emptyCxfSummary: CxfImportSummary = {
   auto_placeholder_assets_to_add: 0,
   warnings: [],
   auto_generated_threats: []
+};
+
+const emptyF3532Accepted = {
+  boundary_interfaces: 0,
+  boundary_data_flows: 0,
+  system_interfaces: 0,
+  system_data_flows: 0,
+  threat_actors: 0,
+  trust_boundaries: 0
+};
+
+const emptyF3532Summary: F3532InputImportSummary = {
+  asset_nodes_to_add: 0,
+  asset_edges_to_add: 0,
+  boundary_interfaces_to_add: 0,
+  trust_boundaries_to_add: 0,
+  threat_actors_to_add: 0,
+  system_data_flows_to_add: 0,
+  function_nodes_to_add: 0,
+  function_links_to_add: 0,
+  warnings: []
 };
 
 function toImportRequestErrorResponse(issues: Array<{ path: Array<string | number>; message: string }>) {
@@ -79,8 +107,92 @@ function toCxfImportRequestErrorResponse(issues: Array<{ path: Array<string | nu
   };
 }
 
+function toF3532InputImportRequestErrorResponse(issues: Array<{ path: Array<string | number>; message: string }>) {
+  const error_details = issues.map((issue) => ({
+    type: "field" as const,
+    field: issue.path.join(".") || undefined,
+    message: issue.message
+  }));
+
+  return {
+    ok: false,
+    accepted: emptyF3532Accepted,
+    errors: error_details.map((detail) => (detail.field ? `field / ${detail.field}: ${detail.message}` : detail.message)),
+    error_details,
+    summary: emptyF3532Summary
+  };
+}
+
 router.get("/health", async (_req, res) => {
   res.json({ ok: true });
+});
+
+router.post("/standard/f3532/import", async (req, res, next) => {
+  try {
+    const parsed = f3532StandardImportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ imported: false, errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const summary = await standardRepo.importF3532KnowledgeBase({
+      ...parsed.data,
+      source: {
+        ...parsed.data.source,
+        imported_by: parsed.data.source?.imported_by ?? String(req.headers["x-user-id"] ?? "standard-import")
+      }
+    });
+    return res.status(201).json({ imported: true, summary });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/standard/f3532/summary", async (_req, res, next) => {
+  try {
+    const summary = await standardRepo.getKnowledgeSummary();
+    return res.json(summary);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/standard/f3532/clauses", async (req, res, next) => {
+  try {
+    const clauses = await standardRepo.getClauses("ASTM-F3532-23", req.query.section ? String(req.query.section) : undefined);
+    return res.json({ count: clauses.length, clauses });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/standard/f3532/artifacts", async (_req, res, next) => {
+  try {
+    const artifacts = await standardRepo.getArtifacts();
+    return res.json({ count: artifacts.length, artifacts });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/standard/f3532/mappings", async (_req, res, next) => {
+  try {
+    const mappings = await standardRepo.getMappings();
+    return res.json({ count: mappings.length, mappings });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/standard/f3532/mappings", async (req, res, next) => {
+  try {
+    const parsed = standardMappingRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ created: false, errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const mapping = await standardRepo.upsertMapping(parsed.data);
+    return res.status(201).json({ created: true, mapping });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.post("/admin/seed/sample", async (req, res, next) => {
@@ -186,6 +298,53 @@ router.post("/imports/cxf-asset-inventory/commit", async (req, res, next) => {
   } catch (error) {
     if (error instanceof GraphChangeSetValidationError) {
       const error_details = cxfImportService.createBindingErrors(error.errors);
+      return res.status(409).json({
+        committed: false,
+        ok: false,
+        accepted,
+        errors: error_details.map((detail) => detail.message),
+        error_details,
+        summary
+      });
+    }
+    return next(error);
+  }
+});
+
+router.post("/imports/f3532-input/preview", (req, res) => {
+  const parsed = f3532InputImportRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json(toF3532InputImportRequestErrorResponse(parsed.error.issues));
+  }
+
+  const preview = f3532InputImportService.preview(parsed.data);
+  return res.json(preview);
+});
+
+router.post("/imports/f3532-input/commit", async (req, res, next) => {
+  let accepted = emptyF3532Accepted;
+  let summary = emptyF3532Summary;
+
+  try {
+    const parsed = f3532InputImportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ committed: false, ...toF3532InputImportRequestErrorResponse(parsed.error.issues) });
+    }
+
+    const graphVersion = await graphRepo.getGraphVersion();
+    const prepared = f3532InputImportService.prepareChangeSet(parsed.data, graphVersion);
+    accepted = prepared.accepted;
+    summary = prepared.summary;
+    if (prepared.error_details.length > 0 || !prepared.change_set) {
+      return res.status(400).json({ committed: false, ...prepared });
+    }
+
+    const userId = String(req.headers["x-user-id"] ?? "f3532-input-import");
+    const commit = await graphRepo.commitChangeSet(prepared.change_set, userId);
+    return res.json({ committed: true, ...prepared, ...commit });
+  } catch (error) {
+    if (error instanceof GraphChangeSetValidationError) {
+      const error_details = f3532InputImportService.createBindingErrors(error.errors);
       return res.status(409).json({
         committed: false,
         ok: false,

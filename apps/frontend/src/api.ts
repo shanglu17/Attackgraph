@@ -5,12 +5,19 @@ import type {
   CxfImportPreviewResult,
   CxfImportRequest,
   DO326ALink,
+  F3532InputImportCommitResult,
+  F3532InputImportPreviewResult,
+  F3532InputImportRequest,
   FunctionPropagationReportRow,
   GraphChangeSet,
   GraphData,
   InternalDataFlowReportRow,
   ModelingExportData,
   ReviewStatus,
+  StandardArtifactType,
+  StandardClause,
+  StandardKnowledgeSummary,
+  StandardMapping,
   TrustBoundaryReportRow
 } from "./types";
 
@@ -77,6 +84,24 @@ export async function commitCxfImport(payload: CxfImportRequest): Promise<CxfImp
     body: JSON.stringify(payload)
   });
   return (await response.json()) as CxfImportCommitResult;
+}
+
+export async function previewF3532InputImport(payload: F3532InputImportRequest): Promise<F3532InputImportPreviewResult> {
+  const response = await fetch(`${baseUrl}/imports/f3532-input/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return (await response.json()) as F3532InputImportPreviewResult;
+}
+
+export async function commitF3532InputImport(payload: F3532InputImportRequest): Promise<F3532InputImportCommitResult> {
+  const response = await fetch(`${baseUrl}/imports/f3532-input/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
+    body: JSON.stringify(payload)
+  });
+  return (await response.json()) as F3532InputImportCommitResult;
 }
 
 export async function runAnalysis(payload?: {
@@ -187,6 +212,45 @@ export async function runFunctionPropagationAnalysis(
 export async function getDo326aLinks(): Promise<{ count: number; links: DO326ALink[] }> {
   const response = await fetch(`${baseUrl}/compliance/do326a-links`);
   await ensureOk(response, "Failed to load DO326A links");
+  return response.json();
+}
+
+export async function getF3532StandardSummary(): Promise<StandardKnowledgeSummary> {
+  const response = await fetch(`${baseUrl}/standard/f3532/summary`);
+  await ensureOk(response, "Failed to load F3532 standard summary");
+  return response.json();
+}
+
+export async function getF3532Clauses(section?: string): Promise<{ count: number; clauses: StandardClause[] }> {
+  const searchParams = new URLSearchParams();
+  if (section) {
+    searchParams.set("section", section);
+  }
+  const query = searchParams.toString();
+  const response = await fetch(`${baseUrl}/standard/f3532/clauses${query ? `?${query}` : ""}`);
+  await ensureOk(response, "Failed to load F3532 clauses");
+  return response.json();
+}
+
+export async function getF3532Artifacts(): Promise<{ count: number; artifacts: StandardArtifactType[] }> {
+  const response = await fetch(`${baseUrl}/standard/f3532/artifacts`);
+  await ensureOk(response, "Failed to load F3532 artifacts");
+  return response.json();
+}
+
+export async function getF3532Mappings(): Promise<{ count: number; mappings: StandardMapping[] }> {
+  const response = await fetch(`${baseUrl}/standard/f3532/mappings`);
+  await ensureOk(response, "Failed to load F3532 mappings");
+  return response.json();
+}
+
+export async function createOrUpdateF3532Mapping(mapping: StandardMapping): Promise<{ created: boolean; mapping: StandardMapping }> {
+  const response = await fetch(`${baseUrl}/standard/f3532/mappings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(mapping)
+  });
+  await ensureOk(response, "Failed to save F3532 mapping");
   return response.json();
 }
 

@@ -27,6 +27,7 @@ export interface AssetNode {
   bdf_ids?: string[];
   enters_internal_propagation?: boolean;
   boundary_interface_id?: string;
+  boundary_interface_ids?: string[];
 }
 
 export interface BoundaryInterface {
@@ -153,6 +154,78 @@ export interface DO326ALink {
   mapping_version?: string;
 }
 
+export interface StandardClause {
+  clause_id: string;
+  std: string;
+  parent_id?: string;
+  level?: number;
+  number?: string;
+  section?: string;
+  title_zh?: string;
+  title_en?: string;
+  clause_type?: string;
+  normative?: string;
+  keywords?: string[];
+  pdf_page?: number;
+  text_zh?: string;
+  text_en?: string;
+  notes?: string;
+}
+
+export interface StandardArtifactField {
+  field_id: string;
+  artifact_id: string;
+  artifact_name?: string;
+  seq: number;
+  field_name_zh: string;
+  required: boolean;
+  data_type: string;
+  enum_or_ref?: string;
+  fill_guidance?: string;
+  example?: string;
+  clause_ref?: string;
+  clause_title?: string;
+  source?: string;
+  trace_role?: string;
+}
+
+export interface StandardArtifactType {
+  artifact_id: string;
+  name_zh: string;
+  name_en?: string;
+  io_role: "input" | "output" | "intermediate";
+  pipeline_slot: string;
+  primary_clause_id?: string;
+  primary_clause_title?: string;
+  scope_status?: "active" | "placeholder" | "deprecated";
+  source_ref?: string;
+  description?: string;
+  fields?: StandardArtifactField[];
+}
+
+export interface StandardKnowledgeSummary {
+  standard_id: string;
+  counts: {
+    clauses: number;
+    clause_relations: number;
+    artifact_types: number;
+    artifact_fields: number;
+    pipeline_stages: number;
+  };
+  imported_at?: string;
+}
+
+export interface StandardMapping {
+  mapping_id: string;
+  standard_id: string;
+  clause_id: string;
+  semantic_element_type: string;
+  semantic_element_id: string;
+  linkage_type: "Requirement" | "Evidence" | "Mitigation" | "Input" | "Output";
+  evidence_reference?: string;
+  review_status: ReviewStatus;
+}
+
 export interface GraphData {
   graph_version: string;
   asset_nodes: AssetNode[];
@@ -179,6 +252,13 @@ export interface GraphChangeSet {
   asset_edges: ChangeSet<AssetEdge>;
   threat_points: ChangeSet<ThreatPoint>;
   do326a_links: ChangeSet<DO326ALink>;
+  function_nodes?: ChangeSet<FunctionNode>;
+  trust_boundaries?: ChangeSet<TrustBoundary>;
+  threat_actors?: ChangeSet<ThreatActor>;
+  boundary_interfaces?: ChangeSet<BoundaryInterface>;
+  system_data_flows?: ChangeSet<SystemDataFlow>;
+  function_propagation_paths?: ChangeSet<FunctionPropagationPath>;
+  function_links?: Array<{ asset_id: string; function_id: string }>;
 }
 
 export interface ModelingExportMetadata {
@@ -368,6 +448,135 @@ export interface CxfImportPreviewResult {
 }
 
 export interface CxfImportCommitResult extends CxfImportPreviewResult {
+  committed: boolean;
+  commit_id?: string;
+  new_version?: string;
+}
+
+export interface F3532BoundaryInterfaceRow {
+  id: string;
+  interface_class?: string;
+  external_entity?: string;
+  access_object?: string;
+  access_device?: string;
+  physical_interconnect?: string;
+  logical_protocol?: string;
+  direction?: string;
+  description?: string;
+  notes?: string;
+  excel_row?: number;
+}
+
+export interface F3532BoundaryDataFlowRow {
+  id: string;
+  producer?: string;
+  consumer?: string;
+  destination?: string;
+  description?: string;
+  data_flow_type?: string;
+  target_function?: string;
+  notes?: string;
+  boundary_interface_id?: string;
+  excel_row?: number;
+}
+
+export interface F3532SystemInterfaceRow {
+  id: string;
+  producer?: string;
+  consumer?: string;
+  interface_type?: string;
+  protocol?: string;
+  direction?: string;
+  content?: string;
+  notes?: string;
+  excel_row?: number;
+}
+
+export interface F3532SystemDataFlowRow {
+  id: string;
+  producer?: string;
+  consumer?: string;
+  destination?: string;
+  content?: string;
+  data_flow_type?: string;
+  target_function?: string;
+  failure_condition?: string;
+  notes?: string;
+  system_interface_id?: string;
+  excel_row?: number;
+}
+
+export interface F3532ThreatActorRow {
+  id: string;
+  name?: string;
+  actor_type?: string;
+  description?: string;
+  excel_row?: number;
+}
+
+export interface F3532TrustBoundaryRow {
+  boundary_id: string;
+  name?: string;
+  description?: string;
+  covered_scope?: string;
+  threat_actor_refs?: string;
+  excel_row?: number;
+}
+
+export interface F3532InputImportRequest {
+  template_version: "f3532_input_01_02_v1";
+  source: {
+    aircraft_model: string;
+    file_names?: string[];
+    submitted_by: string;
+    submitted_at: string;
+  };
+  workbook: {
+    boundary_interfaces: F3532BoundaryInterfaceRow[];
+    boundary_data_flows: F3532BoundaryDataFlowRow[];
+    system_interfaces: F3532SystemInterfaceRow[];
+    system_data_flows: F3532SystemDataFlowRow[];
+    threat_actors: F3532ThreatActorRow[];
+    trust_boundaries: F3532TrustBoundaryRow[];
+  };
+}
+
+export interface F3532InputImportErrorDetail {
+  type: "field" | "binding";
+  sheet?: keyof F3532InputImportRequest["workbook"];
+  row?: number;
+  field?: string;
+  message: string;
+}
+
+export interface F3532InputImportSummary {
+  asset_nodes_to_add: number;
+  asset_edges_to_add: number;
+  boundary_interfaces_to_add: number;
+  trust_boundaries_to_add: number;
+  threat_actors_to_add: number;
+  system_data_flows_to_add: number;
+  function_nodes_to_add: number;
+  function_links_to_add: number;
+  warnings: string[];
+}
+
+export interface F3532InputImportPreviewResult {
+  ok: boolean;
+  accepted: {
+    boundary_interfaces: number;
+    boundary_data_flows: number;
+    system_interfaces: number;
+    system_data_flows: number;
+    threat_actors: number;
+    trust_boundaries: number;
+  };
+  errors: string[];
+  error_details: F3532InputImportErrorDetail[];
+  summary: F3532InputImportSummary;
+}
+
+export interface F3532InputImportCommitResult extends F3532InputImportPreviewResult {
   committed: boolean;
   commit_id?: string;
   new_version?: string;

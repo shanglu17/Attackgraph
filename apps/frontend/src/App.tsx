@@ -43,7 +43,7 @@ import type {
   TrustBoundaryReportRow
 } from "./types";
 
-type EntityType = Exclude<keyof GraphChangeSet, "graph_version">;
+type EntityType = "asset_nodes" | "asset_edges" | "threat_points" | "do326a_links";
 type DraftOperation = "add" | "update" | "delete";
 type EditorMode = "form" | "json";
 type EditableEntity = AssetNode | AssetEdge | ThreatPoint | DO326ALink;

@@ -10,6 +10,7 @@
     "clear": "tsx src/scripts/clearGraph.ts",
     "seed:sample": "tsx src/scripts/seedSample.ts",
     "seed:generic": "tsx src/scripts/seedGeneric.ts",
+    "standard:f3532:import": "tsx src/scripts/importF3532Standard.ts",
     "exp:do356a:baseline": "tsx src/scripts/runDo356aBaselineExperiment.ts"
   },
   "dependencies": {

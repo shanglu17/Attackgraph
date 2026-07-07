@@ -160,7 +160,8 @@ export class GraphRepository {
             bdf_ids: (properties.bdf_ids as string[] | undefined) ?? undefined,
             enters_internal_propagation:
               (properties.enters_internal_propagation as boolean | undefined) ?? undefined,
-            boundary_interface_id: (properties.boundary_interface_id as string | undefined) ?? undefined
+            boundary_interface_id: (properties.boundary_interface_id as string | undefined) ?? undefined,
+            boundary_interface_ids: (properties.boundary_interface_ids as string[] | undefined) ?? undefined
           };
         }),
         asset_edges: result.edgesRes.records.map((record) => ({
@@ -327,7 +328,7 @@ export class GraphRepository {
 
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
           await tx.run(
-            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id",
+            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id, a.boundary_interface_ids = $boundary_interface_ids",
             {
               ...asset,
               security_domain: asset.security_domain ?? null,
@@ -340,7 +341,8 @@ export class GraphRepository {
               data_flow_type: asset.data_flow_type ?? null,
               bdf_ids: asset.bdf_ids ?? [],
               enters_internal_propagation: asset.enters_internal_propagation ?? null,
-              boundary_interface_id: asset.boundary_interface_id ?? null
+              boundary_interface_id: asset.boundary_interface_id ?? null,
+              boundary_interface_ids: asset.boundary_interface_ids ?? (asset.boundary_interface_id ? [asset.boundary_interface_id] : [])
             }
           );
         }
@@ -400,12 +402,13 @@ export class GraphRepository {
 
         // Link each BDF interface asset to the boundary interface it flows over.
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
-          if (!asset.boundary_interface_id) {
+          const boundaryInterfaceIds = asset.boundary_interface_ids ?? (asset.boundary_interface_id ? [asset.boundary_interface_id] : []);
+          if (boundaryInterfaceIds.length === 0) {
             continue;
           }
           await tx.run(
-            "MATCH (bi:BoundaryInterface {interface_id: $interface_id}), (a:AssetNode {asset_id: $asset_id}) MERGE (bi)-[:CARRIES_FLOW]->(a)",
-            { interface_id: asset.boundary_interface_id, asset_id: asset.asset_id }
+            "MATCH (a:AssetNode {asset_id: $asset_id}) UNWIND $interface_ids AS interface_id MATCH (bi:BoundaryInterface {interface_id: interface_id}) MERGE (bi)-[:CARRIES_FLOW]->(a)",
+            { interface_ids: boundaryInterfaceIds, asset_id: asset.asset_id }
           );
         }
 

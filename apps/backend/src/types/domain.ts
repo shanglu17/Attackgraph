@@ -25,6 +25,7 @@ export type ThreatSource = "internal" | "external" | "third-party";
 export type PriorityLabel = "High" | "Medium" | "Low";
 
 export type LinkageType = "Requirement" | "Evidence" | "Mitigation";
+export type StandardLinkageType = LinkageType | "Input" | "Output";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
 
 export interface AssetNode {
@@ -48,6 +49,8 @@ export interface AssetNode {
   enters_internal_propagation?: boolean;
   /** For a BDF interface asset: the boundary interface (BI) it flows over (e.g. BI02). */
   boundary_interface_id?: string;
+  /** For a BDF interface asset carried by multiple BIs. */
+  boundary_interface_ids?: string[];
 }
 
 export interface AssetEdge {
@@ -110,6 +113,116 @@ export interface DO326ALink {
   review_status: ReviewStatus;
   reviewer?: string;
   mapping_version?: string;
+}
+
+export type StandardIoRole = "input" | "output" | "intermediate";
+export type StandardScopeStatus = "active" | "placeholder" | "deprecated";
+export type StandardRelationType =
+  | "PARENT_OF"
+  | "REFERENCES"
+  | "TRIGGERS"
+  | "ITERATES_WITH"
+  | "DEPENDS_ON"
+  | "TAILORS"
+  | "DEFINES"
+  | "CHECKS"
+  | "PRODUCES";
+
+export interface StandardClause {
+  clause_id: string;
+  std: string;
+  parent_id?: string;
+  level?: number;
+  number?: string;
+  section?: string;
+  title_zh?: string;
+  title_en?: string;
+  clause_type?: string;
+  normative?: string;
+  keywords?: string[];
+  pdf_page?: number;
+  text_zh?: string;
+  text_en?: string;
+  notes?: string;
+}
+
+export interface StandardClauseRelation {
+  relation_id: string;
+  source_clause_id: string;
+  target_clause_id: string;
+  relation_type: StandardRelationType;
+  description?: string;
+}
+
+export interface StandardArtifactType {
+  artifact_id: string;
+  name_zh: string;
+  name_en?: string;
+  io_role: StandardIoRole;
+  pipeline_slot: string;
+  primary_clause_id?: string;
+  primary_clause_title?: string;
+  scope_status?: StandardScopeStatus;
+  source_ref?: string;
+  description?: string;
+}
+
+export interface StandardArtifactField {
+  field_id: string;
+  artifact_id: string;
+  artifact_name?: string;
+  seq: number;
+  field_name_zh: string;
+  required: boolean;
+  data_type: string;
+  enum_or_ref?: string;
+  fill_guidance?: string;
+  example?: string;
+  clause_ref?: string;
+  clause_title?: string;
+  source?: string;
+  trace_role?: string;
+}
+
+export interface StandardPipelineStage {
+  stage_id: string;
+  stage_name?: string;
+  key_question?: string;
+  inputs?: string[];
+  activities?: string;
+  outputs?: string[];
+  termination_condition?: string;
+}
+
+export interface StandardMapping {
+  mapping_id: string;
+  standard_id: string;
+  clause_id: string;
+  semantic_element_type: string;
+  semantic_element_id: string;
+  linkage_type: StandardLinkageType;
+  evidence_reference?: string;
+  review_status: ReviewStatus;
+}
+
+export interface StandardKnowledgeBase {
+  clauses: StandardClause[];
+  clause_relations: StandardClauseRelation[];
+  artifact_types: StandardArtifactType[];
+  artifact_fields: StandardArtifactField[];
+  pipeline_stages: StandardPipelineStage[];
+}
+
+export interface StandardKnowledgeSummary {
+  standard_id: string;
+  counts: {
+    clauses: number;
+    clause_relations: number;
+    artifact_types: number;
+    artifact_fields: number;
+    pipeline_stages: number;
+  };
+  imported_at?: string;
 }
 
 export type ThreatActorType = "external" | "internal" | "third-party";

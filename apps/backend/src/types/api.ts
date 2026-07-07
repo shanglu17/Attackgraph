@@ -19,7 +19,8 @@ export const assetNodeSchema = z
     data_flow_type: z.string().min(1).optional(),
     bdf_ids: z.array(z.string().min(1)).optional(),
     enters_internal_propagation: z.boolean().optional(),
-    boundary_interface_id: z.string().min(1).optional()
+    boundary_interface_id: z.string().min(1).optional(),
+    boundary_interface_ids: z.array(z.string().min(1)).optional()
   })
   .superRefine((value, ctx) => {
     if (value.asset_type === "Data" && !value.data_classification) {
@@ -115,6 +116,111 @@ export const do326aLinkSchema = z
       });
     }
   });
+
+export const standardClauseSchema = z.object({
+  clause_id: z.string().min(1),
+  std: z.string().min(1),
+  parent_id: z.string().optional(),
+  level: z.number().int().min(1).optional(),
+  number: z.string().optional(),
+  section: z.string().optional(),
+  title_zh: z.string().optional(),
+  title_en: z.string().optional(),
+  clause_type: z.string().optional(),
+  normative: z.string().optional(),
+  keywords: z.array(z.string()).optional(),
+  pdf_page: z.number().int().min(1).optional(),
+  text_zh: z.string().optional(),
+  text_en: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export const standardClauseRelationSchema = z.object({
+  relation_id: z.string().min(1),
+  source_clause_id: z.string().min(1),
+  target_clause_id: z.string().min(1),
+  relation_type: z.enum([
+    "PARENT_OF",
+    "REFERENCES",
+    "TRIGGERS",
+    "ITERATES_WITH",
+    "DEPENDS_ON",
+    "TAILORS",
+    "DEFINES",
+    "CHECKS",
+    "PRODUCES"
+  ]),
+  description: z.string().optional()
+});
+
+export const standardArtifactTypeSchema = z.object({
+  artifact_id: z.string().min(1),
+  name_zh: z.string().min(1),
+  name_en: z.string().optional(),
+  io_role: z.enum(["input", "output", "intermediate"]),
+  pipeline_slot: z.string().min(1),
+  primary_clause_id: z.string().optional(),
+  primary_clause_title: z.string().optional(),
+  scope_status: z.enum(["active", "placeholder", "deprecated"]).optional(),
+  source_ref: z.string().optional(),
+  description: z.string().optional()
+});
+
+export const standardArtifactFieldSchema = z.object({
+  field_id: z.string().min(1),
+  artifact_id: z.string().min(1),
+  artifact_name: z.string().optional(),
+  seq: z.number().int().min(1),
+  field_name_zh: z.string().min(1),
+  required: z.boolean(),
+  data_type: z.string().min(1),
+  enum_or_ref: z.string().optional(),
+  fill_guidance: z.string().optional(),
+  example: z.string().optional(),
+  clause_ref: z.string().optional(),
+  clause_title: z.string().optional(),
+  source: z.string().optional(),
+  trace_role: z.string().optional()
+});
+
+export const standardPipelineStageSchema = z.object({
+  stage_id: z.string().min(1),
+  stage_name: z.string().optional(),
+  key_question: z.string().optional(),
+  inputs: z.array(z.string()).optional(),
+  activities: z.string().optional(),
+  outputs: z.array(z.string()).optional(),
+  termination_condition: z.string().optional()
+});
+
+export const standardMappingSchema = z.object({
+  mapping_id: z.string().min(1),
+  standard_id: z.string().min(1),
+  clause_id: z.string().min(1),
+  semantic_element_type: z.string().min(1),
+  semantic_element_id: z.string().min(1),
+  linkage_type: z.enum(["Requirement", "Evidence", "Mitigation", "Input", "Output"]),
+  evidence_reference: z.string().optional(),
+  review_status: z.enum(["Draft", "Reviewed", "Approved"]).default("Draft")
+});
+
+export const f3532StandardImportRequestSchema = z.object({
+  standard_id: z.string().default("ASTM-F3532-23"),
+  source: z
+    .object({
+      model_version: z.string().optional(),
+      imported_by: z.string().optional(),
+      source_ref: z.string().optional()
+    })
+    .optional(),
+  clauses: z.array(standardClauseSchema),
+  clause_relations: z.array(standardClauseRelationSchema).default([]),
+  artifact_types: z.array(standardArtifactTypeSchema).default([]),
+  artifact_fields: z.array(standardArtifactFieldSchema).default([]),
+  pipeline_stages: z.array(standardPipelineStageSchema).default([])
+});
+
+export const standardMappingRequestSchema = standardMappingSchema;
 
 const changeSetSchema = <T extends z.ZodTypeAny>(schema: T) =>
   z.object({
@@ -384,6 +490,94 @@ export const cxfImportRequestSchema = z.object({
   })
 });
 
+const f3532RowBaseSchema = {
+  id: z.union([z.string(), z.number()]).transform((value) => String(value).trim()),
+  excel_row: z.number().int().min(2).optional()
+} as const;
+
+export const f3532BoundaryInterfaceRowSchema = z.object({
+  ...f3532RowBaseSchema,
+  interface_class: z.string().optional(),
+  external_entity: z.string().optional(),
+  access_object: z.string().optional(),
+  access_device: z.string().optional(),
+  physical_interconnect: z.string().optional(),
+  logical_protocol: z.string().optional(),
+  direction: z.string().optional(),
+  description: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export const f3532BoundaryDataFlowRowSchema = z.object({
+  ...f3532RowBaseSchema,
+  producer: z.string().optional(),
+  consumer: z.string().optional(),
+  destination: z.string().optional(),
+  description: z.string().optional(),
+  data_flow_type: z.string().optional(),
+  target_function: z.string().optional(),
+  notes: z.string().optional(),
+  boundary_interface_id: z.string().optional()
+});
+
+export const f3532SystemInterfaceRowSchema = z.object({
+  ...f3532RowBaseSchema,
+  producer: z.string().optional(),
+  consumer: z.string().optional(),
+  interface_type: z.string().optional(),
+  protocol: z.string().optional(),
+  direction: z.string().optional(),
+  content: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export const f3532SystemDataFlowRowSchema = z.object({
+  ...f3532RowBaseSchema,
+  producer: z.string().optional(),
+  consumer: z.string().optional(),
+  destination: z.string().optional(),
+  content: z.string().optional(),
+  data_flow_type: z.string().optional(),
+  target_function: z.string().optional(),
+  failure_condition: z.string().optional(),
+  notes: z.string().optional(),
+  system_interface_id: z.string().optional()
+});
+
+export const f3532ThreatActorRowSchema = z.object({
+  ...f3532RowBaseSchema,
+  name: z.string().optional(),
+  actor_type: z.string().optional(),
+  description: z.string().optional()
+});
+
+export const f3532TrustBoundaryRowSchema = z.object({
+  boundary_id: z.string().min(1),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  covered_scope: z.string().optional(),
+  threat_actor_refs: z.string().optional(),
+  excel_row: z.number().int().min(2).optional()
+});
+
+export const f3532InputImportRequestSchema = z.object({
+  template_version: z.literal("f3532_input_01_02_v1"),
+  source: z.object({
+    aircraft_model: z.string().min(1).default("ASTRA-F3532"),
+    file_names: z.array(z.string()).optional(),
+    submitted_by: z.string().min(1),
+    submitted_at: z.string().datetime()
+  }),
+  workbook: z.object({
+    boundary_interfaces: z.array(f3532BoundaryInterfaceRowSchema).default([]),
+    boundary_data_flows: z.array(f3532BoundaryDataFlowRowSchema).default([]),
+    system_interfaces: z.array(f3532SystemInterfaceRowSchema).default([]),
+    system_data_flows: z.array(f3532SystemDataFlowRowSchema).default([]),
+    threat_actors: z.array(f3532ThreatActorRowSchema).default([]),
+    trust_boundaries: z.array(f3532TrustBoundaryRowSchema).default([])
+  })
+});
+
 export const modelingExportQuerySchema = z.object({
   analysis_batch_id: z.preprocess((value) => {
     if (typeof value !== "string") {
@@ -396,4 +590,6 @@ export const modelingExportQuerySchema = z.object({
 
 export type SingleSheetImportRequest = z.infer<typeof singleSheetImportRequestSchema>;
 export type CxfImportRequest = z.infer<typeof cxfImportRequestSchema>;
+export type F3532StandardImportRequest = z.infer<typeof f3532StandardImportRequestSchema>;
+export type F3532InputImportRequest = z.infer<typeof f3532InputImportRequestSchema>;
 export type ModelingExportQuery = z.infer<typeof modelingExportQuerySchema>;

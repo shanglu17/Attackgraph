@@ -3,10 +3,12 @@ import express from "express";
 import { env } from "./config/env.js";
 import { closeDriver } from "./db/neo4j.js";
 import { GraphRepository } from "./repositories/graphRepository.js";
+import { StandardRepository } from "./repositories/standardRepository.js";
 import router from "./routes/index.js";
 
 const app = express();
 const graphRepo = new GraphRepository();
+const standardRepo = new StandardRepository();
 
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -18,7 +20,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 });
 
 const start = async () => {
-  await graphRepo.ensureConstraints();
+  await Promise.all([graphRepo.ensureConstraints(), standardRepo.ensureConstraints()]);
   app.listen(env.port, () => {
     console.log(`Backend API listening on http://localhost:${env.port}`);
   });
