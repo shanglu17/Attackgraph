@@ -85,21 +85,7 @@ export class F353204Service {
       }
     }
 
-    const pathById = new Map(paths.map((path) => [path.path_id, path]));
-    const threatScenarios = threatConditions.map((tc, index) => {
-      const path = tc.path_ids.map((id) => pathById.get(id)).find((item): item is ThreatPathContext => Boolean(item));
-      const actor = path?.threat_actors[0];
-      return {
-        ts_id: `TS-${String(index + 1).padStart(3, "0")}`,
-        threat_actor_id: actor?.actor_id,
-        tc_ids: [tc.tc_id],
-        attack_vector: this.inferAttackVector(actor, path),
-        attack_path: this.buildAttackPath(actor, path),
-        existing_security_measures: undefined,
-        review_status: "Draft",
-        is_default: true
-      } satisfies ThreatScenario;
-    });
+    const threatScenarios = this.buildThreatScenarios(threatConditions, paths);
 
     const unlinked = failureConditions
       .filter((fc) => !linkedFailureConditionIds.has(fc.failure_condition_id))
@@ -123,6 +109,58 @@ export class F353204Service {
       return [["C"], ["I"], ["A"], ["C", "I"], ["C", "A"], ["I", "A"], ["C", "I", "A"]];
     }
     return [["C"], ["I"], ["A"]];
+  }
+
+  private buildThreatScenarios(
+    threatConditions: ThreatCondition[],
+    paths: ThreatPathContext[]
+  ): ThreatScenario[] {
+    const pathById = new Map(paths.map((path) => [path.path_id, path]));
+    const groups = new Map<
+      string,
+      {
+        actor?: ThreatPathActorContext;
+        path?: ThreatPathContext;
+        attackVector?: AttackVector;
+        tcIds: Set<string>;
+      }
+    >();
+
+    for (const tc of threatConditions) {
+      let matched = false;
+      for (const pathId of tc.path_ids) {
+        const path = pathById.get(pathId);
+        if (!path) {
+          continue;
+        }
+        const actors = [...path.threat_actors].sort((a, b) => a.actor_id.localeCompare(b.actor_id));
+        for (const actor of actors) {
+          const attackVector = this.inferAttackVector(actor, path);
+          const key = `${path.path_id}|${actor.actor_id}|${attackVector ?? ""}`;
+          const group = groups.get(key) ?? { actor, path, attackVector, tcIds: new Set<string>() };
+          group.tcIds.add(tc.tc_id);
+          groups.set(key, group);
+          matched = true;
+        }
+      }
+
+      if (!matched) {
+        groups.set(`unlinked|${tc.tc_id}`, { tcIds: new Set([tc.tc_id]) });
+      }
+    }
+
+    return Array.from(groups.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([, group], index) => ({
+        ts_id: `TS-${String(index + 1).padStart(3, "0")}`,
+        threat_actor_id: group.actor?.actor_id,
+        tc_ids: Array.from(group.tcIds).sort(),
+        attack_vector: group.attackVector,
+        attack_path: this.buildAttackPath(group.actor, group.path),
+        existing_security_measures: undefined,
+        review_status: "Draft",
+        is_default: true
+      } satisfies ThreatScenario));
   }
 
   private resolveFunctionIds(fc: FailureConditionContext, paths: ThreatPathContext[]): string[] {
