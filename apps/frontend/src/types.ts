@@ -1,5 +1,7 @@
 export type PriorityLabel = "High" | "Medium" | "Low";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
+export type FhaSeverity = "Catastrophic" | "Hazardous" | "Major" | "Minor" | "NoSafetyEffect" | "Unknown";
+export type CiaAttribute = "C" | "I" | "A";
 export type CxfSheetName =
   | "functional_assets"
   | "interface_assets"
@@ -73,7 +75,84 @@ export interface SystemDataFlow {
   content?: string;
   data_flow_type?: string;
   function_ids?: string[];
+  failure_condition_ids?: string[];
+  system_interface_id?: string;
   description?: string;
+}
+
+export interface FailureCondition {
+  failure_condition_id: string;
+  name: string;
+  flight_phases: string[];
+  hazard_class: string;
+  severity: FhaSeverity;
+  max_failure_probability?: string;
+  source_ref?: string;
+  notes?: string;
+  sdf_ids?: string[];
+  function_ids?: string[];
+  path_ids?: string[];
+}
+
+export interface ThreatCondition {
+  tc_id: string;
+  function_id?: string;
+  failure_condition_ids: string[];
+  cia_attributes: CiaAttribute[];
+  description?: string;
+  aircraft_effect?: string;
+  system_effect?: string;
+  crew_effect?: string;
+  occupant_effect?: string;
+  severity: FhaSeverity;
+  severity_source: "FHA" | "manual" | "default";
+  path_ids: string[];
+  coverage_status: "linked" | "unlinked";
+  review_status: ReviewStatus;
+  is_default?: boolean;
+}
+
+export interface ThreatScenario {
+  ts_id: string;
+  threat_actor_id?: string;
+  tc_ids: string[];
+  attack_vector?: "Network" | "Wireless" | "Physical" | "Maintenance" | "SupplyChain";
+  attack_path: string;
+  existing_security_measures?: string;
+  review_status: ReviewStatus;
+  is_default?: boolean;
+}
+
+export interface FhaImportRequest {
+  source: {
+    file_name: string;
+    submitted_by: string;
+    submitted_at: string;
+  };
+  failure_conditions: FailureCondition[];
+}
+
+export interface F353204Defaults {
+  cia_modes: Array<{ value: "single" | "all_non_empty"; label: string }>;
+  aircraft_effect_options: string[];
+  system_effect_options: string[];
+  crew_effect_options: string[];
+  occupant_effect_options: string[];
+  reference_notes: string[];
+}
+
+export interface F353204GenerationResult {
+  generated: boolean;
+  defaults: F353204Defaults;
+  threat_conditions: ThreatCondition[];
+  threat_scenarios: ThreatScenario[];
+  coverage: {
+    total_failure_conditions: number;
+    linked_failure_conditions: number;
+    unlinked_failure_condition_ids: string[];
+    generated_tc_count: number;
+    generated_ts_count: number;
+  };
 }
 
 export interface FunctionPropagationPath {
@@ -620,4 +699,22 @@ export interface InternalDataFlowReportRow {
   function_ids: string[];
   origin_class: string;
   boundary_reachable: boolean;
+}
+
+export interface F3532Report03Data {
+  metadata: {
+    generated_at?: string;
+    loaded_at?: string;
+    graph_version: string;
+    fp_count?: number;
+  };
+  boundary_data_flows: {
+    count: number;
+    rows: BoundaryDataFlowReportRow[];
+  };
+  function_propagation: {
+    count: number;
+    rows: FunctionPropagationReportRow[];
+  };
+  generated?: boolean;
 }

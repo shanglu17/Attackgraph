@@ -277,7 +277,68 @@ export const systemDataFlowSchema = z.object({
   content: z.string().max(500).optional(),
   data_flow_type: z.string().max(32).optional(),
   function_ids: z.array(z.string().min(1).max(32)).optional(),
+  failure_condition_ids: z.array(z.string().min(1).max(64)).optional(),
+  system_interface_id: z.string().min(1).max(32).optional(),
   description: z.string().max(500).optional()
+});
+
+export const failureConditionSchema = z.object({
+  failure_condition_id: z.string().min(1).max(64),
+  name: z.string().min(1).max(500),
+  flight_phases: z.array(z.string().min(1).max(32)).default([]),
+  hazard_class: z.string().min(1).max(32),
+  severity: z.enum(["Catastrophic", "Hazardous", "Major", "Minor", "NoSafetyEffect", "Unknown"]),
+  max_failure_probability: z.string().max(64).optional(),
+  source_ref: z.string().max(500).optional(),
+  notes: z.string().max(1000).optional()
+});
+
+export const fhaImportRequestSchema = z.object({
+  source: z.object({
+    file_name: z.string().min(1),
+    submitted_by: z.string().min(1),
+    submitted_at: z.string().datetime()
+  }),
+  failure_conditions: z.array(failureConditionSchema).min(1)
+});
+
+export const threatConditionSchema = z.object({
+  tc_id: z.string().min(1).max(64),
+  function_id: z.string().min(1).max(32).optional(),
+  failure_condition_ids: z.array(z.string().min(1).max(64)).min(1),
+  cia_attributes: z.array(z.enum(["C", "I", "A"])).min(1),
+  description: z.string().max(1000).optional(),
+  aircraft_effect: z.string().max(1000).optional(),
+  system_effect: z.string().max(1000).optional(),
+  crew_effect: z.string().max(1000).optional(),
+  occupant_effect: z.string().max(1000).optional(),
+  severity: z.enum(["Catastrophic", "Hazardous", "Major", "Minor", "NoSafetyEffect", "Unknown"]),
+  severity_source: z.enum(["FHA", "manual", "default"]),
+  path_ids: z.array(z.string().min(1).max(64)).default([]),
+  coverage_status: z.enum(["linked", "unlinked"]),
+  review_status: z.enum(["Draft", "Reviewed", "Approved"]).default("Draft"),
+  is_default: z.boolean().optional()
+});
+
+export const threatScenarioSchema = z.object({
+  ts_id: z.string().min(1).max(64),
+  threat_actor_id: z.string().min(1).max(64).optional(),
+  tc_ids: z.array(z.string().min(1).max(64)).min(1),
+  attack_vector: z.enum(["Network", "Wireless", "Physical", "Maintenance", "SupplyChain"]).optional(),
+  attack_path: z.string().max(2000),
+  existing_security_measures: z.string().max(2000).optional(),
+  review_status: z.enum(["Draft", "Reviewed", "Approved"]).default("Draft"),
+  is_default: z.boolean().optional()
+});
+
+export const generateF353204Schema = z.object({
+  cia_mode: z.enum(["single", "all_non_empty"]).default("single"),
+  include_unlinked_failure_conditions: z.boolean().default(true)
+});
+
+export const commitF353204Schema = z.object({
+  threat_conditions: z.array(threatConditionSchema),
+  threat_scenarios: z.array(threatScenarioSchema)
 });
 
 export const functionPropagationPathSchema = z.object({
@@ -592,4 +653,7 @@ export type SingleSheetImportRequest = z.infer<typeof singleSheetImportRequestSc
 export type CxfImportRequest = z.infer<typeof cxfImportRequestSchema>;
 export type F3532StandardImportRequest = z.infer<typeof f3532StandardImportRequestSchema>;
 export type F3532InputImportRequest = z.infer<typeof f3532InputImportRequestSchema>;
+export type FhaImportRequest = z.infer<typeof fhaImportRequestSchema>;
+export type GenerateF353204Request = z.infer<typeof generateF353204Schema>;
+export type CommitF353204Request = z.infer<typeof commitF353204Schema>;
 export type ModelingExportQuery = z.infer<typeof modelingExportQuerySchema>;

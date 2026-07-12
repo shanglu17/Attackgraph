@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
+import { F3532AnalysisRepository } from "../repositories/f3532AnalysisRepository.js";
 import { StandardRepository } from "../repositories/standardRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
 import { FpAnalysisService } from "../services/fpAnalysisService.js";
 import { CxfImportService, type CxfImportSummary } from "../services/cxfImportService.js";
 import { F3532InputImportService, type F3532InputImportSummary } from "../services/f3532InputImportService.js";
+import { F353204Service, f353204Defaults } from "../services/f353204Service.js";
 import { ImportService } from "../services/importService.js";
 import {
   cxfImportRequestSchema,
@@ -12,6 +14,9 @@ import {
   do326aReviewSchema,
   f3532InputImportRequestSchema,
   f3532StandardImportRequestSchema,
+  fhaImportRequestSchema,
+  generateF353204Schema,
+  commitF353204Schema,
   graphChangeSetSchema,
   modelingExportQuerySchema,
   persistPathsSchema,
@@ -23,12 +28,14 @@ import {
 
 const router = Router();
 const graphRepo = new GraphRepository();
+const f3532AnalysisRepo = new F3532AnalysisRepository();
 const standardRepo = new StandardRepository();
 const analysisService = new AnalysisService();
 const fpAnalysisService = new FpAnalysisService();
 const importService = new ImportService();
 const cxfImportService = new CxfImportService();
 const f3532InputImportService = new F3532InputImportService();
+const f353204Service = new F353204Service();
 
 const emptyImportSummary = {
   asset_nodes: 0,
@@ -358,6 +365,99 @@ router.post("/imports/f3532-input/commit", async (req, res, next) => {
   }
 });
 
+router.post("/imports/fha/preview", (req, res) => {
+  const parsed = fhaImportRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      ok: false,
+      errors: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+    });
+  }
+  const ids = parsed.data.failure_conditions.map((item) => item.failure_condition_id);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+  if (duplicates.length > 0) {
+    return res.status(400).json({ ok: false, errors: [`duplicate failure condition ids: ${Array.from(new Set(duplicates)).join(", ")}`] });
+  }
+  const severity_counts = parsed.data.failure_conditions.reduce<Record<string, number>>((counts, item) => {
+    counts[item.severity] = (counts[item.severity] ?? 0) + 1;
+    return counts;
+  }, {});
+  return res.json({ ok: true, count: parsed.data.failure_conditions.length, severity_counts, errors: [] });
+});
+
+router.post("/imports/fha/commit", async (req, res, next) => {
+  try {
+    const parsed = fhaImportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ committed: false, errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const result = await f3532AnalysisRepo.importFailureConditions(parsed.data);
+    return res.json({ committed: true, ...result });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/fha/failure-conditions", async (_req, res, next) => {
+  try {
+    const rows = await f3532AnalysisRepo.getFailureConditionContexts();
+    return res.json({ count: rows.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/analysis/f3532/04/defaults", (_req, res) => {
+  return res.json(f353204Defaults);
+});
+
+router.post("/analysis/f3532/generate-04", async (req, res, next) => {
+  try {
+    const parsed = generateF353204Schema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ generated: false, errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const [failureConditions, paths] = await Promise.all([
+      f3532AnalysisRepo.getFailureConditionContexts(),
+      f3532AnalysisRepo.getThreatPathContexts()
+    ]);
+    const result = f353204Service.generate(parsed.data, failureConditions, paths);
+    return res.json({ generated: true, ...result });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/analysis/f3532/commit-04", async (req, res, next) => {
+  try {
+    const parsed = commitF353204Schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ committed: false, errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    await f3532AnalysisRepo.replaceF353204(parsed.data.threat_conditions, parsed.data.threat_scenarios);
+    return res.json({
+      committed: true,
+      threat_condition_count: parsed.data.threat_conditions.length,
+      threat_scenario_count: parsed.data.threat_scenarios.length
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/reports/f3532/04", async (_req, res, next) => {
+  try {
+    const report = await f3532AnalysisRepo.getF353204();
+    return res.json({
+      threat_condition_count: report.threat_conditions.length,
+      threat_scenario_count: report.threat_scenarios.length,
+      ...report
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/graph", async (_req, res, next) => {
   try {
     const data = await graphRepo.getGraph();
@@ -532,6 +632,53 @@ router.post("/analysis/function-propagation/run", async (req, res, next) => {
     await graphRepo.replaceFunctionPropagationPaths(fps);
     const rows = await graphRepo.getFunctionPropagationReport();
     return res.json({ count: rows.length, fp_count: fps.length, rows });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/analysis/f3532/generate-03", async (req, res, next) => {
+  try {
+    const parsed = runFpAnalysisSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const inputs = await graphRepo.getFunctionPropagationInputs();
+    const fps = fpAnalysisService.run({ ...inputs, max_hops: parsed.data.max_hops, group_by: parsed.data.group_by });
+    await graphRepo.replaceFunctionPropagationPaths(fps);
+    const [boundaryDataFlows, functionPropagation] = await Promise.all([
+      graphRepo.getBoundaryDataFlowReport(),
+      graphRepo.getFunctionPropagationReport()
+    ]);
+    return res.json({
+      generated: true,
+      metadata: {
+        generated_at: new Date().toISOString(),
+        graph_version: await graphRepo.getGraphVersion(),
+        fp_count: fps.length
+      },
+      boundary_data_flows: { count: boundaryDataFlows.length, rows: boundaryDataFlows },
+      function_propagation: { count: functionPropagation.length, rows: functionPropagation }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/reports/f3532/03", async (_req, res, next) => {
+  try {
+    const [boundaryDataFlows, functionPropagation] = await Promise.all([
+      graphRepo.getBoundaryDataFlowReport(),
+      graphRepo.getFunctionPropagationReport()
+    ]);
+    return res.json({
+      metadata: {
+        loaded_at: new Date().toISOString(),
+        graph_version: await graphRepo.getGraphVersion()
+      },
+      boundary_data_flows: { count: boundaryDataFlows.length, rows: boundaryDataFlows },
+      function_propagation: { count: functionPropagation.length, rows: functionPropagation }
+    });
   } catch (error) {
     return next(error);
   }

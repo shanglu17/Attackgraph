@@ -61,6 +61,9 @@ export class GraphRepository {
       await session.run("CREATE CONSTRAINT boundary_interface_unique IF NOT EXISTS FOR (bi:BoundaryInterface) REQUIRE bi.interface_id IS UNIQUE");
       await session.run("CREATE CONSTRAINT system_data_flow_unique IF NOT EXISTS FOR (sdf:SystemDataFlow) REQUIRE sdf.sdf_id IS UNIQUE");
       await session.run("CREATE CONSTRAINT function_propagation_unique IF NOT EXISTS FOR (fp:FunctionPropagationPath) REQUIRE fp.fp_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT failure_condition_unique IF NOT EXISTS FOR (fc:FailureCondition) REQUIRE fc.failure_condition_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT threat_condition_unique IF NOT EXISTS FOR (tc:ThreatCondition) REQUIRE tc.tc_id IS UNIQUE");
+      await session.run("CREATE CONSTRAINT threat_scenario_unique IF NOT EXISTS FOR (ts:ThreatScenario) REQUIRE ts.ts_id IS UNIQUE");
       await session.run("DROP CONSTRAINT path_unique IF EXISTS");
       await session.run(
         `MATCH (p:AttackPath)
@@ -118,7 +121,7 @@ export class GraphRepository {
             ),
             tx.run("MATCH (bi:BoundaryInterface) RETURN bi ORDER BY bi.interface_id"),
             tx.run(
-              "MATCH (sdf:SystemDataFlow) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id"
+              "MATCH (sdf:SystemDataFlow) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, sdf.failure_condition_ids AS failure_condition_ids, sdf.system_interface_id AS system_interface_id, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id"
             ),
             tx.run(
               "MATCH (fp:FunctionPropagationPath) OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode) OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow) RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type_label, fp.system_path_text AS system_path_text, fp.sdf_note AS sdf_note, fp.description AS description, collect(DISTINCT bdf.business_id) AS bdf_ids, collect(DISTINCT sdf.sdf_id) AS sdf_ids ORDER BY fp_id"
@@ -254,7 +257,9 @@ export class GraphRepository {
           content: (record.get("content") as string | null) ?? undefined,
           data_flow_type: (record.get("data_flow_type") as string | null) ?? undefined,
           description: (record.get("description") as string | null) ?? undefined,
-          function_ids: ((record.get("function_ids") as unknown[]) ?? []).map((value) => String(value))
+          function_ids: ((record.get("function_ids") as unknown[]) ?? []).map((value) => String(value)),
+          failure_condition_ids: ((record.get("failure_condition_ids") as unknown[]) ?? []).map((value) => String(value)),
+          system_interface_id: (record.get("system_interface_id") as string | null) ?? undefined
         })),
         function_propagation_paths: result.fpRes.records.map((record) => ({
           fp_id: record.get("fp_id") as string,
@@ -378,7 +383,7 @@ export class GraphRepository {
           ...(changeSet.boundary_interfaces?.update ?? [])
         ]) {
           await tx.run(
-            "MERGE (bi:BoundaryInterface {interface_id: $interface_id}) SET bi.name = $name, bi.interface_class = $interface_class, bi.external_entity = $external_entity, bi.access_object = $access_object, bi.physical_interconnect = $physical_interconnect, bi.logical_protocol = $logical_protocol, bi.direction = $direction, bi.boundary_id = $boundary_id, bi.description = $description WITH bi OPTIONAL MATCH (bi)-[old:CARRIES_FLOW]->() DELETE old WITH bi OPTIONAL MATCH (sb:TrustBoundary)-[oldhi:HAS_INTERFACE]->(bi) DELETE oldhi",
+            "MERGE (bi:BoundaryInterface {interface_id: $interface_id}) SET bi.name = $name, bi.interface_class = $interface_class, bi.external_entity = $external_entity, bi.access_object = $access_object, bi.physical_interconnect = $physical_interconnect, bi.logical_protocol = $logical_protocol, bi.direction = $direction, bi.boundary_id = $boundary_id, bi.description = $description WITH bi OPTIONAL MATCH (bi)-[old:CARRIES|CARRIES_FLOW]->() DELETE old WITH bi OPTIONAL MATCH (sb:TrustBoundary)-[oldhi:HAS_INTERFACE]->(bi) DELETE oldhi",
             {
               interface_id: bi.interface_id,
               name: bi.name ?? null,
@@ -407,7 +412,7 @@ export class GraphRepository {
             continue;
           }
           await tx.run(
-            "MATCH (a:AssetNode {asset_id: $asset_id}) UNWIND $interface_ids AS interface_id MATCH (bi:BoundaryInterface {interface_id: interface_id}) MERGE (bi)-[:CARRIES_FLOW]->(a)",
+            "MATCH (a:AssetNode {asset_id: $asset_id}) UNWIND $interface_ids AS interface_id MATCH (bi:BoundaryInterface {interface_id: interface_id}) MERGE (bi)-[:CARRIES]->(a) MERGE (bi)-[:CARRIES_FLOW]->(a)",
             { interface_ids: boundaryInterfaceIds, asset_id: asset.asset_id }
           );
         }
@@ -428,19 +433,25 @@ export class GraphRepository {
           ...(changeSet.system_data_flows?.update ?? [])
         ]) {
           await tx.run(
-            "MERGE (sdf:SystemDataFlow {sdf_id: $sdf_id}) SET sdf.producer = $producer, sdf.consumer = $consumer, sdf.content = $content, sdf.data_flow_type = $data_flow_type, sdf.description = $description WITH sdf OPTIONAL MATCH (sdf)-[old:SUPPORTS_FUNCTION]->() DELETE old",
+            "MERGE (sdf:SystemDataFlow {sdf_id: $sdf_id}) SET sdf.producer = $producer, sdf.consumer = $consumer, sdf.content = $content, sdf.data_flow_type = $data_flow_type, sdf.description = $description, sdf.failure_condition_ids = $failure_condition_ids, sdf.system_interface_id = $system_interface_id WITH sdf OPTIONAL MATCH (sdf)-[old:SUPPORTS_FUNCTION|TRACES_TO]->() DELETE old",
             {
               sdf_id: sdf.sdf_id,
               producer: sdf.producer ?? null,
               consumer: sdf.consumer ?? null,
               content: sdf.content ?? null,
               data_flow_type: sdf.data_flow_type ?? null,
-              description: sdf.description ?? null
+              description: sdf.description ?? null,
+              failure_condition_ids: sdf.failure_condition_ids ?? [],
+              system_interface_id: sdf.system_interface_id ?? null
             }
           );
           await tx.run(
             "MATCH (sdf:SystemDataFlow {sdf_id: $sdf_id}) UNWIND $function_ids AS fid MATCH (f:FunctionNode {function_id: fid}) MERGE (sdf)-[:SUPPORTS_FUNCTION]->(f)",
             { sdf_id: sdf.sdf_id, function_ids: sdf.function_ids ?? [] }
+          );
+          await tx.run(
+            "MATCH (sdf:SystemDataFlow {sdf_id: $sdf_id}) UNWIND $failure_condition_ids AS fcid MATCH (fc:FailureCondition {failure_condition_id: fcid}) MERGE (sdf)-[:TRACES_TO]->(fc)",
+            { sdf_id: sdf.sdf_id, failure_condition_ids: sdf.failure_condition_ids ?? [] }
           );
         }
 
@@ -619,7 +630,7 @@ export class GraphRepository {
     try {
       const result = await session.executeRead((tx) =>
         tx.run(
-          `MATCH (sb:TrustBoundary)-[:HAS_INTERFACE]->(bi:BoundaryInterface)-[:CARRIES_FLOW]->(bdf:AssetNode)
+          `MATCH (sb:TrustBoundary)-[:HAS_INTERFACE]->(bi:BoundaryInterface)-[:CARRIES|CARRIES_FLOW]->(bdf:AssetNode)
            OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
            RETURN sb.boundary_id AS boundary_id, sb.name AS boundary_name,
                   bi.interface_id AS interface_id,
@@ -696,7 +707,7 @@ export class GraphRepository {
         tx.run(
           `MATCH (fp:FunctionPropagationPath)
            OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode)
-           OPTIONAL MATCH (bi:BoundaryInterface)-[:CARRIES_FLOW]->(bdf)
+           OPTIONAL MATCH (bi:BoundaryInterface)-[:CARRIES|CARRIES_FLOW]->(bdf)
            OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(fb:FunctionNode)
            OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow)
            OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(fs:FunctionNode)

@@ -8,6 +8,11 @@ import type {
   F3532InputImportCommitResult,
   F3532InputImportPreviewResult,
   F3532InputImportRequest,
+  F3532Report03Data,
+  F353204Defaults,
+  F353204GenerationResult,
+  FailureCondition,
+  FhaImportRequest,
   FunctionPropagationReportRow,
   GraphChangeSet,
   GraphData,
@@ -18,6 +23,8 @@ import type {
   StandardClause,
   StandardKnowledgeSummary,
   StandardMapping,
+  ThreatCondition,
+  ThreatScenario,
   TrustBoundaryReportRow
 } from "./types";
 
@@ -102,6 +109,83 @@ export async function commitF3532InputImport(payload: F3532InputImportRequest): 
     body: JSON.stringify(payload)
   });
   return (await response.json()) as F3532InputImportCommitResult;
+}
+
+export async function previewFhaImport(payload: FhaImportRequest): Promise<{
+  ok: boolean;
+  count?: number;
+  severity_counts?: Record<string, number>;
+  errors: string[];
+}> {
+  const response = await fetch(`${baseUrl}/imports/fha/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return response.json();
+}
+
+export async function commitFhaImport(payload: FhaImportRequest): Promise<{
+  committed: boolean;
+  imported?: number;
+  linked_sdf_count?: number;
+  unlinked_failure_condition_ids?: string[];
+  errors?: string[];
+}> {
+  const response = await fetch(`${baseUrl}/imports/fha/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
+    body: JSON.stringify(payload)
+  });
+  return response.json();
+}
+
+export async function getFailureConditions(): Promise<{ count: number; rows: FailureCondition[] }> {
+  const response = await fetch(`${baseUrl}/fha/failure-conditions`);
+  await ensureOk(response, "Failed to load FHA failure conditions");
+  return response.json();
+}
+
+export async function getF353204Defaults(): Promise<F353204Defaults> {
+  const response = await fetch(`${baseUrl}/analysis/f3532/04/defaults`);
+  await ensureOk(response, "Failed to load F3532 04 defaults");
+  return response.json();
+}
+
+export async function generateF353204(options: {
+  cia_mode: "single" | "all_non_empty";
+  include_unlinked_failure_conditions?: boolean;
+}): Promise<F353204GenerationResult> {
+  const response = await fetch(`${baseUrl}/analysis/f3532/generate-04`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(options)
+  });
+  await ensureOk(response, "Failed to generate F3532 04");
+  return response.json();
+}
+
+export async function commitF353204(
+  threat_conditions: ThreatCondition[],
+  threat_scenarios: ThreatScenario[]
+): Promise<{ committed: boolean; threat_condition_count?: number; threat_scenario_count?: number; errors?: string[] }> {
+  const response = await fetch(`${baseUrl}/analysis/f3532/commit-04`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
+    body: JSON.stringify({ threat_conditions, threat_scenarios })
+  });
+  return response.json();
+}
+
+export async function getF353204Report(): Promise<{
+  threat_condition_count: number;
+  threat_scenario_count: number;
+  threat_conditions: ThreatCondition[];
+  threat_scenarios: ThreatScenario[];
+}> {
+  const response = await fetch(`${baseUrl}/reports/f3532/04`);
+  await ensureOk(response, "Failed to load F3532 04 report");
+  return response.json();
 }
 
 export async function runAnalysis(payload?: {
@@ -206,6 +290,31 @@ export async function runFunctionPropagationAnalysis(
     body: JSON.stringify(body)
   });
   await ensureOk(response, "Failed to run function propagation analysis");
+  return response.json();
+}
+
+export async function runF3532Generate03(
+  options?: { groupBy?: FpGroupBy; maxHops?: number }
+): Promise<F3532Report03Data> {
+  const body: Record<string, unknown> = {};
+  if (options?.groupBy) {
+    body.group_by = options.groupBy;
+  }
+  if (options?.maxHops) {
+    body.max_hops = options.maxHops;
+  }
+  const response = await fetch(`${baseUrl}/analysis/f3532/generate-03`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  await ensureOk(response, "Failed to generate F3532 03");
+  return response.json();
+}
+
+export async function getF3532Report03(): Promise<F3532Report03Data> {
+  const response = await fetch(`${baseUrl}/reports/f3532/03`);
+  await ensureOk(response, "Failed to load F3532 03 report");
   return response.json();
 }
 

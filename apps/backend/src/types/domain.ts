@@ -27,6 +27,8 @@ export type PriorityLabel = "High" | "Medium" | "Low";
 export type LinkageType = "Requirement" | "Evidence" | "Mitigation";
 export type StandardLinkageType = LinkageType | "Input" | "Output";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
+export type FhaSeverity = "Catastrophic" | "Hazardous" | "Major" | "Minor" | "NoSafetyEffect" | "Unknown";
+export type CiaAttribute = "C" | "I" | "A";
 
 export interface AssetNode {
   asset_id: string;
@@ -286,7 +288,51 @@ export interface SystemDataFlow {
   data_flow_type?: string;
   /** function_ids (F1..) this SDF supports — drives the 影响功能 derivation in table 4-5. */
   function_ids?: string[];
+  /** Exact AFHA/FHA failure-condition ids referenced by the source 01 workbook. */
+  failure_condition_ids?: string[];
+  /** Source system-interface id from the 01 workbook. */
+  system_interface_id?: string;
   description?: string;
+}
+
+export interface FailureCondition {
+  failure_condition_id: string;
+  name: string;
+  flight_phases: string[];
+  hazard_class: string;
+  severity: FhaSeverity;
+  max_failure_probability?: string;
+  source_ref?: string;
+  notes?: string;
+}
+
+export interface ThreatCondition {
+  tc_id: string;
+  function_id?: string;
+  failure_condition_ids: string[];
+  cia_attributes: CiaAttribute[];
+  description?: string;
+  aircraft_effect?: string;
+  system_effect?: string;
+  crew_effect?: string;
+  occupant_effect?: string;
+  severity: FhaSeverity;
+  severity_source: "FHA" | "manual" | "default";
+  path_ids: string[];
+  coverage_status: "linked" | "unlinked";
+  review_status: ReviewStatus;
+  is_default?: boolean;
+}
+
+export interface ThreatScenario {
+  ts_id: string;
+  threat_actor_id?: string;
+  tc_ids: string[];
+  attack_vector?: AttackVector;
+  attack_path: string;
+  existing_security_measures?: string;
+  review_status: ReviewStatus;
+  is_default?: boolean;
 }
 
 /** Function propagation path (FP01..) from vol3 表4-5 — expert grouping of BDFs into a propagation chain. */

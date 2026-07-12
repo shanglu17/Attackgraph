@@ -16,11 +16,13 @@ import {
   exportModelingResult,
   getBoundaryDataFlowReport,
   getFunctionPropagationReport,
+  getF3532Report03,
   getGraph,
   getInternalDataFlowReport,
   getTrustBoundaryReport,
   persistPaths,
   runAnalysis,
+  runF3532Generate03,
   runFunctionPropagationAnalysis,
   type FpGroupBy,
   seedGenericData,
@@ -28,6 +30,8 @@ import {
   validateChangeSet
 } from "./api";
 import { CxfImportPanel } from "./CxfImportPanel";
+import { F3532ImportPanel } from "./F3532ImportPanel";
+import { F353204Panel } from "./F353204Panel";
 import type {
   AssetEdge,
   AssetNode,
@@ -303,6 +307,45 @@ async function exportChapter4Workbook(
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   xlsx.writeFile(wb, `vol3-chapter4-report-${timestamp}.xlsx`);
+}
+
+async function exportF353203Workbook(
+  dataFlowRows: BoundaryDataFlowReportRow[],
+  propagationRows: FunctionPropagationReportRow[]
+): Promise<void> {
+  const xlsx = await import("xlsx");
+  const wb = xlsx.utils.book_new();
+
+  const bdfBoundarySheet = [
+    ["信任边界", "边界名称", "数据流类型", "边界接口(BI)", "关联BDF", "关联功能(F)", "是否进入内部传播"],
+    ...dataFlowRows.map((row) => [
+      row.boundary_id,
+      row.boundary_name,
+      row.data_flow_type,
+      row.interfaces.join("、"),
+      row.bdf_ids.join("、"),
+      row.function_ids.join("、"),
+      row.enters_internal_propagation ? "是" : "否"
+    ])
+  ];
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(bdfBoundarySheet), "03_边界数据流-安保边界");
+
+  const pathSheet = [
+    ["路径编号", "数据类型", "入口BI", "关联BDF", "关联SDF", "系统传播路径", "影响功能"],
+    ...propagationRows.map((row) => [
+      row.fp_id,
+      row.data_type,
+      row.entry_bis.join("、"),
+      row.bdf_ids.join("、"),
+      row.sdf_ids.length > 0 ? row.sdf_ids.join("、") : row.sdf_note ?? "",
+      row.system_path,
+      row.function_ids.join("、")
+    ])
+  ];
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(pathSheet), "03_关键数据流传播路径");
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  xlsx.writeFile(wb, `f3532-03-report-${timestamp}.xlsx`);
 }
 
 function getEntityItems(graph: GraphData | null, entityType: EntityType): EditableEntity[] {
@@ -860,13 +903,13 @@ export function App() {
     }
   }
 
-  async function handleCxfImportCommit(result: { commit_id?: string; new_version?: string }) {
+  async function handleWorkbookImportCommit(result: { commit_id?: string; new_version?: string }) {
     try {
       setBusy(true);
       const data = await getGraph();
       setGraph(data);
       setDraft(emptyChangeSet(data.graph_version));
-      setMessage(`Multi-sheet import committed: ${result.commit_id ?? "-"}, version ${result.new_version ?? data.graph_version}`);
+      setMessage(`Workbook import committed: ${result.commit_id ?? "-"}, version ${result.new_version ?? data.graph_version}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to refresh graph after import");
     } finally {
@@ -926,6 +969,55 @@ export function App() {
       setMessage(`FP 分析完成（按 ${fpGroupBy} 归并）：由 BDF+SDF 归并出 ${result.fp_count} 条功能传播路径`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to run FP analysis");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGenerateF353203() {
+    try {
+      setBusy(true);
+      const result = await runF3532Generate03({ groupBy: fpGroupBy });
+      setDataFlowReport(result.boundary_data_flows.rows);
+      setPropagationReport(result.function_propagation.rows);
+      setReportLoaded(true);
+      setMessage(
+        `F3532 03 已生成：边界数据流对照 ${result.boundary_data_flows.count} 行，关键传播路径 ${result.function_propagation.count} 行，FP ${result.metadata.fp_count ?? result.function_propagation.count} 条`
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to generate F3532 03");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleLoadF353203() {
+    try {
+      setBusy(true);
+      const result = await getF3532Report03();
+      setDataFlowReport(result.boundary_data_flows.rows);
+      setPropagationReport(result.function_propagation.rows);
+      setReportLoaded(true);
+      setMessage(
+        `F3532 03 已加载：边界数据流对照 ${result.boundary_data_flows.count} 行，关键传播路径 ${result.function_propagation.count} 行`
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to load F3532 03");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExportF353203() {
+    try {
+      setBusy(true);
+      const report = reportLoaded
+        ? { boundary_data_flows: { rows: dataFlowReport }, function_propagation: { rows: propagationReport } }
+        : await getF3532Report03();
+      await exportF353203Workbook(report.boundary_data_flows.rows, report.function_propagation.rows);
+      setMessage("F3532 03 已导出为 Excel 文件");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to export F3532 03");
     } finally {
       setBusy(false);
     }
@@ -998,7 +1090,9 @@ export function App() {
         </article>
       </section>
 
-      <CxfImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleCxfImportCommit} />
+      <CxfImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
+      <F3532ImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
+      <F353204Panel disabled={busy} onStatusChange={setMessage} />
 
       <div className="layout">
         <aside className="panel left">
@@ -1095,8 +1189,17 @@ export function App() {
 
           <h3>第四章报告 (vol3)</h3>
           <div className="toolbar wrap">
+            <button className="button primary" onClick={handleGenerateF353203} disabled={busy}>
+              生成 F3532 03
+            </button>
+            <button className="button" onClick={handleLoadF353203} disabled={busy}>
+              加载 F3532 03
+            </button>
+            <button className="button" onClick={handleExportF353203} disabled={busy}>
+              导出 03 Excel
+            </button>
             <button className="button" onClick={handleLoadChapter4Report} disabled={busy}>
-              加载报告
+              加载 vol3 报告
             </button>
             <select
               className="input-field"
@@ -1113,7 +1216,7 @@ export function App() {
               分析生成FP
             </button>
             <button className="button" onClick={handleExportChapter4} disabled={busy}>
-              导出 Excel
+              导出 vol3 Excel
             </button>
           </div>
           {reportLoaded ? (

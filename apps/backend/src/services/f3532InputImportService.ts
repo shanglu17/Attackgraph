@@ -165,7 +165,6 @@ export class F3532InputImportService {
         boundary_id: boundaryId,
         name: this.sanitizeName(row.name ?? boundaryId, "Trust Boundary"),
         description: this.truncate(this.buildDescription(row.description, row.covered_scope), 200),
-        interface_asset_ids: coveredInterfaces,
         domain_asset_ids: []
       });
       accepted.trust_boundaries += 1;
@@ -260,6 +259,7 @@ export class F3532InputImportService {
         continue;
       }
       const functionIds = this.collectFunctionNodes(row.target_function, functionNodes);
+      const failureConditionIds = this.extractFailureConditionRefs(row.failure_condition);
       systemDataFlows.set(sdfId, {
         sdf_id: sdfId,
         producer: row.producer,
@@ -267,7 +267,9 @@ export class F3532InputImportService {
         content: row.content,
         data_flow_type: row.data_flow_type ? row.data_flow_type.trim().toUpperCase() : undefined,
         function_ids: functionIds,
-        description: this.buildDescription(row.destination, row.failure_condition, row.notes, `SI:${siId}`)
+        failure_condition_ids: failureConditionIds,
+        system_interface_id: siId,
+        description: this.buildDescription(row.destination, row.notes)
       });
       accepted.system_data_flows += 1;
     }
@@ -470,6 +472,17 @@ export class F3532InputImportService {
     return Array.from(refs).sort();
   }
 
+  private extractFailureConditionRefs(raw: string | undefined): string[] {
+    if (!raw || raw.trim().toUpperCase() === "N/A") {
+      return [];
+    }
+    const refs = new Set<string>();
+    for (const match of raw.matchAll(/(?:FC\s*)?(\d+(?:\.\d+)+)/gi)) {
+      refs.add(`FC${match[1]}`.toUpperCase());
+    }
+    return Array.from(refs).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }
+
   private resolveActorType(rawType: string | undefined, actorId: string): ThreatActorType {
     const value = `${rawType ?? ""} ${actorId}`.toLowerCase();
     if (/供应|third|vendor|ta-t/.test(value)) {
@@ -511,6 +524,7 @@ export class F3532InputImportService {
   private sanitizeName(value: string, fallback: string): string {
     const safe = value
       .replace(/[()（）"'`~!@#$%^&*+=?<>[\]{}|\\]/g, " ")
+      .replace(/[^A-Za-z0-9\u4e00-\u9fa5\s\-_\/]+/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     const candidate = safe.length > 0 ? safe : fallback;
