@@ -20,7 +20,8 @@ export const assetNodeSchema = z
     bdf_ids: z.array(z.string().min(1)).optional(),
     enters_internal_propagation: z.boolean().optional(),
     boundary_interface_id: z.string().min(1).optional(),
-    boundary_interface_ids: z.array(z.string().min(1)).optional()
+    boundary_interface_ids: z.array(z.string().min(1)).optional(),
+    failure_condition_ids: z.array(z.string().min(1).max(64)).optional()
   })
   .superRefine((value, ctx) => {
     if (value.asset_type === "Data" && !value.data_classification) {
@@ -306,6 +307,8 @@ export const threatConditionSchema = z.object({
   tc_id: z.string().min(1).max(64),
   function_id: z.string().min(1).max(32).optional(),
   failure_condition_ids: z.array(z.string().min(1).max(64)).min(1),
+  flight_phases: z.array(z.string().min(1).max(64)).optional(),
+  affected_assets: z.array(z.string().min(1).max(200)).optional(),
   cia_attributes: z.array(z.enum(["C", "I", "A"])).min(1),
   description: z.string().max(1000).optional(),
   aircraft_effect: z.string().max(1000).optional(),
@@ -577,6 +580,7 @@ export const f3532BoundaryDataFlowRowSchema = z.object({
   description: z.string().optional(),
   data_flow_type: z.string().optional(),
   target_function: z.string().optional(),
+  failure_condition: z.string().optional(),
   notes: z.string().optional(),
   boundary_interface_id: z.string().optional()
 });

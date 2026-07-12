@@ -129,6 +129,7 @@ export async function commitFhaImport(payload: FhaImportRequest): Promise<{
   committed: boolean;
   imported?: number;
   linked_sdf_count?: number;
+  linked_bdf_count?: number;
   unlinked_failure_condition_ids?: string[];
   errors?: string[];
 }> {

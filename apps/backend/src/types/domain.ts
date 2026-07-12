@@ -53,6 +53,8 @@ export interface AssetNode {
   boundary_interface_id?: string;
   /** For a BDF interface asset carried by multiple BIs. */
   boundary_interface_ids?: string[];
+  /** Exact AFHA/FHA failure-condition ids referenced by a boundary data flow row. */
+  failure_condition_ids?: string[];
 }
 
 export interface AssetEdge {
@@ -310,6 +312,8 @@ export interface ThreatCondition {
   tc_id: string;
   function_id?: string;
   failure_condition_ids: string[];
+  flight_phases?: string[];
+  affected_assets?: string[];
   cia_attributes: CiaAttribute[];
   description?: string;
   aircraft_effect?: string;

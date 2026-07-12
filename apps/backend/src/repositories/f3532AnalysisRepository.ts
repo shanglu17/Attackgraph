@@ -3,9 +3,11 @@ import type { FhaImportRequest } from "../types/api.js";
 import type { FailureCondition, ThreatCondition, ThreatScenario, ThreatActorType } from "../types/domain.js";
 
 export interface FailureConditionContext extends FailureCondition {
+  bdf_ids: string[];
   sdf_ids: string[];
   function_ids: string[];
   path_ids: string[];
+  affected_assets: string[];
 }
 
 export interface ThreatPathActorContext {
@@ -29,6 +31,7 @@ export class F3532AnalysisRepository {
   async importFailureConditions(input: FhaImportRequest): Promise<{
     imported: number;
     linked_sdf_count: number;
+    linked_bdf_count: number;
     unlinked_failure_condition_ids: string[];
   }> {
     const session = getDriver().session();
@@ -63,19 +66,28 @@ export class F3532AnalysisRepository {
            MATCH (fc:FailureCondition {failure_condition_id: failure_condition_id})
            MERGE (sdf)-[:TRACES_TO]->(fc)`
         );
+        await tx.run(
+          `MATCH (bdf:AssetNode)
+           WHERE bdf.boundary_interface_id IS NOT NULL
+           UNWIND coalesce(bdf.failure_condition_ids, []) AS failure_condition_id
+           MATCH (fc:FailureCondition {failure_condition_id: failure_condition_id})
+           MERGE (bdf)-[:TRACES_TO]->(fc)`
+        );
       });
 
       const summary = await session.executeRead(async (tx) => {
-        const [linked, unlinked] = await Promise.all([
+        const [linkedSdf, linkedBdf, unlinked] = await Promise.all([
           tx.run("MATCH (sdf:SystemDataFlow)-[:TRACES_TO]->(:FailureCondition) RETURN count(DISTINCT sdf) AS count"),
+          tx.run("MATCH (bdf:AssetNode)-[:TRACES_TO]->(:FailureCondition) WHERE bdf.boundary_interface_id IS NOT NULL RETURN count(DISTINCT bdf) AS count"),
           tx.run(
             `MATCH (fc:FailureCondition)
-             WHERE NOT EXISTS { MATCH (:SystemDataFlow)-[:TRACES_TO]->(fc) }
+             WHERE NOT EXISTS { MATCH (flow)-[:TRACES_TO]->(fc) WHERE flow:SystemDataFlow OR flow:AssetNode }
              RETURN collect(fc.failure_condition_id) AS ids`
           )
         ]);
         return {
-          linked_sdf_count: Number(linked.records[0]?.get("count") ?? 0),
+          linked_sdf_count: Number(linkedSdf.records[0]?.get("count") ?? 0),
+          linked_bdf_count: Number(linkedBdf.records[0]?.get("count") ?? 0),
           unlinked_failure_condition_ids: toStrings(unlinked.records[0]?.get("ids"))
         };
       });
@@ -90,13 +102,16 @@ export class F3532AnalysisRepository {
     try {
       const result = await session.run(
         `MATCH (fc:FailureCondition)
-         OPTIONAL MATCH (sdf:SystemDataFlow)-[:TRACES_TO]->(fc)
-         OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
-         OPTIONAL MATCH (fp:FunctionPropagationPath)-[:INCLUDES_SDF]->(sdf)
+         OPTIONAL MATCH (flow)-[:TRACES_TO]->(fc)
+         WHERE flow:SystemDataFlow OR flow:AssetNode
+         OPTIONAL MATCH (flow)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+         OPTIONAL MATCH (fp:FunctionPropagationPath)-[:INCLUDES_SDF|INCLUDES_BDF]->(flow)
          RETURN fc,
-                collect(DISTINCT sdf.sdf_id) AS sdf_ids,
+                collect(DISTINCT CASE WHEN flow:AssetNode THEN flow.business_id END) AS bdf_ids,
+                collect(DISTINCT CASE WHEN flow:SystemDataFlow THEN flow.sdf_id END) AS sdf_ids,
                 collect(DISTINCT f.function_id) AS function_ids,
-                collect(DISTINCT fp.fp_id) AS path_ids
+                collect(DISTINCT fp.fp_id) AS path_ids,
+                collect(DISTINCT CASE WHEN flow:SystemDataFlow THEN flow.consumer ELSE flow.asset_name END) AS affected_assets
          ORDER BY fc.failure_condition_id`
       );
       return result.records.map((record) => {
@@ -110,9 +125,11 @@ export class F3532AnalysisRepository {
           max_failure_probability: (props.max_failure_probability as string | undefined) ?? undefined,
           source_ref: (props.source_ref as string | undefined) ?? undefined,
           notes: (props.notes as string | undefined) ?? undefined,
+          bdf_ids: toStrings(record.get("bdf_ids")),
           sdf_ids: toStrings(record.get("sdf_ids")),
           function_ids: toStrings(record.get("function_ids")),
-          path_ids: toStrings(record.get("path_ids"))
+          path_ids: toStrings(record.get("path_ids")),
+          affected_assets: toStrings(record.get("affected_assets"))
         };
       });
     } finally {
@@ -125,7 +142,7 @@ export class F3532AnalysisRepository {
     try {
       const result = await session.run(
         `MATCH (fp:FunctionPropagationPath)
-         OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+         OPTIONAL MATCH (fp)-[:INCLUDES_SDF|INCLUDES_BDF]->(flow)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
          OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode)
          OPTIONAL MATCH (bi:BoundaryInterface)-[:CARRIES|CARRIES_FLOW]->(bdf)
          OPTIONAL MATCH (sb:TrustBoundary)-[:HAS_INTERFACE]->(bi)
@@ -161,8 +178,9 @@ export class F3532AnalysisRepository {
         await tx.run("MATCH (n) WHERE n:ThreatCondition OR n:ThreatScenario DETACH DELETE n");
         for (const tc of threatConditions) {
           await tx.run(
-            `CREATE (tc:ThreatCondition {
+             `CREATE (tc:ThreatCondition {
                tc_id: $tc_id, function_id: $function_id, failure_condition_ids: $failure_condition_ids,
+               flight_phases: $flight_phases, affected_assets: $affected_assets,
                cia_attributes: $cia_attributes, description: $description, aircraft_effect: $aircraft_effect,
                system_effect: $system_effect, crew_effect: $crew_effect, occupant_effect: $occupant_effect,
                severity: $severity, severity_source: $severity_source, path_ids: $path_ids,
@@ -171,6 +189,8 @@ export class F3532AnalysisRepository {
             {
               ...tc,
               function_id: tc.function_id ?? null,
+              flight_phases: tc.flight_phases ?? [],
+              affected_assets: tc.affected_assets ?? [],
               description: tc.description ?? null,
               aircraft_effect: tc.aircraft_effect ?? null,
               system_effect: tc.system_effect ?? null,

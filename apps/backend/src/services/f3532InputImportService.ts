@@ -207,6 +207,7 @@ export class F3532InputImportService {
       }
       const assetId = this.toInternalAssetId("IF", bdfId);
       const functionIds = this.collectFunctionNodes(row.target_function, functionNodes);
+      const failureConditionIds = this.extractFailureConditionRefs(row.failure_condition);
       assets.set(assetId, {
         asset_id: assetId,
         asset_name: this.sanitizeName(row.description ?? row.destination ?? bdfId, "Boundary Data Flow"),
@@ -219,6 +220,7 @@ export class F3532InputImportService {
         data_flow_type: row.data_flow_type ? row.data_flow_type.trim().toUpperCase() : undefined,
         boundary_interface_id: interfaceIds[0],
         boundary_interface_ids: interfaceIds,
+        failure_condition_ids: failureConditionIds,
         enters_internal_propagation: true
       });
       for (const functionId of functionIds) {

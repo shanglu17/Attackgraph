@@ -98,6 +98,8 @@ export interface ThreatCondition {
   tc_id: string;
   function_id?: string;
   failure_condition_ids: string[];
+  flight_phases?: string[];
+  affected_assets?: string[];
   cia_attributes: CiaAttribute[];
   description?: string;
   aircraft_effect?: string;
@@ -554,6 +556,7 @@ export interface F3532BoundaryDataFlowRow {
   description?: string;
   data_flow_type?: string;
   target_function?: string;
+  failure_condition?: string;
   notes?: string;
   boundary_interface_id?: string;
   excel_row?: number;

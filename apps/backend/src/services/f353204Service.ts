@@ -44,19 +44,30 @@ export class F353204Service {
   ): F353204GenerationResult {
     const ciaCombinations = this.ciaCombinations(input.cia_mode);
     const threatConditions: ThreatCondition[] = [];
+    const linkedFailureConditionIds = new Set<string>();
 
     const eligibleFailureConditions = input.include_unlinked_failure_conditions
       ? failureConditions
       : failureConditions.filter((fc) => fc.function_ids.length > 0 || fc.path_ids.length > 0);
 
     for (const fc of eligibleFailureConditions) {
-      const functionIds: Array<string | undefined> = fc.function_ids.length > 0 ? fc.function_ids : [undefined];
+      const resolvedFunctionIds = this.resolveFunctionIds(fc, paths);
+      const functionIds: Array<string | undefined> = resolvedFunctionIds.length > 0 ? resolvedFunctionIds : [undefined];
       for (const functionId of functionIds) {
+        const pathIds = this.resolvePathIds(fc.path_ids, functionId, paths);
+        const affectedAssets =
+          fc.affected_assets.length > 0 ? fc.affected_assets : this.inferAffectedAssets(pathIds, paths);
+        const linked = Boolean(functionId) && pathIds.length > 0;
+        if (linked) {
+          linkedFailureConditionIds.add(fc.failure_condition_id);
+        }
         for (const ciaAttributes of ciaCombinations) {
           threatConditions.push({
             tc_id: `TC-${String(threatConditions.length + 1).padStart(3, "0")}`,
             function_id: functionId,
             failure_condition_ids: [fc.failure_condition_id],
+            flight_phases: fc.flight_phases,
+            affected_assets: affectedAssets,
             cia_attributes: ciaAttributes,
             description: undefined,
             aircraft_effect: undefined,
@@ -65,8 +76,8 @@ export class F353204Service {
             occupant_effect: undefined,
             severity: fc.severity,
             severity_source: "FHA",
-            path_ids: fc.path_ids,
-            coverage_status: fc.function_ids.length > 0 || fc.path_ids.length > 0 ? "linked" : "unlinked",
+            path_ids: pathIds,
+            coverage_status: linked ? "linked" : "unlinked",
             review_status: "Draft",
             is_default: true
           });
@@ -91,7 +102,7 @@ export class F353204Service {
     });
 
     const unlinked = failureConditions
-      .filter((fc) => fc.function_ids.length === 0 && fc.path_ids.length === 0)
+      .filter((fc) => !linkedFailureConditionIds.has(fc.failure_condition_id))
       .map((fc) => fc.failure_condition_id);
     return {
       defaults: f353204Defaults,
@@ -112,6 +123,73 @@ export class F353204Service {
       return [["C"], ["I"], ["A"], ["C", "I"], ["C", "A"], ["I", "A"], ["C", "I", "A"]];
     }
     return [["C"], ["I"], ["A"]];
+  }
+
+  private resolveFunctionIds(fc: FailureConditionContext, paths: ThreatPathContext[]): string[] {
+    const match = fc.failure_condition_id.match(/^FC\s*(\d+(?:\.\d+)*)/i);
+    if (!match) {
+      return [...fc.function_ids].sort();
+    }
+    const failureFunctionPath = `F${match[1]}`;
+    const inferred = this.functionFamily(failureFunctionPath);
+    const directCandidates = fc.function_ids
+      .filter((functionId) => this.functionFamily(functionId) === inferred)
+      .filter((functionId) => failureFunctionPath === functionId || failureFunctionPath.startsWith(`${functionId}.`));
+    if (directCandidates.length > 0) {
+      const maxDepth = Math.max(...directCandidates.map((functionId) => functionId.split(".").length));
+      return Array.from(new Set(directCandidates.filter((functionId) => functionId.split(".").length === maxDepth))).sort();
+    }
+    const available = new Set(paths.flatMap((path) => path.function_ids));
+    if (available.has(inferred)) {
+      return [inferred];
+    }
+    const sameFamily = Array.from(available).filter((functionId) => this.functionFamily(functionId) === inferred).sort();
+    return sameFamily.length > 0 ? [sameFamily[0]] : [inferred];
+  }
+
+  private resolvePathIds(
+    directPathIds: string[],
+    functionId: string | undefined,
+    paths: ThreatPathContext[]
+  ): string[] {
+    const direct = directPathIds
+      .map((pathId) => paths.find((path) => path.path_id === pathId))
+      .filter((path): path is ThreatPathContext => Boolean(path));
+    if (direct.length > 0) {
+      const compatible = direct.filter((path) => this.pathSupportsFunction(path, functionId));
+      return (compatible.length > 0 ? compatible : direct).map((path) => path.path_id).sort();
+    }
+    if (!functionId) {
+      return [];
+    }
+    return paths
+      .filter((path) => this.pathSupportsFunction(path, functionId))
+      .map((path) => path.path_id)
+      .sort();
+  }
+
+  private pathSupportsFunction(path: ThreatPathContext, functionId: string | undefined): boolean {
+    if (!functionId) {
+      return false;
+    }
+    const family = this.functionFamily(functionId);
+    return path.function_ids.some((candidate) => candidate === functionId || this.functionFamily(candidate) === family);
+  }
+
+  private functionFamily(functionId: string): string {
+    return functionId.match(/^F\d+/i)?.[0].toUpperCase() ?? functionId.toUpperCase();
+  }
+
+  private inferAffectedAssets(pathIds: string[], paths: ThreatPathContext[]): string[] {
+    const assets = new Set<string>();
+    for (const pathId of pathIds) {
+      const systemPath = paths.find((path) => path.path_id === pathId)?.system_path ?? "";
+      const nodes = systemPath.split(/\s*(?:→|->)\s*/).map((item) => item.trim()).filter(Boolean);
+      if (nodes.length > 0) {
+        assets.add(nodes[nodes.length - 1]);
+      }
+    }
+    return Array.from(assets).sort();
   }
 
   private buildAttackPath(actor: ThreatPathActorContext | undefined, path: ThreatPathContext | undefined): string {

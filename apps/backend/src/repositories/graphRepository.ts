@@ -333,7 +333,7 @@ export class GraphRepository {
 
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
           await tx.run(
-            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id, a.boundary_interface_ids = $boundary_interface_ids",
+            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id, a.boundary_interface_ids = $boundary_interface_ids, a.failure_condition_ids = $failure_condition_ids WITH a OPTIONAL MATCH (a)-[old:TRACES_TO]->(:FailureCondition) DELETE old",
             {
               ...asset,
               security_domain: asset.security_domain ?? null,
@@ -347,8 +347,13 @@ export class GraphRepository {
               bdf_ids: asset.bdf_ids ?? [],
               enters_internal_propagation: asset.enters_internal_propagation ?? null,
               boundary_interface_id: asset.boundary_interface_id ?? null,
-              boundary_interface_ids: asset.boundary_interface_ids ?? (asset.boundary_interface_id ? [asset.boundary_interface_id] : [])
+              boundary_interface_ids: asset.boundary_interface_ids ?? (asset.boundary_interface_id ? [asset.boundary_interface_id] : []),
+              failure_condition_ids: asset.failure_condition_ids ?? []
             }
+          );
+          await tx.run(
+            "MATCH (a:AssetNode {asset_id: $asset_id}) UNWIND $failure_condition_ids AS fcid MATCH (fc:FailureCondition {failure_condition_id: fcid}) MERGE (a)-[:TRACES_TO]->(fc)",
+            { asset_id: asset.asset_id, failure_condition_ids: asset.failure_condition_ids ?? [] }
           );
         }
 

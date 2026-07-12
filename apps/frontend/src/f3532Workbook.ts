@@ -54,7 +54,7 @@ const sheetHeaders: Record<F3532SheetName, string[]> = {
     "接口说明",
     "备注"
   ],
-  boundary_data_flows: ["编号", "Producer", "Consumer", "Destination", "描述", "类型", "关联功能", "备注", "对应边界接口编号"],
+  boundary_data_flows: ["编号", "Producer", "Consumer", "Destination", "描述", "类型", "关联功能", "关联的重大失效状态", "备注", "对应边界接口编号"],
   system_interfaces: ["编号", "Producer", "Consumer", "接口类型", "协议", "方向性", "交互数据内容/类型", "备注"],
   system_data_flows: [
     "编号",
@@ -147,8 +147,9 @@ function parseBoundaryDataFlows(workbook: WorkBook): F3532BoundaryDataFlowRow[] 
       description: cell(row, 4),
       data_flow_type: cell(row, 5),
       target_function: cell(row, 6),
-      notes: cell(row, 7),
-      boundary_interface_id: cell(row, 8),
+      failure_condition: cell(row, 7),
+      notes: cell(row, 8),
+      boundary_interface_id: cell(row, 9),
       excel_row: index + 2
     })
   );
@@ -230,7 +231,24 @@ function readSheetRows(workbook: WorkBook, sheetKey: F3532SheetName): string[][]
 
   const headerRow = (matrix[0] ?? []).map((value) => normalizeCell(value));
   const expected = sheetHeaders[sheetKey];
-  if (headerRow.length < expected.length || expected.some((header, index) => headerRow[index] !== header)) {
+  const isLegacyBoundaryDataFlow =
+    sheetKey === "boundary_data_flows" &&
+    headerRow.length >= 9 &&
+    expected.slice(0, 7).every((header, index) => headerRow[index] === header) &&
+    headerRow[7] === "备注" &&
+    headerRow[8] === "对应边界接口编号";
+  const isCurrentBoundaryDataFlow =
+    sheetKey === "boundary_data_flows" &&
+    headerRow.length >= 10 &&
+    expected.slice(0, 7).every((header, index) => headerRow[index] === header) &&
+    /^关联的重大失效状态/.test(headerRow[7]) &&
+    headerRow[8] === "备注" &&
+    headerRow[9] === "对应边界接口编号";
+  if (
+    !isLegacyBoundaryDataFlow &&
+    !isCurrentBoundaryDataFlow &&
+    (headerRow.length < expected.length || expected.some((header, index) => headerRow[index] !== header))
+  ) {
     throw toParseError(`Sheet header mismatch. Expected: ${expected.join(" / ")}`, sheetNames[sheetKey], 1);
   }
 
@@ -240,7 +258,7 @@ function readSheetRows(workbook: WorkBook, sheetKey: F3532SheetName): string[][]
     if (row.every((value) => value.length === 0)) {
       continue;
     }
-    rows.push(row);
+    rows.push(isLegacyBoundaryDataFlow ? [...row.slice(0, 7), "", row[7] ?? "", row[8] ?? ""] : row);
   }
   return rows;
 }

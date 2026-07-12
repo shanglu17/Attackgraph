@@ -417,12 +417,15 @@ router.post("/analysis/f3532/generate-04", async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ generated: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
+    const inputs = await graphRepo.getFunctionPropagationInputs();
+    const refreshedPaths = fpAnalysisService.run({ ...inputs, group_by: "function" });
+    await graphRepo.replaceFunctionPropagationPaths(refreshedPaths);
     const [failureConditions, paths] = await Promise.all([
       f3532AnalysisRepo.getFailureConditionContexts(),
       f3532AnalysisRepo.getThreatPathContexts()
     ]);
     const result = f353204Service.generate(parsed.data, failureConditions, paths);
-    return res.json({ generated: true, ...result });
+    return res.json({ generated: true, refreshed_path_count: refreshedPaths.length, ...result });
   } catch (error) {
     return next(error);
   }
