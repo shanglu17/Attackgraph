@@ -100,7 +100,7 @@ export class F3532InputImportService {
     const systemInterfaceIds = new Set<string>();
 
     for (const row of input.workbook.boundary_interfaces) {
-      const interfaceId = this.normalizePrefixedId(row.id, "BI");
+      const interfaceId = this.normalizeBoundaryInterfaceId(row.id);
       if (!this.requireFields("boundary_interfaces", row.excel_row, row, ["id", "external_entity", "access_object", "physical_interconnect", "logical_protocol", "direction"], errors)) {
         continue;
       }
@@ -228,7 +228,7 @@ export class F3532InputImportService {
     }
 
     for (const row of input.workbook.system_interfaces) {
-      const siId = this.normalizePrefixedId(row.id, "SI");
+      const siId = this.normalizeSystemInterfaceId(row.id);
       if (!this.requireFields("system_interfaces", row.excel_row, row, ["id", "producer", "consumer", "interface_type", "protocol", "direction"], errors)) {
         continue;
       }
@@ -249,7 +249,7 @@ export class F3532InputImportService {
       if (!this.requireFields("system_data_flows", row.excel_row, row, ["id", "producer", "consumer", "system_interface_id"], errors)) {
         continue;
       }
-      const siId = this.normalizePrefixedId(row.system_interface_id ?? "", "SI");
+      const siId = this.normalizeSystemInterfaceId(row.system_interface_id ?? "");
       if (!systemInterfaceIds.has(siId)) {
         errors.push(this.error("binding", "system_data_flows", row.excel_row, "system_interface_id", `referenced system interface does not exist: ${siId}`));
         continue;
@@ -452,11 +452,11 @@ export class F3532InputImportService {
       const end = Number(match[2]);
       const step = start <= end ? 1 : -1;
       for (let value = start; step > 0 ? value <= end : value >= end; value += step) {
-        refs.add(`BI${value}`);
+        refs.add(this.normalizeBoundaryInterfaceId(value));
       }
     }
     for (const match of raw.matchAll(/BI\s*[-]?\s*(\d+)/gi)) {
-      refs.add(`BI${Number(match[1])}`);
+      refs.add(this.normalizeBoundaryInterfaceId(match[1]));
     }
     return Array.from(refs).sort((a, b) => Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, "")));
   }
@@ -501,6 +501,20 @@ export class F3532InputImportService {
     }
     const numeric = value.match(/\d+/)?.[0];
     return numeric ? `${prefix}${Number(numeric)}` : `${prefix}${value.replace(/[^A-Z0-9]/g, "")}`;
+  }
+
+  private normalizeBoundaryInterfaceId(raw: string | number): string {
+    const value = String(raw).trim().toUpperCase().replace(/\s+/g, "");
+    const numeric = value.match(/(?:^|[^A-Z])BI[-_]?0*(\d+)|^0*(\d+)$/i);
+    const sequence = numeric?.[1] ?? numeric?.[2] ?? value.match(/\d+/)?.[0];
+    return sequence ? `BI${String(Number(sequence)).padStart(2, "0")}` : this.normalizePrefixedId(value, "BI");
+  }
+
+  private normalizeSystemInterfaceId(raw: string | number): string {
+    const value = String(raw).trim().toUpperCase().replace(/\s+/g, "");
+    const numeric = value.match(/(?:^|[^A-Z])SI[-_]?0*(\d+)|^0*(\d+)$/i);
+    const sequence = numeric?.[1] ?? numeric?.[2] ?? value.match(/\d+/)?.[0];
+    return sequence ? `SI${Number(sequence)}` : this.normalizePrefixedId(value, "SI");
   }
 
   private normalizeThreatActorId(raw: string | number): string {
