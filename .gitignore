@@ -3,6 +3,8 @@ dist/
 .env
 .DS_Store
 coverage/
+.tmp/
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
+.claude/

@@ -1,0 +1,649 @@
+{
+  "generated_at": "2026-07-14T13:34:28.051Z",
+  "inputs": {
+    "file01": "C:\\Users\\97301\\Desktop\\01网络安保资产_边界及系统_接口和数据流清.xlsx",
+    "file02": "C:\\Users\\97301\\Desktop\\02安保边界及威胁主体.xlsx",
+    "file03": "C:\\Users\\97301\\Desktop\\03安保边界数据流梳理表.xlsx",
+    "counts": {
+      "boundary_interfaces": 24,
+      "boundary_data_flows": 57,
+      "system_interfaces": 17,
+      "system_data_flows": 82,
+      "threat_actors": 11,
+      "trust_boundaries": 3
+    }
+  },
+  "generated_metadata": {
+    "generated_at": "2026-07-14T13:34:28.042Z",
+    "graph_version": "golden-file-in-memory",
+    "mode": "preview",
+    "generator_version": "f3532-03-deterministic-v2",
+    "confirmed_count": 13,
+    "needs_review_count": 6,
+    "unmatched_count": 0,
+    "warnings": []
+  },
+  "first_sheet": {
+    "standard_count": 57,
+    "generated_count": 57,
+    "expected_bdf_count": 57,
+    "generated_bdf_count": 57,
+    "matched_bdf_count": 57,
+    "mismatched_bdf_count": 0,
+    "missing_bdf_count": 0,
+    "extra_bdf_count": 0,
+    "missing_bdfs": [],
+    "extra_bdfs": [],
+    "mismatches": []
+  },
+  "second_sheet": {
+    "standard_count": 19,
+    "generated_count": 19,
+    "exact_member_match_count": 11,
+    "partial_or_mismatch_count": 8,
+    "extra_generated_count": 0,
+    "needs_review_count": 6,
+    "unmatched_count": 0,
+    "segment_consistency_problem_count": 0,
+    "matches": [
+      {
+        "standard_path_id": "P01",
+        "generated_path_id": "P01",
+        "generated_status": "NEEDS_REVIEW",
+        "generated_rule_id": "RULE_CC_DOWNLINK",
+        "score": 0.9156,
+        "member_exact": false,
+        "standard_description": "指挥控制系统经BI1(HTTP,RCS)/BI2(QUIC,DLS)下发航线、电子围栏、备降点配置及登录、控制类指令；经RCS-DLS(SI1)、DLS-IMS(SI4 CAN FD/SI5 RS422)逐级下行至机载综合管理系统(IMS)，驱动起飞、备降、悬停、加解锁、高压上下电等控制类指令及维护指令的执行。",
+        "generated_system_path": "RCS → DLS → IMS → FCS；RCS → DLS → IMS → FMS；RCS → DLS → AVCS；RCS → DLS → IMS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [
+            "SDF3",
+            "SDF7",
+            "SDF36"
+          ],
+          "extra_sdf": [
+            "SDF39",
+            "SDF74",
+            "SDF75",
+            "SDF76",
+            "SDF79"
+          ],
+          "missing_bi": [
+            "BI02"
+          ],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [
+            "SI2",
+            "SI14",
+            "SI15"
+          ],
+          "missing_function": [],
+          "extra_function": [
+            "F2.4.2",
+            "F3.1",
+            "F5",
+            "F8.1.2"
+          ],
+          "missing_data_type": [
+            "ALERT"
+          ],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P02",
+        "generated_path_id": "P02",
+        "generated_status": "NEEDS_REVIEW",
+        "generated_rule_id": "RULE_CC_UPLINK",
+        "score": 0.902,
+        "member_exact": false,
+        "standard_description": "IMS聚合的飞控/飞管/综管/电气/动力/导航/探测各子系统周期性状态及告警信息经DLS-IMS(SI5)上行汇聚至DLS，再经RCS-DLS(SI1)中转至RCS，最终经BI2(DLS转发)/BI1上行至地面指挥控制系统与大数据中心，实现航空器系统状态的远程监视。该路径起点为机载内部系统状态汇聚，而非直接源自某条边界数据流，属于\"内部数据流延伸至边界并传出\"的情形。",
+        "generated_system_path": "DLS → RCS；DLS → IMS；FCS → IMS → DLS → RCS；FMS → IMS → DLS → RCS；IMS → DLS → RCS；IMS → DLS；IMS → FCS；IMS → FMS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [
+            "SDF20",
+            "SDF22"
+          ],
+          "extra_sdf": [
+            "SDF31",
+            "SDF33",
+            "SDF34",
+            "SDF36",
+            "SDF60",
+            "SDF61",
+            "SDF63",
+            "SDF64",
+            "SDF73",
+            "SDF77",
+            "SDF80"
+          ],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [
+            "SI4",
+            "SI14",
+            "SI15"
+          ],
+          "missing_function": [],
+          "extra_function": [
+            "F2",
+            "F3.2",
+            "F5",
+            "F5.1",
+            "F7.2",
+            "F8.2.1"
+          ],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P03",
+        "generated_path_id": "P03",
+        "generated_status": "NEEDS_REVIEW",
+        "generated_rule_id": "RULE_AUDIO_VIDEO_UPLINK",
+        "score": 1.0109,
+        "member_exact": false,
+        "standard_description": "机舱视频/音频及探测视频数据经AVCS-DLS(SI2)、DAAS-DLS(SI3)汇聚，再经DLS-RCS(SI1)上行，并通过BI1/BI2(已在P01/P02计入)转发至指挥控制系统/大数据中心；同时地面指挥端经SI2下行的飞行机组语音数据(SDF39)亦在此artery内传递，供地面操作人员监视、通话及录像存档。",
+        "generated_system_path": "AVCS → DLS → RCS；DAAS → DLS → RCS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [
+            "SDF39"
+          ],
+          "extra_sdf": [
+            "SDF30"
+          ],
+          "missing_bi": [
+            "BI01",
+            "BI02"
+          ],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [
+            "F7.3"
+          ],
+          "extra_function": [
+            "F7.3.1",
+            "F7.3.2",
+            "F7.3.3"
+          ],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P04",
+        "generated_path_id": "P04",
+        "generated_status": "NEEDS_REVIEW",
+        "generated_rule_id": "RULE_OPEN_ENVIRONMENT",
+        "score": 0.684,
+        "member_exact": false,
+        "standard_description": "相机/激光雷达/麦克风/视频等开放环境感知输入经BI5~BI8进入DAAS/AVCS；DAAS探测数据进一步经DAAS-IMS(SI7)与综合管理系统双向交互探测与避让状态、目标信息、告警信息及位置/速度/姿态反馈，实现F13探测与避让功能；音视频感知数据则沿P03路径继续上行至地面。",
+        "generated_system_path": "AVCS → DLS → RCS；DAAS → DLS → RCS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [
+            "SDF41",
+            "SDF42",
+            "SDF65"
+          ],
+          "extra_sdf": [
+            "SDF24",
+            "SDF25",
+            "SDF26",
+            "SDF27",
+            "SDF28",
+            "SDF29",
+            "SDF31",
+            "SDF32",
+            "SDF33"
+          ],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [
+            "SI7"
+          ],
+          "extra_si": [
+            "SI1",
+            "SI2",
+            "SI3"
+          ],
+          "missing_function": [],
+          "extra_function": [
+            "F7.1",
+            "F7.3.1",
+            "F7.3.2",
+            "F7.3.3",
+            "F8.3.1",
+            "F8.3.2",
+            "F10"
+          ],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P05",
+        "generated_path_id": "P05",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_GNSS_RTK",
+        "score": 1.1333,
+        "member_exact": false,
+        "standard_description": "GNSS信号经BI3直接输入NAVS提供定位与时间信息；经BI4输入RCS的RTK差分修正数据经RCS-DLS(SI1, SDF9)、DLS-NAVS(SI6, SDF40)透传至NAVS，NAVS融合后的导航状态经NAVS-IMS(SI12)上行至IMS，支撑F4导航功能。",
+        "generated_system_path": "NAVS → IMS；RCS → DLS → NAVS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [
+            "F2",
+            "F3",
+            "F4.5",
+            "F5",
+            "F7.1"
+          ],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P06",
+        "generated_path_id": "P06",
+        "generated_status": "NEEDS_REVIEW",
+        "generated_rule_id": "RULE_INTERNAL_FLIGHT_CORE",
+        "score": 1.084,
+        "member_exact": false,
+        "standard_description": "综合管理系统(IMS)与飞控(FCS)、飞行管理(FMS)系统间通过RPC(IMS-FCS:SI14, IMS-FMS:SI15)交互导航数据、电子围栏、备降点、控制量、告警信息；FMS与FCS间经SI16传递制导指令；是机载核心飞行控制回路的内部数据流，不直接源自任何边界接口，是系统内部固有的数据交互。",
+        "generated_system_path": "FCS → IMS；FMS → IMS；FMS → FCS → IMS；IMS → FCS；IMS → FMS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [
+            "SDF59",
+            "SDF78",
+            "SDF80"
+          ],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [
+            "F3"
+          ],
+          "extra_function": [
+            "F2.4.2",
+            "F3.1",
+            "F3.3"
+          ],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P07",
+        "generated_path_id": "P07",
+        "generated_status": "NEEDS_REVIEW",
+        "generated_rule_id": "RULE_INTERNAL_POWER",
+        "score": 1.1203,
+        "member_exact": false,
+        "standard_description": "综合管理系统与电推进(EPS)、电气系统(ES)、高压配电(HVDS)、动力电池(PACKS)间经CAN总线(SI8/SI9/SI10/SI11)交互状态、告警与控制指令；HVDS与PACKS间经SI17直接交互主继电器及电池状态；构成动力与电气系统的核心内部数据闭环，不直接源自任何边界接口。",
+        "generated_system_path": "EPS → IMS → HVDS → PACKS；EPS → IMS；ES → IMS → HVDS → PACKS；ES → IMS → PACKS；HVDS → IMS；HVDS → PACKS → IMS；IMS → EPS；IMS → ES；IMS → HVDS → PACKS；IMS → PACKS；PACKS → IMS → ES；PACKS → IMS → HVDS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [
+            "SDF43"
+          ],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [
+            "F9"
+          ],
+          "extra_function": [
+            "F2",
+            "F5.1",
+            "F5.3",
+            "F9.1.1",
+            "F9.1.2",
+            "F11"
+          ],
+          "missing_data_type": [
+            "DATA"
+          ],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P08",
+        "generated_path_id": "P08",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_INTERNAL_PARACHUTE",
+        "score": 1.1733,
+        "member_exact": false,
+        "standard_description": "综合管理系统与伞降系统(PES)间经CAN(SI13)交互激活/加解锁/通信/重检指令及自检状态、指令反馈、告警信息，支撑F5.3应急情况下空中开伞功能。注：SDF72(IMS→PES指令)与P06/P07中的CMD类指令性质相近，因目标系统为PES故归入本路径。",
+        "generated_system_path": "IMS → PES；PES → IMS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [
+            "F5"
+          ],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P09",
+        "generated_path_id": "P09",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_FLIGHT_CORE",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI9(CAN/ETH,私有协议,属于ICCP)对IMS(ICC1)/FMS(ICC2)/FCS(BICC)下发引导加载软件、软件维护配置，并接收诊断数据、日志数据、软硬件版本状态反馈。维护数据在目标系统内部生效，现有清单未记录其经系统间接口继续向其他子系统传播。",
+        "generated_system_path": "FCS → FMS → 地面维护设备 → IMS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P10",
+        "generated_path_id": "P10",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_DLS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI10(ETH,私有协议)对DLS(ACU/GCU)下发软件维护配置及引导加载软件，并接收日志数据；未见经系统间接口向其他系统传播的记录。",
+        "generated_system_path": "DLS → 地面维护设备",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P11",
+        "generated_path_id": "P11",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_EPS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI11(CAN,CAN协议)对EPS(MCU)下发软件维护配置及引导加载软件，并接收电推进周期性状态数据；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "EPS → 地面维护设备",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P12",
+        "generated_path_id": "P12",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_PACKS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI12(CAN,CAN协议)对PACKS(BCU)下发引导加载软件，并接收动力电池周期性状态、告警及日志数据；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "地面维护设备 → PACKS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P13",
+        "generated_path_id": "P13",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_HVDS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI13(SWD,SWD协议)对HVDS(HPDU)下发引导加载软件；该接口因不直接对外暴露（需供应商拆机维修），电气专业已建议删除，建议在后续版本中确认是否保留该边界数据流。",
+        "generated_system_path": "地面维护设备 → HVDS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P14",
+        "generated_path_id": "P14",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_ES",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI14(SWD,SWD协议)对ES(LPDU/DCDC/EPDU)下发引导加载软件；同样存在电气专业建议删除该维护接口的备注，需与SB03边界范围一并复核。",
+        "generated_system_path": "ES → 地面维护设备",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P15",
+        "generated_path_id": "P15",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_DAAS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI15(USB,私有协议)对DAAS(DTC)下发软件维护配置及引导加载软件，并接收日志数据；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "DAAS → 地面维护设备",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P16",
+        "generated_path_id": "P16",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_AVCS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI16(RS232/ETH,私有协议)对AVCS(CCU)下发软件维护配置、引导加载软件并进行诊断，同时接收AVCS运行数据备份；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "AVCS → 地面维护设备",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P17",
+        "generated_path_id": "P17",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_NAVS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI17(RS422,私有协议)对NAVS(FOG-INS1/FOG-INS2/MEMS-INS)下发引导加载软件及软件维护配置；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "地面维护设备 → NAVS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P18",
+        "generated_path_id": "P18",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_PES",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI19(UART,命令交互)/BI20(SWD,软件升级)对PES(激活装置)下发引导加载软件、软件维护配置，并接收诊断数据及升级结果反馈；该设备维护接口位于铁盒内部不对外暴露，维修需拆卸整个伞降系统由供应商完成；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "地面维护设备 → PES",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      },
+      {
+        "standard_path_id": "P19",
+        "generated_path_id": "P19",
+        "generated_status": "CONFIRMED",
+        "generated_rule_id": "RULE_MAINTENANCE_RCS",
+        "score": 1.2,
+        "member_exact": true,
+        "standard_description": "地面维护设备经BI21(RCU调试)/BI22(RTK基准站)/BI23(席位计算机USB)/BI24(网络交换机ETH)对RCS下发引导加载软件、软件维护配置，并接收操控单元、RTK基准站及席位计算机的诊断数据与音视频导出数据；未见经系统间接口继续传播的记录。",
+        "generated_system_path": "地面维护设备 → RCS",
+        "diffs": {
+          "missing_bdf": [],
+          "extra_bdf": [],
+          "missing_sdf": [],
+          "extra_sdf": [],
+          "missing_bi": [],
+          "extra_bi": [],
+          "missing_si": [],
+          "extra_si": [],
+          "missing_function": [],
+          "extra_function": [],
+          "missing_data_type": [],
+          "extra_data_type": []
+        },
+        "generated_warnings": []
+      }
+    ],
+    "extra_generated": [],
+    "segment_consistency_problems": []
+  }
+}

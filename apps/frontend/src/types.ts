@@ -30,6 +30,21 @@ export interface AssetNode {
   enters_internal_propagation?: boolean;
   boundary_interface_id?: string;
   boundary_interface_ids?: string[];
+  bdf_producer_id?: string;
+  bdf_producer_name?: string;
+  bdf_consumer_id?: string;
+  bdf_consumer_name?: string;
+  bdf_destination_ids?: string[];
+  bdf_destination_names?: string[];
+  bdf_direction?: "INBOUND" | "OUTBOUND" | "INTERNAL" | "BIDIRECTIONAL" | "UNKNOWN";
+  bdf_data_description?: string;
+  bdf_function_text?: string;
+  bdf_function_ids?: string[];
+  bdf_topic_ids?: F3532DataTopic[];
+  bdf_continuation_policy?: "CONTINUE" | "STOP_AT_CONSUMER" | "RULE_DEPENDENT" | "UNKNOWN";
+  source_sheet?: string;
+  source_row?: number;
+  system_id?: string;
 }
 
 export interface BoundaryInterface {
@@ -77,6 +92,9 @@ export interface SystemDataFlow {
   function_ids?: string[];
   failure_condition_ids?: string[];
   system_interface_id?: string;
+  producer_system_id?: string;
+  consumer_system_id?: string;
+  topic_ids?: F3532DataTopic[];
   description?: string;
 }
 
@@ -706,18 +724,109 @@ export interface InternalDataFlowReportRow {
 
 export interface F3532Report03Data {
   metadata: {
-    generated_at?: string;
-    loaded_at?: string;
+    generated_at: string;
     graph_version: string;
-    fp_count?: number;
+    mode: "preview" | "commit" | "loaded";
+    generator_version: string;
+    confirmed_count: number;
+    needs_review_count: number;
+    unmatched_count: number;
+    warnings: string[];
   };
   boundary_data_flows: {
     count: number;
-    rows: BoundaryDataFlowReportRow[];
+    rows: F353203BoundaryFlowRow[];
   };
-  function_propagation: {
+  propagation_paths: {
     count: number;
-    rows: FunctionPropagationReportRow[];
+    rows: F353203PathRow[];
+    paths: GeneratedBusinessPath[];
   };
+  /** Compatibility alias returned by the backend for old callers. */
+  function_propagation: F3532Report03Data["propagation_paths"];
   generated?: boolean;
+  committed?: boolean;
+  committed_path_count?: number;
+}
+
+export type F3532DataTopic =
+  | "COMMAND_CONTROL" | "NAVIGATION" | "RTK_CORRECTION" | "POSITION" | "MAINTENANCE"
+  | "SOFTWARE_LOAD" | "PARAMETER_CONFIGURATION" | "FAULT_DIAGNOSIS" | "AUDIO" | "VIDEO"
+  | "POWER" | "FLIGHT_STATE" | "MISSION_DATA" | "RECORDING" | "ALERT" | "UNKNOWN";
+
+export interface F3532GenerationEvidence {
+  type: string;
+  source_id?: string;
+  rule_id?: string;
+  message: string;
+}
+
+export interface F3532GeneratedRouteSegment {
+  from_system_id: string;
+  to_system_id: string;
+  sdf_ids: string[];
+  sequence?: number;
+  branch_id?: string;
+  system_interface_ids?: string[];
+  data_types?: string[];
+  topic_ids?: F3532DataTopic[];
+}
+
+export interface GeneratedBusinessPath {
+  id: string;
+  rule_id: string;
+  status: "CONFIRMED" | "NEEDS_REVIEW" | "UNMATCHED";
+  name: string;
+  description: string;
+  origin_type: "BOUNDARY_FLOW" | "INTERNAL_FLOW" | "RULE_DEFINED";
+  origin_boundary_ids: string[];
+  seed_bdf_ids: string[];
+  boundary_interface_ids: string[];
+  system_interface_ids: string[];
+  bdf_ids: string[];
+  sdf_ids: string[];
+  function_ids: string[];
+  data_types: string[];
+  topic_ids: F3532DataTopic[];
+  system_node_ids: string[];
+  route_segments: F3532GeneratedRouteSegment[];
+  terminal_system_ids: string[];
+  stop_reasons: string[];
+  evidence: F3532GenerationEvidence[];
+  warnings: string[];
+}
+
+export interface F353203BoundaryFlowRow {
+  security_boundary: string;
+  security_boundary_ids: string[];
+  data_flow_type: string;
+  boundary_interface_ids: string[];
+  bdf_id: string;
+  bdf_display: string;
+  function_ids: string[];
+  function_display: string;
+  direction: "INBOUND" | "OUTBOUND" | "INTERNAL" | "BIDIRECTIONAL" | "UNKNOWN";
+  continuation_policy: "CONTINUE" | "STOP_AT_CONSUMER" | "RULE_DEPENDENT" | "UNKNOWN";
+  evidence: F3532GenerationEvidence[];
+  warnings: string[];
+}
+
+export interface F353203PathRow {
+  path_id: string;
+  path_name: string;
+  data_flow_types: string[];
+  origin: string;
+  boundary_interface_ids: string[];
+  system_interface_ids: string[];
+  bdf_ids: string[];
+  sdf_ids: string[];
+  function_ids: string[];
+  system_path: string;
+  path_description: string;
+  status: "CONFIRMED" | "NEEDS_REVIEW" | "UNMATCHED";
+  rule_id: string;
+  route_segments: F3532GeneratedRouteSegment[];
+  terminal_system_ids: string[];
+  evidence: F3532GenerationEvidence[];
+  warnings: string[];
 }

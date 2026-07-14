@@ -304,12 +304,28 @@ export async function runF3532Generate03(
   if (options?.maxHops) {
     body.max_hops = options.maxHops;
   }
-  const response = await fetch(`${baseUrl}/analysis/f3532/generate-03`, {
+  const response = await fetch(`${baseUrl}/analysis/f3532/generate-03/preview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
   await ensureOk(response, "Failed to generate F3532 03");
+  return response.json();
+}
+
+export async function commitF353203(options: {
+  expectedGraphVersion: string;
+  maxHops?: number;
+}): Promise<F3532Report03Data> {
+  const response = await fetch(`${baseUrl}/analysis/f3532/generate-03/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      expected_graph_version: options.expectedGraphVersion,
+      max_hops: options.maxHops
+    })
+  });
+  await ensureOk(response, "Failed to commit F3532 03");
   return response.json();
 }
 

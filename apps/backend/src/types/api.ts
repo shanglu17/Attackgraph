@@ -21,7 +21,28 @@ export const assetNodeSchema = z
     enters_internal_propagation: z.boolean().optional(),
     boundary_interface_id: z.string().min(1).optional(),
     boundary_interface_ids: z.array(z.string().min(1)).optional(),
-    failure_condition_ids: z.array(z.string().min(1).max(64)).optional()
+    failure_condition_ids: z.array(z.string().min(1).max(64)).optional(),
+    bdf_producer_id: z.string().min(1).optional(),
+    bdf_producer_name: z.string().min(1).optional(),
+    bdf_consumer_id: z.string().min(1).optional(),
+    bdf_consumer_name: z.string().min(1).optional(),
+    bdf_destination_ids: z.array(z.string().min(1)).optional(),
+    bdf_destination_names: z.array(z.string().min(1)).optional(),
+    bdf_direction: z.enum(["INBOUND", "OUTBOUND", "INTERNAL", "BIDIRECTIONAL", "UNKNOWN"]).optional(),
+    bdf_data_description: z.string().max(1000).optional(),
+    bdf_function_text: z.string().max(1000).optional(),
+    bdf_function_ids: z.array(z.string().min(1).max(32)).optional(),
+    bdf_topic_ids: z.array(
+      z.enum([
+        "COMMAND_CONTROL", "NAVIGATION", "RTK_CORRECTION", "POSITION", "MAINTENANCE",
+        "SOFTWARE_LOAD", "PARAMETER_CONFIGURATION", "FAULT_DIAGNOSIS", "AUDIO", "VIDEO",
+        "POWER", "FLIGHT_STATE", "MISSION_DATA", "RECORDING", "ALERT", "UNKNOWN"
+      ])
+    ).optional(),
+    bdf_continuation_policy: z.enum(["CONTINUE", "STOP_AT_CONSUMER", "RULE_DEPENDENT", "UNKNOWN"]).optional(),
+    source_sheet: z.string().max(100).optional(),
+    source_row: z.number().int().positive().optional(),
+    system_id: z.string().min(1).optional()
   })
   .superRefine((value, ctx) => {
     if (value.asset_type === "Data" && !value.data_classification) {
@@ -280,6 +301,28 @@ export const systemDataFlowSchema = z.object({
   function_ids: z.array(z.string().min(1).max(32)).optional(),
   failure_condition_ids: z.array(z.string().min(1).max(64)).optional(),
   system_interface_id: z.string().min(1).max(32).optional(),
+  producer_system_id: z.string().min(1).optional(),
+  consumer_system_id: z.string().min(1).optional(),
+  topic_ids: z.array(
+    z.enum([
+      "COMMAND_CONTROL",
+      "NAVIGATION",
+      "RTK_CORRECTION",
+      "POSITION",
+      "MAINTENANCE",
+      "SOFTWARE_LOAD",
+      "PARAMETER_CONFIGURATION",
+      "FAULT_DIAGNOSIS",
+      "AUDIO",
+      "VIDEO",
+      "POWER",
+      "FLIGHT_STATE",
+      "MISSION_DATA",
+      "RECORDING",
+      "ALERT",
+      "UNKNOWN"
+    ])
+  ).optional(),
   description: z.string().max(500).optional()
 });
 
@@ -380,6 +423,18 @@ export const runAnalysisSchema = z.object({
 export const runFpAnalysisSchema = z.object({
   max_hops: z.number().int().min(1).max(12).default(5),
   group_by: z.enum(["function", "boundary", "type"]).default("boundary")
+});
+
+/** Read-only F3532 03 generation. group_by is accepted only for old clients and is ignored. */
+export const previewF353203Schema = z.object({
+  max_hops: z.number().int().min(1).max(20).default(8),
+  group_by: z.enum(["function", "boundary", "type"]).optional()
+});
+
+/** Formal replacement is explicit and bound to the exact source GraphVersion. */
+export const commitF353203Schema = z.object({
+  expected_graph_version: z.string().min(1),
+  max_hops: z.number().int().min(1).max(20).default(8)
 });
 
 export const persistPathsSchema = z.object({

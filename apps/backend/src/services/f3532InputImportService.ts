@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { resolveSystemIdentity } from "../config/f3532/systemAliases.js";
 import { graphChangeSetSchema, type F3532InputImportRequest } from "../types/api.js";
 import type {
   AssetEdge,
@@ -12,6 +13,7 @@ import type {
   ThreatActorType,
   TrustBoundary
 } from "../types/domain.js";
+import { normalizeF3532WorkbookFacts } from "./f3532/factNormalizer.js";
 
 type F3532InputSheetName = keyof F3532InputImportRequest["workbook"];
 type ImportErrorCategory = "field" | "binding";
@@ -60,6 +62,7 @@ export interface F3532InputImportPreparedChangeSet extends F3532InputImportPrevi
 interface SystemEndpoint {
   asset_id: string;
   name: string;
+  system_id: string;
 }
 
 export class F3532InputImportService {
@@ -98,6 +101,10 @@ export class F3532InputImportService {
     const boundaryIdsByActorId = new Map<string, Set<string>>();
     const systemEndpoints = new Map<string, SystemEndpoint>();
     const systemInterfaceIds = new Set<string>();
+    const normalizedFacts = normalizeF3532WorkbookFacts(input.workbook, graphVersion ?? "preview");
+    const normalizedBdfById = new Map(normalizedFacts.boundary_data_flows.map((fact) => [fact.id, fact]));
+    const normalizedSdfById = new Map(normalizedFacts.system_data_flows.map((fact) => [fact.id, fact]));
+    summary.warnings.push(...normalizedFacts.warnings);
 
     for (const row of input.workbook.boundary_interfaces) {
       const interfaceId = this.normalizeBoundaryInterfaceId(row.id);
@@ -188,6 +195,7 @@ export class F3532InputImportService {
 
     for (const row of input.workbook.boundary_data_flows) {
       const bdfId = this.normalizePrefixedId(row.id, "BDF");
+      const normalizedFact = normalizedBdfById.get(bdfId);
       if (!this.requireFields("boundary_data_flows", row.excel_row, row, ["id", "producer", "consumer", "boundary_interface_id"], errors)) {
         continue;
       }
@@ -221,7 +229,21 @@ export class F3532InputImportService {
         boundary_interface_id: interfaceIds[0],
         boundary_interface_ids: interfaceIds,
         failure_condition_ids: failureConditionIds,
-        enters_internal_propagation: true
+        enters_internal_propagation: normalizedFact?.direction === "INBOUND",
+        bdf_producer_id: normalizedFact?.producer_id,
+        bdf_producer_name: normalizedFact?.producer_name ?? row.producer,
+        bdf_consumer_id: normalizedFact?.consumer_id,
+        bdf_consumer_name: normalizedFact?.consumer_name ?? row.consumer,
+        bdf_destination_ids: normalizedFact?.destination_ids ?? [],
+        bdf_destination_names: normalizedFact?.destination_names ?? [],
+        bdf_direction: normalizedFact?.direction ?? "UNKNOWN",
+        bdf_data_description: normalizedFact?.data_description ?? row.description,
+        bdf_function_text: normalizedFact?.function_text ?? row.target_function,
+        bdf_function_ids: normalizedFact?.function_ids ?? functionIds,
+        bdf_topic_ids: normalizedFact?.topic_ids ?? ["UNKNOWN"],
+        bdf_continuation_policy: normalizedFact?.continuation_policy ?? "UNKNOWN",
+        source_sheet: normalizedFact?.source_sheet ?? "边界数据流",
+        source_row: normalizedFact?.source_row ?? row.excel_row
       });
       for (const functionId of functionIds) {
         functionLinks.push({ asset_id: assetId, function_id: functionId });
@@ -248,6 +270,7 @@ export class F3532InputImportService {
 
     for (const row of input.workbook.system_data_flows) {
       const sdfId = this.normalizePrefixedId(row.id, "SDF");
+      const normalizedFact = normalizedSdfById.get(sdfId);
       if (!this.requireFields("system_data_flows", row.excel_row, row, ["id", "producer", "consumer", "system_interface_id"], errors)) {
         continue;
       }
@@ -271,6 +294,9 @@ export class F3532InputImportService {
         function_ids: functionIds,
         failure_condition_ids: failureConditionIds,
         system_interface_id: siId,
+        producer_system_id: normalizedFact?.producer_system_id,
+        consumer_system_id: normalizedFact?.consumer_system_id,
+        topic_ids: normalizedFact?.topic_ids ?? [],
         description: this.buildDescription(row.destination, row.notes)
       });
       accepted.system_data_flows += 1;
@@ -406,16 +432,17 @@ export class F3532InputImportService {
     registry: Map<string, SystemEndpoint>,
     assets: Map<string, AssetNode>
   ): SystemEndpoint {
-    const normalizedName = this.normalizeName(rawName);
-    const current = registry.get(normalizedName);
+    const resolved = resolveSystemIdentity(rawName);
+    const current = registry.get(resolved.system_id);
     if (current) {
       return current;
     }
     const endpoint: SystemEndpoint = {
-      asset_id: this.toInternalAssetId("SYS", rawName),
-      name: this.sanitizeName(rawName, "System")
+      asset_id: this.toInternalAssetId("SYS", resolved.system_id),
+      name: this.sanitizeName(resolved.display_name || rawName, "System"),
+      system_id: resolved.system_id
     };
-    registry.set(normalizedName, endpoint);
+    registry.set(resolved.system_id, endpoint);
     assets.set(endpoint.asset_id, {
       asset_id: endpoint.asset_id,
       asset_name: endpoint.name,
@@ -423,7 +450,8 @@ export class F3532InputImportService {
       criticality: "Medium",
       security_domain: "Internal",
       source: "excel_import",
-      business_id: this.normalizeBusinessId(rawName)
+      business_id: this.normalizeBusinessId(rawName),
+      system_id: resolved.system_id
     });
     return endpoint;
   }

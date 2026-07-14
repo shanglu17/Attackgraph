@@ -7,6 +7,7 @@ import { FpAnalysisService } from "../services/fpAnalysisService.js";
 import { CxfImportService, type CxfImportSummary } from "../services/cxfImportService.js";
 import { F3532InputImportService, type F3532InputImportSummary } from "../services/f3532InputImportService.js";
 import { F353204Service, f353204Defaults } from "../services/f353204Service.js";
+import { F353203GenerationService } from "../services/f3532/f353203GenerationService.js";
 import { ImportService } from "../services/importService.js";
 import {
   cxfImportRequestSchema,
@@ -17,11 +18,13 @@ import {
   fhaImportRequestSchema,
   generateF353204Schema,
   commitF353204Schema,
+  commitF353203Schema,
   graphChangeSetSchema,
   modelingExportQuerySchema,
   persistPathsSchema,
   runAnalysisSchema,
   runFpAnalysisSchema,
+  previewF353203Schema,
   singleSheetImportRequestSchema,
   standardMappingRequestSchema
 } from "../types/api.js";
@@ -36,6 +39,7 @@ const importService = new ImportService();
 const cxfImportService = new CxfImportService();
 const f3532InputImportService = new F3532InputImportService();
 const f353204Service = new F353204Service();
+const f353203GenerationService = new F353203GenerationService();
 
 const emptyImportSummary = {
   asset_nodes: 0,
@@ -640,48 +644,81 @@ router.post("/analysis/function-propagation/run", async (req, res, next) => {
   }
 });
 
-router.post("/analysis/f3532/generate-03", async (req, res, next) => {
+async function createF353203Preview(maxHops: number, mode: "preview" | "commit" | "loaded" = "preview") {
+  const facts = await graphRepo.getF353203GenerationFacts();
+  const result = f353203GenerationService.generate(facts, { max_hops: maxHops, mode });
+  return {
+    ...result,
+    // Compatibility alias for the former frontend. Rows now use the complete standard 03 DTO.
+    function_propagation: result.propagation_paths
+  };
+}
+
+router.post("/analysis/f3532/generate-03/preview", async (req, res, next) => {
   try {
-    const parsed = runFpAnalysisSchema.safeParse(req.body ?? {});
+    const parsed = previewF353203Schema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
-    const inputs = await graphRepo.getFunctionPropagationInputs();
-    const fps = fpAnalysisService.run({ ...inputs, max_hops: parsed.data.max_hops, group_by: parsed.data.group_by });
-    await graphRepo.replaceFunctionPropagationPaths(fps);
-    const [boundaryDataFlows, functionPropagation] = await Promise.all([
-      graphRepo.getBoundaryDataFlowReport(),
-      graphRepo.getFunctionPropagationReport()
-    ]);
-    return res.json({
-      generated: true,
-      metadata: {
-        generated_at: new Date().toISOString(),
-        graph_version: await graphRepo.getGraphVersion(),
-        fp_count: fps.length
-      },
-      boundary_data_flows: { count: boundaryDataFlows.length, rows: boundaryDataFlows },
-      function_propagation: { count: functionPropagation.length, rows: functionPropagation }
-    });
+    const result = await createF353203Preview(parsed.data.max_hops);
+    if (parsed.data.group_by) {
+      result.metadata.warnings.push(`group_by=${parsed.data.group_by} 已废弃并被忽略；v2 使用业务规则配置`);
+    }
+    return res.json({ generated: true, committed: false, ...result });
   } catch (error) {
+    return next(error);
+  }
+});
+
+/** Old entry retained as a safe compatibility preview; it no longer deletes or commits FP nodes. */
+router.post("/analysis/f3532/generate-03", async (req, res, next) => {
+  try {
+    const parsed = previewF353203Schema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const result = await createF353203Preview(parsed.data.max_hops);
+    result.metadata.warnings.push("兼容端点 /analysis/f3532/generate-03 当前仅执行只读预览；正式保存请调用 /commit");
+    if (parsed.data.group_by) {
+      result.metadata.warnings.push(`group_by=${parsed.data.group_by} 已废弃并被忽略；v2 使用业务规则配置`);
+    }
+    return res.json({ generated: true, committed: false, ...result });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/analysis/f3532/generate-03/commit", async (req, res, next) => {
+  try {
+    const parsed = commitF353203Schema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ committed: false, errors: parsed.error.issues.map((issue) => issue.message) });
+    }
+    const result = await createF353203Preview(parsed.data.max_hops, "commit");
+    if (result.metadata.graph_version !== parsed.data.expected_graph_version) {
+      return res.status(409).json({
+        committed: false,
+        errors: [`输入版本已变化：期望 ${parsed.data.expected_graph_version}，当前 ${result.metadata.graph_version}`]
+      });
+    }
+    const committedCount = await graphRepo.commitF353203Paths(
+      result.propagation_paths.paths,
+      parsed.data.expected_graph_version
+    );
+    return res.json({ generated: true, committed: true, committed_path_count: committedCount, ...result });
+  } catch (error) {
+    if (error instanceof GraphChangeSetValidationError) {
+      return res.status(409).json({ committed: false, errors: error.errors });
+    }
     return next(error);
   }
 });
 
 router.get("/reports/f3532/03", async (_req, res, next) => {
   try {
-    const [boundaryDataFlows, functionPropagation] = await Promise.all([
-      graphRepo.getBoundaryDataFlowReport(),
-      graphRepo.getFunctionPropagationReport()
-    ]);
-    return res.json({
-      metadata: {
-        loaded_at: new Date().toISOString(),
-        graph_version: await graphRepo.getGraphVersion()
-      },
-      boundary_data_flows: { count: boundaryDataFlows.length, rows: boundaryDataFlows },
-      function_propagation: { count: functionPropagation.length, rows: functionPropagation }
-    });
+    const result = await createF353203Preview(8, "loaded");
+    result.metadata.warnings.push("报告按当前 GraphVersion 只读重算；已提交路径的审核状态不会被覆盖");
+    return res.json(result);
   } catch (error) {
     return next(error);
   }

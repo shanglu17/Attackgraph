@@ -13,6 +13,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import {
   commitChangeSet,
+  commitF353203,
   exportModelingResult,
   getBoundaryDataFlowReport,
   getFunctionPropagationReport,
@@ -39,6 +40,9 @@ import type {
   BoundaryDataFlowReportRow,
   ChangeSet,
   DO326ALink,
+  F353203BoundaryFlowRow,
+  F353203PathRow,
+  F3532Report03Data,
   FunctionPropagationReportRow,
   InternalDataFlowReportRow,
   GraphChangeSet,
@@ -50,6 +54,7 @@ import type {
 type EntityType = "asset_nodes" | "asset_edges" | "threat_points" | "do326a_links";
 type DraftOperation = "add" | "update" | "delete";
 type EditorMode = "form" | "json";
+type ImportWorkspace = "f3532" | "cxf" | "f353204";
 type EditableEntity = AssetNode | AssetEdge | ThreatPoint | DO326ALink;
 type FormState = Record<string, string>;
 type FieldKind = "text" | "textarea" | "select" | "number" | "csv";
@@ -64,6 +69,11 @@ interface FieldConfig {
 }
 
 const ENTITY_TYPES: EntityType[] = ["asset_nodes", "asset_edges", "threat_points", "do326a_links"];
+const IMPORT_WORKSPACES: Array<{ id: ImportWorkspace; label: string; description: string }> = [
+  { id: "f3532", label: "F3532 01/02", description: "导入 01、02，准备生成 03" },
+  { id: "cxf", label: "CXF 多 Sheet", description: "导入资产/接口/数据流清单" },
+  { id: "f353204", label: "F3532 04 / FHA", description: "导入 FHA 并生成 04 草稿" }
+];
 const ENTITY_LABELS: Record<EntityType, string> = {
   asset_nodes: "AssetNode",
   asset_edges: "AssetEdge",
@@ -310,39 +320,40 @@ async function exportChapter4Workbook(
 }
 
 async function exportF353203Workbook(
-  dataFlowRows: BoundaryDataFlowReportRow[],
-  propagationRows: FunctionPropagationReportRow[]
+  dataFlowRows: F353203BoundaryFlowRow[],
+  propagationRows: F353203PathRow[]
 ): Promise<void> {
   const xlsx = await import("xlsx");
   const wb = xlsx.utils.book_new();
 
   const bdfBoundarySheet = [
-    ["信任边界", "边界名称", "数据流类型", "边界接口(BI)", "关联BDF", "关联功能(F)", "是否进入内部传播"],
+    ["信任边界", "数据流类型", "边界接口(BI)", "关联BDF", "关联功能"],
     ...dataFlowRows.map((row) => [
-      row.boundary_id,
-      row.boundary_name,
+      row.security_boundary,
       row.data_flow_type,
-      row.interfaces.join("、"),
-      row.bdf_ids.join("、"),
-      row.function_ids.join("、"),
-      row.enters_internal_propagation ? "是" : "否"
+      row.boundary_interface_ids.join("、"),
+      row.bdf_display,
+      row.function_display
     ])
   ];
-  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(bdfBoundarySheet), "03_边界数据流-安保边界");
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(bdfBoundarySheet), "边界数据流-安保边界对照表");
 
   const pathSheet = [
-    ["路径编号", "数据类型", "入口BI", "关联BDF", "关联SDF", "系统传播路径", "影响功能"],
+    ["路径编号", "路径名称", "数据流类型", "入口/起源边界", "关联外部BI", "关联SDF", "关联内部SI", "关联BDF", "关联功能", "路径简述"],
     ...propagationRows.map((row) => [
-      row.fp_id,
-      row.data_type,
-      row.entry_bis.join("、"),
+      row.path_id,
+      row.path_name,
+      row.data_flow_types.join("/"),
+      row.origin,
+      row.boundary_interface_ids.join("、"),
+      row.sdf_ids.join("、"),
+      row.system_interface_ids.join("、"),
       row.bdf_ids.join("、"),
-      row.sdf_ids.length > 0 ? row.sdf_ids.join("、") : row.sdf_note ?? "",
-      row.system_path,
-      row.function_ids.join("、")
+      row.function_ids.join("、"),
+      row.path_description
     ])
   ];
-  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(pathSheet), "03_关键数据流传播路径");
+  xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(pathSheet), "关键数据流传播路径表");
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   xlsx.writeFile(wb, `f3532-03-report-${timestamp}.xlsx`);
@@ -535,10 +546,12 @@ export function App() {
   const [selectedExistingId, setSelectedExistingId] = useState("");
   const [editorValue, setEditorValue] = useState("");
   const [formState, setFormState] = useState<FormState>(createFormState("asset_nodes", null));
+  const [importWorkspace, setImportWorkspace] = useState<ImportWorkspace>("f3532");
   const [boundaryReport, setBoundaryReport] = useState<TrustBoundaryReportRow[]>([]);
   const [dataFlowReport, setDataFlowReport] = useState<BoundaryDataFlowReportRow[]>([]);
   const [propagationReport, setPropagationReport] = useState<FunctionPropagationReportRow[]>([]);
   const [internalFlowReport, setInternalFlowReport] = useState<InternalDataFlowReportRow[]>([]);
+  const [f353203Report, setF353203Report] = useState<F3532Report03Data | null>(null);
   const [fpGroupBy, setFpGroupBy] = useState<FpGroupBy>("boundary");
   const [reportLoaded, setReportLoaded] = useState(false);
 
@@ -948,6 +961,7 @@ export function App() {
       setDataFlowReport(bdf.rows);
       setPropagationReport(fp.rows);
       setInternalFlowReport(idf.rows);
+      setF353203Report(null);
       setReportLoaded(true);
       const pureInternal = idf.rows.filter((row) => !row.boundary_reachable).length;
       setMessage(
@@ -977,15 +991,31 @@ export function App() {
   async function handleGenerateF353203() {
     try {
       setBusy(true);
-      const result = await runF3532Generate03({ groupBy: fpGroupBy });
-      setDataFlowReport(result.boundary_data_flows.rows);
-      setPropagationReport(result.function_propagation.rows);
+      const result = await runF3532Generate03();
+      setF353203Report(result);
       setReportLoaded(true);
       setMessage(
-        `F3532 03 已生成：边界数据流对照 ${result.boundary_data_flows.count} 行，关键传播路径 ${result.function_propagation.count} 行，FP ${result.metadata.fp_count ?? result.function_propagation.count} 条`
+        `F3532 03 只读预览：逐 BDF ${result.boundary_data_flows.count} 行，路径 ${result.propagation_paths.count} 条（确认 ${result.metadata.confirmed_count} / 待审核 ${result.metadata.needs_review_count} / 未匹配 ${result.metadata.unmatched_count}）`
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to generate F3532 03");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCommitF353203() {
+    if (!f353203Report) {
+      setMessage("请先生成 F3532 03 只读预览，再基于预览 GraphVersion 显式提交");
+      return;
+    }
+    try {
+      setBusy(true);
+      const result = await commitF353203({ expectedGraphVersion: f353203Report.metadata.graph_version });
+      setF353203Report(result);
+      setMessage(`F3532 03 已提交 ${result.committed_path_count ?? result.propagation_paths.count} 条路径；人工/Approved 路径未被覆盖`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to commit F3532 03");
     } finally {
       setBusy(false);
     }
@@ -995,11 +1025,10 @@ export function App() {
     try {
       setBusy(true);
       const result = await getF3532Report03();
-      setDataFlowReport(result.boundary_data_flows.rows);
-      setPropagationReport(result.function_propagation.rows);
+      setF353203Report(result);
       setReportLoaded(true);
       setMessage(
-        `F3532 03 已加载：边界数据流对照 ${result.boundary_data_flows.count} 行，关键传播路径 ${result.function_propagation.count} 行`
+        `F3532 03 已按当前 GraphVersion 只读重算：逐 BDF ${result.boundary_data_flows.count} 行，路径 ${result.propagation_paths.count} 条`
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to load F3532 03");
@@ -1011,10 +1040,8 @@ export function App() {
   async function handleExportF353203() {
     try {
       setBusy(true);
-      const report = reportLoaded
-        ? { boundary_data_flows: { rows: dataFlowReport }, function_propagation: { rows: propagationReport } }
-        : await getF3532Report03();
-      await exportF353203Workbook(report.boundary_data_flows.rows, report.function_propagation.rows);
+      const report = f353203Report ?? await getF3532Report03();
+      await exportF353203Workbook(report.boundary_data_flows.rows, report.propagation_paths.rows);
       setMessage("F3532 03 已导出为 Excel 文件");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to export F3532 03");
@@ -1090,9 +1117,38 @@ export function App() {
         </article>
       </section>
 
-      <CxfImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
-      <F3532ImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
-      <F353204Panel disabled={busy} onStatusChange={setMessage} />
+      <section className="import-workspace" aria-label="Upload workbench">
+        <div className="import-switcher-header">
+          <div>
+            <h3>Upload Workbench</h3>
+            <p>{IMPORT_WORKSPACES.find((item) => item.id === importWorkspace)?.description}</p>
+          </div>
+          <div className="mode-toggle import-tabs" role="tablist" aria-label="Upload type">
+            {IMPORT_WORKSPACES.map((workspace) => (
+              <button
+                key={workspace.id}
+                type="button"
+                role="tab"
+                aria-selected={importWorkspace === workspace.id}
+                className={`mode-toggle-button ${importWorkspace === workspace.id ? "active" : ""}`}
+                onClick={() => setImportWorkspace(workspace.id)}
+              >
+                {workspace.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={importWorkspace === "f3532" ? "import-tab-panel" : "import-tab-panel hidden"} role="tabpanel">
+          <F3532ImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
+        </div>
+        <div className={importWorkspace === "cxf" ? "import-tab-panel" : "import-tab-panel hidden"} role="tabpanel">
+          <CxfImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
+        </div>
+        <div className={importWorkspace === "f353204" ? "import-tab-panel" : "import-tab-panel hidden"} role="tabpanel">
+          <F353204Panel disabled={busy} onStatusChange={setMessage} />
+        </div>
+      </section>
 
       <div className="layout">
         <aside className="panel left">
@@ -1190,7 +1246,10 @@ export function App() {
           <h3>第四章报告 (vol3)</h3>
           <div className="toolbar wrap">
             <button className="button primary" onClick={handleGenerateF353203} disabled={busy}>
-              生成 F3532 03
+              预览 F3532 03
+            </button>
+            <button className="button" onClick={handleCommitF353203} disabled={busy || !f353203Report}>
+              提交 F3532 03
             </button>
             <button className="button" onClick={handleLoadF353203} disabled={busy}>
               加载 F3532 03
@@ -1219,7 +1278,42 @@ export function App() {
               导出 vol3 Excel
             </button>
           </div>
-          {reportLoaded ? (
+          {f353203Report ? (
+            <div className="scroll-panel">
+              <p>
+                GraphVersion {f353203Report.metadata.graph_version}；确认 {f353203Report.metadata.confirmed_count} / 待审核 {f353203Report.metadata.needs_review_count} / 未匹配 {f353203Report.metadata.unmatched_count}
+              </p>
+              <h4>边界数据流—安保边界对照表（逐 BDF）</h4>
+              <table className="report-table">
+                <thead><tr><th>安保边界</th><th>数据流类型</th><th>边界接口</th><th>关联BDF</th><th>关联功能</th><th>方向/状态</th></tr></thead>
+                <tbody>
+                  {f353203Report.boundary_data_flows.rows.map((row) => (
+                    <tr key={row.bdf_id}>
+                      <td>{row.security_boundary || "—"}</td><td>{row.data_flow_type}</td>
+                      <td>{row.boundary_interface_ids.join("、") || "—"}</td><td>{row.bdf_display}</td>
+                      <td>{row.function_display || "—"}</td><td>{row.direction}{row.warnings.length ? " / 待核" : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <h4>关键数据流传播路径表</h4>
+              <table className="report-table">
+                <thead><tr><th>编号</th><th>名称</th><th>起源</th><th>外部BI</th><th>内部SI</th><th>BDF</th><th>SDF</th><th>功能</th><th>系统路径</th><th>简述/状态</th></tr></thead>
+                <tbody>
+                  {f353203Report.propagation_paths.rows.map((row) => (
+                    <tr key={row.path_id}>
+                      <td>{row.path_id}</td><td>{row.path_name}</td><td>{row.origin}</td>
+                      <td>{row.boundary_interface_ids.join("、") || "—"}</td><td>{row.system_interface_ids.join("、") || "—"}</td>
+                      <td>{row.bdf_ids.join("、") || "—"}</td><td>{row.sdf_ids.join("、") || "—"}</td>
+                      <td>{row.function_ids.join("、") || "—"}</td><td>{row.system_path || "—"}</td>
+                      <td>{row.path_description}<br />[{row.status}]</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          {reportLoaded && !f353203Report ? (
             <div className="scroll-panel">
               <h4>4.2 信任边界汇总</h4>
               <table className="report-table">

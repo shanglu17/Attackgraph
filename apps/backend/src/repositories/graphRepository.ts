@@ -6,6 +6,7 @@ import type {
   AuditRecord,
   BoundaryDataFlowReportRow,
   DO326ALink,
+  F353203GenerationFacts,
   FunctionPropagationPath,
   FunctionPropagationReportRow,
   GraphChangeSet,
@@ -13,10 +14,13 @@ import type {
   InternalDataFlowReportRow,
   ModelingExportBundle,
   ReviewStatus,
-  TrustBoundaryReportRow
+  TrustBoundaryReportRow,
+  GeneratedBusinessPath
 } from "../types/domain.js";
 import type { FpAnalysisInput } from "../services/fpAnalysisService.js";
 import { collectBoundaryReachableSdfIds } from "../services/fpAnalysisService.js";
+import { resolveSystemIdentity, splitSystemNames } from "../config/f3532/systemAliases.js";
+import { naturalSortUnique } from "../services/f3532/naturalSort.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
 
@@ -121,7 +125,7 @@ export class GraphRepository {
             ),
             tx.run("MATCH (bi:BoundaryInterface) RETURN bi ORDER BY bi.interface_id"),
             tx.run(
-              "MATCH (sdf:SystemDataFlow) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, sdf.failure_condition_ids AS failure_condition_ids, sdf.system_interface_id AS system_interface_id, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id"
+              "MATCH (sdf:SystemDataFlow) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, sdf.failure_condition_ids AS failure_condition_ids, sdf.system_interface_id AS system_interface_id, sdf.producer_system_id AS producer_system_id, sdf.consumer_system_id AS consumer_system_id, sdf.topic_ids AS topic_ids, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id"
             ),
             tx.run(
               "MATCH (fp:FunctionPropagationPath) OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode) OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow) RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type_label, fp.system_path_text AS system_path_text, fp.sdf_note AS sdf_note, fp.description AS description, collect(DISTINCT bdf.business_id) AS bdf_ids, collect(DISTINCT sdf.sdf_id) AS sdf_ids ORDER BY fp_id"
@@ -164,7 +168,24 @@ export class GraphRepository {
             enters_internal_propagation:
               (properties.enters_internal_propagation as boolean | undefined) ?? undefined,
             boundary_interface_id: (properties.boundary_interface_id as string | undefined) ?? undefined,
-            boundary_interface_ids: (properties.boundary_interface_ids as string[] | undefined) ?? undefined
+            boundary_interface_ids: (properties.boundary_interface_ids as string[] | undefined) ?? undefined,
+            failure_condition_ids: (properties.failure_condition_ids as string[] | undefined) ?? undefined,
+            bdf_producer_id: (properties.bdf_producer_id as string | undefined) ?? undefined,
+            bdf_producer_name: (properties.bdf_producer_name as string | undefined) ?? undefined,
+            bdf_consumer_id: (properties.bdf_consumer_id as string | undefined) ?? undefined,
+            bdf_consumer_name: (properties.bdf_consumer_name as string | undefined) ?? undefined,
+            bdf_destination_ids: (properties.bdf_destination_ids as string[] | undefined) ?? undefined,
+            bdf_destination_names: (properties.bdf_destination_names as string[] | undefined) ?? undefined,
+            bdf_direction: (properties.bdf_direction as GraphSnapshot["asset_nodes"][number]["bdf_direction"]) ?? undefined,
+            bdf_data_description: (properties.bdf_data_description as string | undefined) ?? undefined,
+            bdf_function_text: (properties.bdf_function_text as string | undefined) ?? undefined,
+            bdf_function_ids: (properties.bdf_function_ids as string[] | undefined) ?? undefined,
+            bdf_topic_ids: (properties.bdf_topic_ids as GraphSnapshot["asset_nodes"][number]["bdf_topic_ids"]) ?? undefined,
+            bdf_continuation_policy:
+              (properties.bdf_continuation_policy as GraphSnapshot["asset_nodes"][number]["bdf_continuation_policy"]) ?? undefined,
+            source_sheet: (properties.source_sheet as string | undefined) ?? undefined,
+            source_row: properties.source_row == null ? undefined : Number(properties.source_row),
+            system_id: (properties.system_id as string | undefined) ?? undefined
           };
         }),
         asset_edges: result.edgesRes.records.map((record) => ({
@@ -259,7 +280,10 @@ export class GraphRepository {
           description: (record.get("description") as string | null) ?? undefined,
           function_ids: ((record.get("function_ids") as unknown[]) ?? []).map((value) => String(value)),
           failure_condition_ids: ((record.get("failure_condition_ids") as unknown[]) ?? []).map((value) => String(value)),
-          system_interface_id: (record.get("system_interface_id") as string | null) ?? undefined
+          system_interface_id: (record.get("system_interface_id") as string | null) ?? undefined,
+          producer_system_id: (record.get("producer_system_id") as string | null) ?? undefined,
+          consumer_system_id: (record.get("consumer_system_id") as string | null) ?? undefined,
+          topic_ids: ((record.get("topic_ids") as unknown[]) ?? []).map((value) => String(value)) as GraphSnapshot["system_data_flows"][number]["topic_ids"]
         })),
         function_propagation_paths: result.fpRes.records.map((record) => ({
           fp_id: record.get("fp_id") as string,
@@ -333,7 +357,7 @@ export class GraphRepository {
 
         for (const asset of [...changeSet.asset_nodes.add, ...changeSet.asset_nodes.update]) {
           await tx.run(
-            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id, a.boundary_interface_ids = $boundary_interface_ids, a.failure_condition_ids = $failure_condition_ids WITH a OPTIONAL MATCH (a)-[old:TRACES_TO]->(:FailureCondition) DELETE old",
+            "MERGE (a:AssetNode {asset_id: $asset_id}) SET a.asset_name = $asset_name, a.asset_type = $asset_type, a.criticality = $criticality, a.security_domain = $security_domain, a.description = $description, a.data_classification = $data_classification, a.tags = $tags, a.is_placeholder = $is_placeholder, a.source = $source, a.business_id = $business_id, a.data_flow_type = $data_flow_type, a.bdf_ids = $bdf_ids, a.enters_internal_propagation = $enters_internal_propagation, a.boundary_interface_id = $boundary_interface_id, a.boundary_interface_ids = $boundary_interface_ids, a.failure_condition_ids = $failure_condition_ids, a.bdf_producer_id = $bdf_producer_id, a.bdf_producer_name = $bdf_producer_name, a.bdf_consumer_id = $bdf_consumer_id, a.bdf_consumer_name = $bdf_consumer_name, a.bdf_destination_ids = $bdf_destination_ids, a.bdf_destination_names = $bdf_destination_names, a.bdf_direction = $bdf_direction, a.bdf_data_description = $bdf_data_description, a.bdf_function_text = $bdf_function_text, a.bdf_function_ids = $bdf_function_ids, a.bdf_topic_ids = $bdf_topic_ids, a.bdf_continuation_policy = $bdf_continuation_policy, a.source_sheet = $source_sheet, a.source_row = $source_row, a.system_id = $system_id WITH a OPTIONAL MATCH (a)-[old:TRACES_TO]->(:FailureCondition) DELETE old",
             {
               ...asset,
               security_domain: asset.security_domain ?? null,
@@ -348,7 +372,22 @@ export class GraphRepository {
               enters_internal_propagation: asset.enters_internal_propagation ?? null,
               boundary_interface_id: asset.boundary_interface_id ?? null,
               boundary_interface_ids: asset.boundary_interface_ids ?? (asset.boundary_interface_id ? [asset.boundary_interface_id] : []),
-              failure_condition_ids: asset.failure_condition_ids ?? []
+              failure_condition_ids: asset.failure_condition_ids ?? [],
+              bdf_producer_id: asset.bdf_producer_id ?? null,
+              bdf_producer_name: asset.bdf_producer_name ?? null,
+              bdf_consumer_id: asset.bdf_consumer_id ?? null,
+              bdf_consumer_name: asset.bdf_consumer_name ?? null,
+              bdf_destination_ids: asset.bdf_destination_ids ?? [],
+              bdf_destination_names: asset.bdf_destination_names ?? [],
+              bdf_direction: asset.bdf_direction ?? null,
+              bdf_data_description: asset.bdf_data_description ?? null,
+              bdf_function_text: asset.bdf_function_text ?? null,
+              bdf_function_ids: asset.bdf_function_ids ?? [],
+              bdf_topic_ids: asset.bdf_topic_ids ?? [],
+              bdf_continuation_policy: asset.bdf_continuation_policy ?? null,
+              source_sheet: asset.source_sheet ?? null,
+              source_row: asset.source_row ?? null,
+              system_id: asset.system_id ?? null
             }
           );
           await tx.run(
@@ -438,7 +477,7 @@ export class GraphRepository {
           ...(changeSet.system_data_flows?.update ?? [])
         ]) {
           await tx.run(
-            "MERGE (sdf:SystemDataFlow {sdf_id: $sdf_id}) SET sdf.producer = $producer, sdf.consumer = $consumer, sdf.content = $content, sdf.data_flow_type = $data_flow_type, sdf.description = $description, sdf.failure_condition_ids = $failure_condition_ids, sdf.system_interface_id = $system_interface_id WITH sdf OPTIONAL MATCH (sdf)-[old:SUPPORTS_FUNCTION|TRACES_TO]->() DELETE old",
+            "MERGE (sdf:SystemDataFlow {sdf_id: $sdf_id}) SET sdf.producer = $producer, sdf.consumer = $consumer, sdf.content = $content, sdf.data_flow_type = $data_flow_type, sdf.description = $description, sdf.failure_condition_ids = $failure_condition_ids, sdf.system_interface_id = $system_interface_id, sdf.producer_system_id = $producer_system_id, sdf.consumer_system_id = $consumer_system_id, sdf.topic_ids = $topic_ids WITH sdf OPTIONAL MATCH (sdf)-[old:SUPPORTS_FUNCTION|TRACES_TO]->() DELETE old",
             {
               sdf_id: sdf.sdf_id,
               producer: sdf.producer ?? null,
@@ -447,7 +486,10 @@ export class GraphRepository {
               data_flow_type: sdf.data_flow_type ?? null,
               description: sdf.description ?? null,
               failure_condition_ids: sdf.failure_condition_ids ?? [],
-              system_interface_id: sdf.system_interface_id ?? null
+              system_interface_id: sdf.system_interface_id ?? null,
+              producer_system_id: sdf.producer_system_id ?? null,
+              consumer_system_id: sdf.consumer_system_id ?? null,
+              topic_ids: sdf.topic_ids ?? []
             }
           );
           await tx.run(
@@ -918,6 +960,201 @@ export class GraphRepository {
           await tx.run(
             "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $sdf_ids AS sid MATCH (sdf:SystemDataFlow {sdf_id: sid}) MERGE (fp)-[:INCLUDES_SDF]->(sdf)",
             { fp_id: fp.fp_id, sdf_ids: fp.sdf_ids ?? [] }
+          );
+        }
+      });
+      return paths.length;
+    } finally {
+      await session.close();
+    }
+  }
+
+  /** Reads the structured F3532 facts used by deterministic 03 generation. No write occurs. */
+  async getF353203GenerationFacts(): Promise<F353203GenerationFacts> {
+    const snapshot = await this.getGraph();
+    const warnings: string[] = [];
+    const boundaryInterfaces = snapshot.boundary_interfaces.map((item) => {
+      const external = item.external_entity ? resolveSystemIdentity(item.external_entity) : undefined;
+      const access = splitSystemNames(item.access_object).map(resolveSystemIdentity);
+      return {
+        id: item.interface_id,
+        external_system_id: external?.system_id,
+        external_name: item.external_entity,
+        access_system_ids: naturalSortUnique(access.map((entry) => entry.system_id)),
+        access_names: splitSystemNames(item.access_object),
+        security_boundary_id: item.boundary_id
+      };
+    });
+    const interfaceById = new Map(boundaryInterfaces.map((item) => [item.id, item]));
+
+    const boundaryDataFlows = snapshot.asset_nodes
+      .filter((asset) => Boolean(asset.business_id?.match(/^BDF\d+$/i)))
+      .map((asset) => {
+        const id = asset.business_id!;
+        const interfaceIds = naturalSortUnique(
+          asset.boundary_interface_ids ?? (asset.boundary_interface_id ? [asset.boundary_interface_id] : [])
+        );
+        const securityBoundaryIds = naturalSortUnique(
+          interfaceIds.map((interfaceId) => interfaceById.get(interfaceId)?.security_boundary_id ?? "").filter(Boolean)
+        );
+        const producer = asset.bdf_producer_name ? resolveSystemIdentity(asset.bdf_producer_name) : undefined;
+        const consumer = asset.bdf_consumer_name ? resolveSystemIdentity(asset.bdf_consumer_name) : undefined;
+        const migrationWarning = !asset.bdf_direction
+          ? `${id} 缺少 v2 结构化方向；请重新导入 01/02 后再正式提交 03`
+          : undefined;
+        if (migrationWarning) warnings.push(migrationWarning);
+        return {
+          id,
+          producer_id: asset.bdf_producer_id ?? producer?.system_id,
+          producer_name: asset.bdf_producer_name ?? producer?.display_name ?? "未提供 Producer",
+          consumer_id: asset.bdf_consumer_id ?? consumer?.system_id,
+          consumer_name: asset.bdf_consumer_name ?? consumer?.display_name ?? "未提供 Consumer",
+          destination_ids: asset.bdf_destination_ids ?? [],
+          destination_names: asset.bdf_destination_names ?? [],
+          direction: asset.bdf_direction ?? (asset.enters_internal_propagation ? "INBOUND" : "UNKNOWN"),
+          boundary_interface_ids: interfaceIds,
+          security_boundary_ids: securityBoundaryIds,
+          data_type: asset.data_flow_type ?? "UNSPECIFIED",
+          data_description: asset.bdf_data_description,
+          function_ids: asset.bdf_function_ids ?? [],
+          function_text: asset.bdf_function_text,
+          continuation_policy: asset.bdf_continuation_policy ?? "UNKNOWN",
+          topic_ids: asset.bdf_topic_ids?.length ? asset.bdf_topic_ids : ["UNKNOWN"],
+          source_sheet: asset.source_sheet,
+          source_row: asset.source_row,
+          warnings: migrationWarning ? [migrationWarning] : [],
+          evidence: [
+            {
+              type: "PERSISTED_BDF_FACT",
+              source_id: id,
+              message: `${asset.bdf_producer_name ?? "?"} → ${asset.bdf_consumer_name ?? "?"}，方向 ${asset.bdf_direction ?? "未迁移"}`
+            }
+          ]
+        } satisfies F353203GenerationFacts["boundary_data_flows"][number];
+      });
+
+    const systemDataFlows = snapshot.system_data_flows.map((sdf) => {
+      const producer = resolveSystemIdentity(sdf.producer);
+      const consumer = resolveSystemIdentity(sdf.consumer);
+      const sdfWarnings: string[] = [];
+      if (!sdf.producer_system_id || !sdf.consumer_system_id) {
+        sdfWarnings.push(`${sdf.sdf_id} 缺少稳定端点 ID，已使用集中别名模块兼容解析；建议重新导入 01/02`);
+      }
+      return {
+        id: sdf.sdf_id,
+        producer_system_id: sdf.producer_system_id ?? producer.system_id,
+        consumer_system_id: sdf.consumer_system_id ?? consumer.system_id,
+        producer_name: sdf.producer ?? producer.display_name,
+        consumer_name: sdf.consumer ?? consumer.display_name,
+        system_interface_id: sdf.system_interface_id,
+        data_type: sdf.data_flow_type ?? "UNSPECIFIED",
+        data_description: sdf.content,
+        function_ids: sdf.function_ids ?? [],
+        topic_ids: sdf.topic_ids?.length ? sdf.topic_ids : ["UNKNOWN"],
+        warnings: sdfWarnings,
+        evidence: []
+      } satisfies F353203GenerationFacts["system_data_flows"][number];
+    });
+    warnings.push(...systemDataFlows.flatMap((sdf) => sdf.warnings));
+
+    const systemInterfaces = Array.from(
+      new Map(
+        systemDataFlows
+          .filter((sdf) => sdf.system_interface_id)
+          .map((sdf) => [
+            sdf.system_interface_id!,
+            {
+              id: sdf.system_interface_id!,
+              producer_system_id: sdf.producer_system_id,
+              consumer_system_id: sdf.consumer_system_id,
+              producer_name: sdf.producer_name,
+              consumer_name: sdf.consumer_name
+            }
+          ])
+      ).values()
+    );
+
+    return {
+      graph_version: snapshot.graph_version,
+      boundary_data_flows: boundaryDataFlows,
+      system_data_flows: systemDataFlows,
+      system_interfaces: systemInterfaces,
+      boundary_interfaces: boundaryInterfaces,
+      trust_boundaries: snapshot.trust_boundaries.map((boundary) => ({ id: boundary.boundary_id, name: boundary.name })),
+      warnings: naturalSortUnique(warnings)
+    };
+  }
+
+  /**
+   * Replaces only v2-generated 03 paths in one transaction. Manual/approved paths are never
+   * overwritten and the caller must bind the commit to the exact GraphVersion used for preview.
+   */
+  async commitF353203Paths(paths: GeneratedBusinessPath[], expectedGraphVersion: string): Promise<number> {
+    const session = getDriver().session();
+    try {
+      await session.executeWrite(async (tx) => {
+        const versionRecord = await tx.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS value", {
+          id: graphVersionNodeId
+        });
+        const currentVersion = (versionRecord.records[0]?.get("value") as string | undefined) ?? "v1";
+        if (currentVersion !== expectedGraphVersion) {
+          throw new GraphChangeSetValidationError([
+            `F3532 03 输入版本冲突：预览基于 ${expectedGraphVersion}，当前 GraphVersion 为 ${currentVersion}`
+          ]);
+        }
+        const protectedResult = await tx.run(
+          `MATCH (fp:FunctionPropagationPath)
+           WHERE fp.review_status = 'Approved'
+              OR (fp.fp_id IN $path_ids AND coalesce(fp.source, '') <> 'f3532-03-deterministic-v2')
+           RETURN collect(fp.fp_id) AS ids`,
+          { path_ids: paths.map((path) => path.id) }
+        );
+        const protectedIds = ((protectedResult.records[0]?.get("ids") as unknown[]) ?? []).map(String);
+        if (protectedIds.length > 0) {
+          throw new GraphChangeSetValidationError([
+            `拒绝覆盖人工或已批准的路径：${naturalSortUnique(protectedIds).join("、")}`
+          ]);
+        }
+
+        await tx.run(
+          "MATCH (fp:FunctionPropagationPath {source: 'f3532-03-deterministic-v2'}) DETACH DELETE fp"
+        );
+        for (const path of paths) {
+          await tx.run(
+            `CREATE (fp:FunctionPropagationPath {
+               fp_id: $fp_id, source: 'f3532-03-deterministic-v2', generator_version: 'f3532-03-deterministic-v2',
+               generated_against_version: $graph_version, generation_status: $generation_status,
+               review_status: 'Draft', rule_id: $rule_id, path_name: $path_name,
+               description: $description, system_path_text: $system_path_text,
+               data_type_label: $data_type_label, boundary_interface_ids: $boundary_interface_ids,
+               system_interface_ids: $system_interface_ids, function_ids: $function_ids,
+               route_segments_json: $route_segments_json, evidence_json: $evidence_json,
+               warnings_json: $warnings_json, generated_at: datetime()
+             })`,
+            {
+              fp_id: path.id,
+              graph_version: expectedGraphVersion,
+              generation_status: path.status,
+              rule_id: path.rule_id,
+              path_name: path.name,
+              description: path.description,
+              system_path_text: path.system_node_ids.join(" → "),
+              data_type_label: path.data_types.join("、"),
+              boundary_interface_ids: path.boundary_interface_ids,
+              system_interface_ids: path.system_interface_ids,
+              function_ids: path.function_ids,
+              route_segments_json: JSON.stringify(path.route_segments),
+              evidence_json: JSON.stringify(path.evidence),
+              warnings_json: JSON.stringify(path.warnings)
+            }
+          );
+          await tx.run(
+            "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $bdf_ids AS bid MATCH (bdf:AssetNode {business_id: bid}) MERGE (fp)-[:INCLUDES_BDF]->(bdf)",
+            { fp_id: path.id, bdf_ids: path.bdf_ids }
+          );
+          await tx.run(
+            "MATCH (fp:FunctionPropagationPath {fp_id: $fp_id}) UNWIND $sdf_ids AS sid MATCH (sdf:SystemDataFlow {sdf_id: sid}) MERGE (fp)-[:INCLUDES_SDF]->(sdf)",
+            { fp_id: path.id, sdf_ids: path.sdf_ids }
           );
         }
       });

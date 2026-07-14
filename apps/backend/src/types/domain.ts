@@ -55,6 +55,27 @@ export interface AssetNode {
   boundary_interface_ids?: string[];
   /** Exact AFHA/FHA failure-condition ids referenced by a boundary data flow row. */
   failure_condition_ids?: string[];
+  /** Structured BDF producer facts retained from the F3532 01 workbook. */
+  bdf_producer_id?: string;
+  bdf_producer_name?: string;
+  /** Structured BDF consumer facts retained from the F3532 01 workbook. */
+  bdf_consumer_id?: string;
+  bdf_consumer_name?: string;
+  /** Destination may name one or more systems/devices. */
+  bdf_destination_ids?: string[];
+  bdf_destination_names?: string[];
+  /** Boundary-crossing direction derived from known external/internal systems. */
+  bdf_direction?: BoundaryDataFlowDirection;
+  /** Original data description and function text used for auditable report output. */
+  bdf_data_description?: string;
+  bdf_function_text?: string;
+  bdf_function_ids?: string[];
+  bdf_topic_ids?: F3532DataTopic[];
+  bdf_continuation_policy?: BoundaryDataFlowContinuationPolicy;
+  source_sheet?: string;
+  source_row?: number;
+  /** Stable identity for system endpoint assets used by F3532 propagation. */
+  system_id?: string;
 }
 
 export interface AssetEdge {
@@ -294,7 +315,207 @@ export interface SystemDataFlow {
   failure_condition_ids?: string[];
   /** Source system-interface id from the 01 workbook. */
   system_interface_id?: string;
+  /** Stable system ids resolved by the shared F3532 identity resolver. */
+  producer_system_id?: string;
+  consumer_system_id?: string;
+  /** Deterministically classified business/data topics. */
+  topic_ids?: F3532DataTopic[];
   description?: string;
+}
+
+export type BoundaryDataFlowDirection = "INBOUND" | "OUTBOUND" | "INTERNAL" | "BIDIRECTIONAL" | "UNKNOWN";
+
+export type BoundaryDataFlowContinuationPolicy =
+  | "CONTINUE"
+  | "STOP_AT_CONSUMER"
+  | "RULE_DEPENDENT"
+  | "UNKNOWN";
+
+export type F3532DataTopic =
+  | "COMMAND_CONTROL"
+  | "NAVIGATION"
+  | "RTK_CORRECTION"
+  | "POSITION"
+  | "MAINTENANCE"
+  | "SOFTWARE_LOAD"
+  | "PARAMETER_CONFIGURATION"
+  | "FAULT_DIAGNOSIS"
+  | "AUDIO"
+  | "VIDEO"
+  | "POWER"
+  | "FLIGHT_STATE"
+  | "MISSION_DATA"
+  | "RECORDING"
+  | "ALERT"
+  | "UNKNOWN";
+
+export interface F3532GenerationEvidence {
+  type: string;
+  source_id?: string;
+  rule_id?: string;
+  message: string;
+}
+
+export interface BoundaryDataFlowFact {
+  id: string;
+  producer_id?: string;
+  producer_name: string;
+  consumer_id?: string;
+  consumer_name: string;
+  destination_ids: string[];
+  destination_names: string[];
+  direction: BoundaryDataFlowDirection;
+  boundary_interface_ids: string[];
+  security_boundary_ids: string[];
+  data_type: string;
+  data_description?: string;
+  function_ids: string[];
+  function_text?: string;
+  continuation_policy: BoundaryDataFlowContinuationPolicy;
+  topic_ids: F3532DataTopic[];
+  source_sheet?: string;
+  source_row?: number;
+  warnings: string[];
+  evidence: F3532GenerationEvidence[];
+}
+
+export interface SystemInterfaceFact {
+  id: string;
+  producer_system_id: string;
+  consumer_system_id: string;
+  producer_name: string;
+  consumer_name: string;
+  direction?: string;
+  protocol?: string;
+}
+
+export interface SystemDataFlowFact {
+  id: string;
+  producer_system_id: string;
+  consumer_system_id: string;
+  producer_name: string;
+  consumer_name: string;
+  system_interface_id?: string;
+  data_type: string;
+  data_description?: string;
+  function_ids: string[];
+  topic_ids: F3532DataTopic[];
+  source_row?: number;
+  warnings: string[];
+  evidence: F3532GenerationEvidence[];
+}
+
+export interface BoundaryInterfaceFact {
+  id: string;
+  external_system_id?: string;
+  external_name?: string;
+  access_system_ids: string[];
+  access_names: string[];
+  security_boundary_id?: string;
+}
+
+export interface TrustBoundaryFact {
+  id: string;
+  name: string;
+}
+
+export interface F353203GenerationFacts {
+  graph_version: string;
+  boundary_data_flows: BoundaryDataFlowFact[];
+  system_data_flows: SystemDataFlowFact[];
+  system_interfaces: SystemInterfaceFact[];
+  boundary_interfaces: BoundaryInterfaceFact[];
+  trust_boundaries: TrustBoundaryFact[];
+  warnings: string[];
+}
+
+export type GeneratedPathStatus = "CONFIRMED" | "NEEDS_REVIEW" | "UNMATCHED";
+export type GeneratedPathOriginType = "BOUNDARY_FLOW" | "INTERNAL_FLOW" | "RULE_DEFINED";
+
+export interface GeneratedRouteSegment {
+  from_system_id: string;
+  to_system_id: string;
+  sdf_ids: string[];
+  sequence?: number;
+  branch_id?: string;
+  system_interface_ids?: string[];
+  data_types?: string[];
+  topic_ids?: F3532DataTopic[];
+}
+
+export interface GeneratedBusinessPath {
+  id: string;
+  compatibility_fp_id?: string;
+  rule_id: string;
+  status: GeneratedPathStatus;
+  name: string;
+  description: string;
+  origin_type: GeneratedPathOriginType;
+  origin_boundary_ids: string[];
+  seed_bdf_ids: string[];
+  boundary_interface_ids: string[];
+  system_interface_ids: string[];
+  bdf_ids: string[];
+  sdf_ids: string[];
+  function_ids: string[];
+  data_types: string[];
+  topic_ids: F3532DataTopic[];
+  system_node_ids: string[];
+  route_segments: GeneratedRouteSegment[];
+  terminal_system_ids: string[];
+  stop_reasons: string[];
+  evidence: F3532GenerationEvidence[];
+  warnings: string[];
+}
+
+export interface F353203BoundaryFlowRow {
+  security_boundary: string;
+  security_boundary_ids: string[];
+  data_flow_type: string;
+  boundary_interface_ids: string[];
+  bdf_id: string;
+  bdf_display: string;
+  function_ids: string[];
+  function_display: string;
+  direction: BoundaryDataFlowDirection;
+  continuation_policy: BoundaryDataFlowContinuationPolicy;
+  evidence: F3532GenerationEvidence[];
+  warnings: string[];
+}
+
+export interface F353203PathRow {
+  path_id: string;
+  path_name: string;
+  data_flow_types: string[];
+  origin: string;
+  boundary_interface_ids: string[];
+  sdf_ids: string[];
+  system_interface_ids: string[];
+  bdf_ids: string[];
+  function_ids: string[];
+  system_path: string;
+  path_description: string;
+  status: GeneratedPathStatus;
+  rule_id: string;
+  route_segments: GeneratedRouteSegment[];
+  terminal_system_ids: string[];
+  evidence: F3532GenerationEvidence[];
+  warnings: string[];
+}
+
+export interface F353203GenerationResult {
+  metadata: {
+    generated_at: string;
+    graph_version: string;
+    mode: "preview" | "commit" | "loaded";
+    generator_version: string;
+    confirmed_count: number;
+    needs_review_count: number;
+    unmatched_count: number;
+    warnings: string[];
+  };
+  boundary_data_flows: { count: number; rows: F353203BoundaryFlowRow[] };
+  propagation_paths: { count: number; rows: F353203PathRow[]; paths: GeneratedBusinessPath[] };
 }
 
 export interface FailureCondition {

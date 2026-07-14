@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/services/f3532/f353203Generation.test.ts",
     "start": "node dist/index.js",
     "clear": "tsx src/scripts/clearGraph.ts",
     "seed:sample": "tsx src/scripts/seedSample.ts",
