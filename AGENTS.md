@@ -66,6 +66,11 @@ Key API endpoints:
 - **`src/types.ts`** — Frontend-side type definitions (mirrors backend domain types)
 - **`src/cxfWorkbook.ts`** — Client-side xlsx workbook parser
 
+Frontend changes must also follow `apps/frontend/AGENTS.md` and
+`docs/frontend-development-standard.md`. These define the four-workspace information
+architecture, responsive layout rules, component boundaries, and the required Agent
+verification checklist.
+
 ### Data Flow
 
 1. **Graph Editing**: Editor (form/JSON) -> Draft ChangeSet (in-memory queue) -> Validate -> Commit to Neo4j (atomic via `commitChangeSet`, version conflict detection)
