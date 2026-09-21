@@ -1,3 +1,4 @@
+import { writeSystemDataFlows } from "./writeSystemDataFlows.js";
 import crypto from "node:crypto";
 import type { QueryResult, Session } from "neo4j-driver";
 import { getDriver } from "../db/neo4j.js";
@@ -472,35 +473,10 @@ export class GraphRepository {
           );
         }
 
-        for (const sdf of [
+        await writeSystemDataFlows(tx, [
           ...(changeSet.system_data_flows?.add ?? []),
           ...(changeSet.system_data_flows?.update ?? [])
-        ]) {
-          await tx.run(
-            "MERGE (sdf:SystemDataFlow {sdf_id: $sdf_id}) SET sdf.producer = $producer, sdf.consumer = $consumer, sdf.content = $content, sdf.data_flow_type = $data_flow_type, sdf.description = $description, sdf.failure_condition_ids = $failure_condition_ids, sdf.system_interface_id = $system_interface_id, sdf.producer_system_id = $producer_system_id, sdf.consumer_system_id = $consumer_system_id, sdf.topic_ids = $topic_ids WITH sdf OPTIONAL MATCH (sdf)-[old:SUPPORTS_FUNCTION|TRACES_TO]->() DELETE old",
-            {
-              sdf_id: sdf.sdf_id,
-              producer: sdf.producer ?? null,
-              consumer: sdf.consumer ?? null,
-              content: sdf.content ?? null,
-              data_flow_type: sdf.data_flow_type ?? null,
-              description: sdf.description ?? null,
-              failure_condition_ids: sdf.failure_condition_ids ?? [],
-              system_interface_id: sdf.system_interface_id ?? null,
-              producer_system_id: sdf.producer_system_id ?? null,
-              consumer_system_id: sdf.consumer_system_id ?? null,
-              topic_ids: sdf.topic_ids ?? []
-            }
-          );
-          await tx.run(
-            "MATCH (sdf:SystemDataFlow {sdf_id: $sdf_id}) UNWIND $function_ids AS fid MATCH (f:FunctionNode {function_id: fid}) MERGE (sdf)-[:SUPPORTS_FUNCTION]->(f)",
-            { sdf_id: sdf.sdf_id, function_ids: sdf.function_ids ?? [] }
-          );
-          await tx.run(
-            "MATCH (sdf:SystemDataFlow {sdf_id: $sdf_id}) UNWIND $failure_condition_ids AS fcid MATCH (fc:FailureCondition {failure_condition_id: fcid}) MERGE (sdf)-[:TRACES_TO]->(fc)",
-            { sdf_id: sdf.sdf_id, failure_condition_ids: sdf.failure_condition_ids ?? [] }
-          );
-        }
+        ]);
 
         for (const fp of [
           ...(changeSet.function_propagation_paths?.add ?? []),

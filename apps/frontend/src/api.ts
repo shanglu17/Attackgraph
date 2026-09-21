@@ -415,3 +415,21 @@ export async function reviewDo326aLink(
   await ensureOk(response, "Failed to update review status");
   return response.json();
 }
+
+
+export async function previewFeatureRules(payload: Record<string, unknown>): Promise<import("./types").FeaturePreviewResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/analysis/feature-rules/preview`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+    });
+  } catch {
+    throw new Error("无法连接后端，请确认 4000 端口的服务已启动。输入已保留，可稍后重试。");
+  }
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({})) as { message?: string; issues?: Array<{ path: Array<string | number>; message: string }> };
+    const issues = detail.issues?.slice(0, 8).map(x => `${x.path.join(".") || "数据包"}：${x.message}`).join("；");
+    throw new Error(issues || detail.message || `预览失败（${response.status}），请检查输入或后端状态。`);
+  }
+  return response.json();
+}

@@ -79,9 +79,10 @@ export async function parseF3532Workbooks(
   file02: File,
   aircraftModel: string
 ): Promise<ParsedF3532Workbook> {
-  xlsxModule ??= await import("xlsx");
-  const workbook01 = xlsxModule.read(await file01.arrayBuffer(), { type: "array", dense: true });
-  const workbook02 = xlsxModule.read(await file02.arrayBuffer(), { type: "array", dense: true });
+  const [xlsx, buffer01, buffer02] = await Promise.all([import("xlsx"), file01.arrayBuffer(), file02.arrayBuffer()]);
+  xlsxModule = xlsx;
+  const workbook01 = xlsx.read(buffer01, { type: "array", dense: true });
+  const workbook02 = xlsx.read(buffer02, { type: "array", dense: true });
 
   const boundaryInterfaces = parseBoundaryInterfaces(workbook01);
   const boundaryDataFlows = parseBoundaryDataFlows(workbook01);

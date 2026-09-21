@@ -28,10 +28,8 @@ import {
   seedGenericData,
   seedSampleData
 } from "./api";
-import { CxfImportPanel } from "./CxfImportPanel";
-import { F3532ImportPanel } from "./F3532ImportPanel";
-import { F353204Panel } from "./F353204Panel";
 import { AppWorkspaceNav, type AppWorkspace } from "./app/AppWorkspaceNav";
+import { ImportWorkspace } from "./features/imports/ImportWorkspace";
 import { ChangeSetStudio } from "./features/changes/ChangeSetStudio";
 import type {
   AssetNode,
@@ -46,12 +44,6 @@ import type {
   TrustBoundaryReportRow
 } from "./types";
 
-type ImportWorkspace = "f3532" | "cxf" | "f353204";
-const IMPORT_WORKSPACES: Array<{ id: ImportWorkspace; label: string; description: string }> = [
-  { id: "f3532", label: "F3532 01/02", description: "导入 01、02，准备生成 03" },
-  { id: "cxf", label: "CXF 多 Sheet", description: "导入资产/接口/数据流清单" },
-  { id: "f353204", label: "F3532 04 / FHA", description: "导入 FHA 并生成 04 草稿" }
-];
 const domainOrder = ["Internal", "Shared", "DMZ", "External"];
 
 function inferDomain(asset: AssetNode): string {
@@ -230,7 +222,6 @@ export function App() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [layoutVersion, setLayoutVersion] = useState(0);
-  const [importWorkspace, setImportWorkspace] = useState<ImportWorkspace>("f3532");
   const [boundaryReport, setBoundaryReport] = useState<TrustBoundaryReportRow[]>([]);
   const [dataFlowReport, setDataFlowReport] = useState<BoundaryDataFlowReportRow[]>([]);
   const [propagationReport, setPropagationReport] = useState<FunctionPropagationReportRow[]>([]);
@@ -595,38 +586,7 @@ export function App() {
         </article>
       </section>
 
-      <section className={activeWorkspace === "imports" ? "import-workspace" : "hidden"} aria-label="数据导入工作台">
-        <div className="import-switcher-header">
-          <div>
-            <h2 className="section-title">数据导入工作台</h2>
-            <p>{IMPORT_WORKSPACES.find((item) => item.id === importWorkspace)?.description}</p>
-          </div>
-          <div className="mode-toggle import-tabs" role="tablist" aria-label="Upload type">
-            {IMPORT_WORKSPACES.map((workspace) => (
-              <button
-                key={workspace.id}
-                type="button"
-                role="tab"
-                aria-selected={importWorkspace === workspace.id}
-                className={`mode-toggle-button ${importWorkspace === workspace.id ? "active" : ""}`}
-                onClick={() => setImportWorkspace(workspace.id)}
-              >
-                {workspace.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={importWorkspace === "f3532" ? "import-tab-panel" : "import-tab-panel hidden"} role="tabpanel">
-          <F3532ImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
-        </div>
-        <div className={importWorkspace === "cxf" ? "import-tab-panel" : "import-tab-panel hidden"} role="tabpanel">
-          <CxfImportPanel disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
-        </div>
-        <div className={importWorkspace === "f353204" ? "import-tab-panel" : "import-tab-panel hidden"} role="tabpanel">
-          <F353204Panel disabled={busy} onStatusChange={setMessage} />
-        </div>
-      </section>
+      <ImportWorkspace active={activeWorkspace === "imports"} disabled={busy} onStatusChange={setMessage} onCommitSuccess={handleWorkbookImportCommit} />
 
       <div className={`layout workspace-${activeWorkspace}`}>
         <aside className={activeWorkspace === "analysis" ? "panel left" : "hidden"}>

@@ -830,3 +830,28 @@ export interface F353203PathRow {
   evidence: F3532GenerationEvidence[];
   warnings: string[];
 }
+
+// Research preview decisions are separate from persisted graph threats.
+export type FeatureDecisionStatus = "rule_not_executed" | "not_applicable" | "needs_evidence" | "requirements_not_met" | "blocked" | "candidate_scoped" | "candidate_protection_unresolved" | "candidate";
+export interface FeatureCheck {
+  feature_id: string; state: "T" | "F" | "U" | "C"; evidence_refs: string[]; reasons: string[];
+  action?: string; effect_description?: string; basis_evidence_refs?: string[];
+}
+export interface FeatureDecision {
+  scenario_id: string; scope_id: string; asset_id: string; prototype_asset_id: string | null;
+  rule_id: string; rule_version: string; feature_version: string | null; policy_version: string | null;
+  output_threat_id: string; decision: FeatureDecisionStatus; executed: boolean; reasons: string[];
+  review_status: "pending_review";
+  required_checks: Array<{ any_of: string[]; state: string; checks: FeatureCheck[] }>;
+  context_checks: Array<{ any_of: string[]; state: string; checks: FeatureCheck[] }>;
+  supporting_checks: FeatureCheck[]; protection_checks: FeatureCheck[]; blocked_by: string[]; evidence_refs: string[];
+}
+export interface FeatureEvidence {
+  evidence_id: string; source: string; source_locator: Record<string, string | number | null>;
+  excerpt: string | null; review_status: string; version: string;
+}
+export interface FeaturePreviewResult {
+  contract_version: string; semantics_version: string; experimental: boolean; input_sha256: string;
+  executed_count: number; decisions: FeatureDecision[]; evidence_index: FeatureEvidence[];
+  scope_index: Array<{ scope_id: string; asset_id: string; boundary_id: string; operational_phase: string; attacker_profile: string }>;
+}

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import featureRulesRouter from "./featureRules.js";
 import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
 import { F3532AnalysisRepository } from "../repositories/f3532AnalysisRepository.js";
 import { StandardRepository } from "../repositories/standardRepository.js";
@@ -30,6 +31,7 @@ import {
 } from "../types/api.js";
 
 const router = Router();
+router.use(featureRulesRouter);
 const graphRepo = new GraphRepository();
 const f3532AnalysisRepo = new F3532AnalysisRepository();
 const standardRepo = new StandardRepository();

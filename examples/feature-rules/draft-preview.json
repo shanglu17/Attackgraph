@@ -1,0 +1,82 @@
+{
+  "contract_version": "feature-preview-0.1",
+  "scenario_id": "TEMPLATE_ONLY_NOT_EXPERIMENT",
+  "assets": [
+    {
+      "asset_id": "TEMPLATE_ASSET",
+      "asset_type": "INT",
+      "name": "待填写的接口资产（模板，不是研究案例）",
+      "layer": null,
+      "operational_phase": [],
+      "evidence_refs": [],
+      "prototype_asset_id": null,
+      "version": "template-0.1"
+    }
+  ],
+  "features": [],
+  "rules": [
+    {
+      "rule_id": "INT_UNAU_001",
+      "asset_type": "INT",
+      "required_features": [
+        {
+          "any_of": [
+            "external_reachable",
+            "cross_boundary"
+          ]
+        },
+        {
+          "any_of": [
+            "access_initiable_by_external_actor"
+          ]
+        },
+        {
+          "any_of": [
+            "weak_auth",
+            "no_auth",
+            "default_trust"
+          ]
+        }
+      ],
+      "supporting_features": [
+        "maintenance_port",
+        "wireless",
+        "remote_access"
+      ],
+      "excluding_features": [
+        "strong_mutual_auth",
+        "hardware_locked_access"
+      ],
+      "context_requirements": [],
+      "output_threat_id": "T.INT.UNAU",
+      "explanation_template": "Candidate {threat_id} for {asset_id}; matched {matched_features}; protection checks {protection_checks}; evidence {evidence_refs}. Human review required.",
+      "version": "2.0-draft",
+      "source": "论文/六维特征式问卷与AI辅助实现方案.docx §2.7, table headed Threat ID (extracted TABLE 7)",
+      "source_required_text": "external_reachable OR cross_boundary；access_initiable_by_external_actor；weak_auth / no_auth / default_trust",
+      "exclusion_effect": "TODO_REVIEW",
+      "review_status": "TODO_REVIEW",
+      "reviewer": null,
+      "review_basis": null,
+      "enabled": false,
+      "review_notes": [
+        "来源明确称示意规则；尚无规则有效性实验。",
+        "核对分号AND、斜线OR和每个特征的可操作定义。",
+        "确定每个保护项的作用对象、阶段、有效性证据及阻断/降级动作；不能见加密就自动排除。",
+        "来源未给逐规则context门控；空数组不是全阶段适用声明。",
+        "Threat ID官方来源待核验；rule_id为本次研究版本管理编号，不是标准编号。"
+      ]
+    }
+  ],
+  "evidence": [],
+  "scopes": [
+    {
+      "scope_id": "TEMPLATE_SCOPE",
+      "asset_id": "TEMPLATE_ASSET",
+      "boundary_id": "TODO_BOUNDARY",
+      "operational_phase": "TODO_PHASE",
+      "attacker_profile": "TODO_ACTOR",
+      "evidence_refs": []
+    }
+  ],
+  "policies": []
+}
