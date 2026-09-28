@@ -948,3 +948,5 @@ P09, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19
 为避免历史审计被误读为当前状态，在首批交付索引、PROJECT_AUDIT、GAP_ANALYSIS和AEROSPACE_TODO页首添加快照说明，原始表格与审计结论保持不变。
 
 工作区新增`docs/cose/SCHEMA_PREVIEW_CROSSWALK.md`，逐项核对六类研究Schema与原型`feature-preview-0.1`的输入、机器日志、结构化scope、逐项policy和路径映射。明确两者不是可互换的JSON契约，ThreatRecord与ReviewRecord仍没有正式原型写入工作流。
+
+中文C&S稿的方法章补充了与当前求值器一致的四值事实合并、组内OR/组间AND、执行门控、保护动作优先顺序和路径截断语义；只描述软件机制，没有补造领域规则批准或实验效果。
