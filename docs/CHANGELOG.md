@@ -944,3 +944,7 @@ P09, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19
 研究协议补充了保留来源的筛选、暴露记录与来源族隔离条件；投稿检查表区分已完成的软件机制和仍需领域复核的工作。中文C&S稿相关工作新增两项已经核实题录及出版社公开摘要的方法研究，限定比较任务，不补造结论或实验数值。
 
 另在工作区`docs/cose/DOMAIN_REVIEW_PACKET.md`整理六条来源规则的逐项裁定问题、证据字段与参考场景的独立复核分工；它是交接模板，所有审核人、动作和参考标签仍待真实填写。
+
+为避免历史审计被误读为当前状态，在首批交付索引、PROJECT_AUDIT、GAP_ANALYSIS和AEROSPACE_TODO页首添加快照说明，原始表格与审计结论保持不变。
+
+工作区新增`docs/cose/SCHEMA_PREVIEW_CROSSWALK.md`，逐项核对六类研究Schema与原型`feature-preview-0.1`的输入、机器日志、结构化scope、逐项policy和路径映射。明确两者不是可互换的JSON契约，ThreatRecord与ReviewRecord仍没有正式原型写入工作流。
