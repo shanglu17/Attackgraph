@@ -58,8 +58,26 @@ downgrade当前仅输出被审查的effect_description，不计算量化风险�
 
 结果保存input_sha256、规则/特征/政策版本、各类checks、blocked_by、来源索引与scope索引；保存原始请求和响应可重算。数组按集合处理以使输入顺序不影响结果。最多10000个scope/rule对，不是性能保证。
 
+## 离线路径追溯
+
+规则预览可与明确提供的图快照一起运行拓扑追溯。命令在仓库根目录执行：
+
+```powershell
+node --import tsx scripts/trace-feature-paths.ts <bundle.json> <graph.json> <scope-mapping.json>
+```
+
+`graph.json`使用图快照中的`graph_version`、`asset_nodes`、`asset_edges`；可传完整图快照。要追溯路径的研究资产须显式填写`prototype_asset_id`，未映射资产仍保留未确定状态。映射文件是数组，每项结构如下，ID必须真实存在于所给快照和数据包中：
+
+```json
+[{"scope_id":"SCOPE_ID","allowed_edge_ids":["EDGE_ID"],"target_asset_ids":["TARGET_ASSET_ID"],"evidence_refs":["EVIDENCE_ID"]}]
+```
+
+`allowed_edge_ids`限制该作用域允许遍历的边；`target_asset_ids`由研究者明确指定，不能从参考答案的路径或预期威胁反向生成。映射证据须在数据包中已标为`verified`且有来源定位，否则保持`mapping_evidence_unverified`。候选机器判定才枚举路径；阻断、待审、证据不足或不适用的判定只留日志。找不到映射时输出`asset_unmapped`/`scope_unmapped`，搜完所允许的边仍无路时才输出`no_path_in_snapshot`；跳数或扩展次数限制截断且未找到路径时为`search_incomplete`，已找到部分路径时仍为`topology_candidate`，同时标记`truncated`。
+
+追溯函数直接接收原始数据包并在内部重新求值，确保路径起点和`input_sha256`来自同一输入。输出保留规则与特征输入哈希、图快照版本与哈希、映射哈希、作用域、边与节点序列、反向遍历标记和证据引用。默认最多4跳、每条决策50条路径、10000次边扩展；遇到上限显式标`truncated`。这些是`topology_only`路径候选：原型`AssetEdge`没有逐边证据字段，输出显式为`edge_evidence_status: not_supplied_by_graph`；路径可达不等于攻击可行，亦不产生ThreatPoint、概率、正式AttackPath或数据库写入。软件测试使用合成图和合成规则，不能作为论文实验值。
+
 ## 当前界限
 
-6条实际领域规则仍禁用待审。已实现的是实验性求值语义，领域正确性、正式场景评价、人工身份签发、图路径桥接、前端复核以及完整报告集成尚未完成。既有六类JSON Schema原件保持不变；HTTP采用上述版本化Zod契约，可接收待审规则以解释拒绝执行原因。
+6条实际领域规则仍禁用待审。已实现的是实验性求值语义与离线拓扑路径候选追溯；领域正确性、正式场景评价、人工身份签发、带逐边证据的路径验证、最终人工批准和完整报告集成尚未完成。既有六类JSON Schema原件保持不变；HTTP采用上述版本化Zod契约，可接收待审规则以解释拒绝执行原因。
 
 运行验证：`npm test -w @attackgraph/backend`（含旧F3532回归、新求值/API/CLI测试）、`npm test -w @attackgraph/frontend`、`npm run build`。合成测试不进入论文E1–E4。

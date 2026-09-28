@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { dimensions, previewSchema, validateReferences } from "./contract.js";
+import type { PreviewInput } from "./contract.js";
 
 type State = "T" | "F" | "U" | "C";
 type Decision = "rule_not_executed" | "not_applicable" | "needs_evidence" | "requirements_not_met" |
@@ -118,5 +119,6 @@ export function evaluateFeatureRules(raw: unknown) {
   return { contract_version: input.contract_version, semantics_version: "experimental-0.1", experimental: true as const,
     input_sha256: createHash("sha256").update(JSON.stringify(canonical(input))).digest("hex"),
     executed_count: decisions.filter(d => d.executed).length, decisions,
-    evidence_index: canonical(input.evidence), scope_index: canonical(input.scopes) };
+    evidence_index: canonical(input.evidence) as PreviewInput["evidence"],
+    scope_index: canonical(input.scopes) as PreviewInput["scopes"] };
 }
