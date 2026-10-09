@@ -9,6 +9,11 @@ import type {
   StandardMapping,
   StandardRelationType
 } from "../types/domain.js";
+import {
+  scopedNodeIdentityDefinitions,
+  standardKnowledgeConstraintDefinitions,
+} from "../services/identity/scopedIdentity.js";
+import { assertConstraintsPresent } from "./schemaCompatibility.js";
 
 const f3532StandardId = "ASTM-F3532-23";
 
@@ -30,17 +35,15 @@ function asStringList(values: unknown[]): string[] {
 
 export class StandardRepository {
   async ensureConstraints(): Promise<void> {
-    const session = getDriver().session();
-    try {
-      await session.run("CREATE CONSTRAINT standard_clause_unique IF NOT EXISTS FOR (c:StandardClause) REQUIRE (c.std, c.clause_id) IS UNIQUE");
-      await session.run("CREATE CONSTRAINT standard_artifact_type_unique IF NOT EXISTS FOR (a:StandardArtifactType) REQUIRE a.artifact_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT standard_artifact_field_unique IF NOT EXISTS FOR (f:StandardArtifactField) REQUIRE f.field_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT standard_pipeline_stage_unique IF NOT EXISTS FOR (s:StandardPipelineStage) REQUIRE s.stage_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT standard_mapping_unique IF NOT EXISTS FOR (m:StandardMapping) REQUIRE m.mapping_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT standard_kb_unique IF NOT EXISTS FOR (kb:StandardKnowledgeBase) REQUIRE kb.standard_id IS UNIQUE");
-    } finally {
-      await session.close();
-    }
+    const mappingIdentity = scopedNodeIdentityDefinitions.find(
+      ({ label }) => label === "StandardMapping",
+    );
+    if (!mappingIdentity) throw new Error("StandardMapping scoped identity is not registered");
+    await assertConstraintsPresent([
+      ...standardKnowledgeConstraintDefinitions.map(({ name }) => name),
+      mappingIdentity.idConstraint,
+      mappingIdentity.businessConstraint,
+    ]);
   }
 
   async importF3532KnowledgeBase(input: F3532StandardImportRequest): Promise<StandardKnowledgeSummary> {

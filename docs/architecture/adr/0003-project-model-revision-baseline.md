@@ -81,3 +81,10 @@ Revision n --- 1 StandardProfileVersion
 - stale version 只在所属 revision 内冲突；
 - baseline 内容摘要在导出和重新加载后保持一致；
 - Approved baseline 没有更新 API。
+
+## 实施记录
+
+- P1.2 已实现 Project/Model/Revision/Baseline 和 StandardProfileVersion 的治理核心身份；
+- P1.4 已实现 Revision 范围统一写入、乐观并发、命令幂等和 AuditEvent；
+- P1.5 已通过显式迁移为登记的工程节点与 `ASSET_EDGE` 建立内部 UUID 和 project/revision 作用域业务编号约束，并退出旧全局业务编号约束；
+- 旧业务字段作为 compatibility projection 输入继续保留，旧读取入口的全面 scope 接入与差异验证属于 P1.6。

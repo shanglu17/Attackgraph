@@ -22,6 +22,8 @@ import type { FpAnalysisInput } from "../services/fpAnalysisService.js";
 import { collectBoundaryReachableSdfIds } from "../services/fpAnalysisService.js";
 import { resolveSystemIdentity, splitSystemNames } from "../config/f3532/systemAliases.js";
 import { naturalSortUnique } from "../services/f3532/naturalSort.js";
+import { scopedIdentityConstraintNames } from "../services/identity/scopedIdentity.js";
+import { assertConstraintsPresent } from "./schemaCompatibility.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
 
@@ -53,41 +55,7 @@ export class GraphChangeSetValidationError extends Error {
 
 export class GraphRepository {
   async ensureConstraints(): Promise<void> {
-    const session = getDriver().session();
-    try {
-      await session.run("CREATE CONSTRAINT asset_unique IF NOT EXISTS FOR (a:AssetNode) REQUIRE a.asset_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT edge_unique IF NOT EXISTS FOR ()-[r:ASSET_EDGE]-() REQUIRE r.edge_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT threat_unique IF NOT EXISTS FOR (t:ThreatPoint) REQUIRE t.threatpoint_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT do326a_link_unique IF NOT EXISTS FOR (l:DO326A_Link) REQUIRE l.link_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT graph_version_unique IF NOT EXISTS FOR (v:GraphVersion) REQUIRE v.id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT function_unique IF NOT EXISTS FOR (f:FunctionNode) REQUIRE f.function_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT trust_boundary_unique IF NOT EXISTS FOR (sb:TrustBoundary) REQUIRE sb.boundary_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT threat_actor_unique IF NOT EXISTS FOR (ta:ThreatActor) REQUIRE ta.actor_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT boundary_interface_unique IF NOT EXISTS FOR (bi:BoundaryInterface) REQUIRE bi.interface_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT system_data_flow_unique IF NOT EXISTS FOR (sdf:SystemDataFlow) REQUIRE sdf.sdf_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT function_propagation_unique IF NOT EXISTS FOR (fp:FunctionPropagationPath) REQUIRE fp.fp_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT failure_condition_unique IF NOT EXISTS FOR (fc:FailureCondition) REQUIRE fc.failure_condition_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT threat_condition_unique IF NOT EXISTS FOR (tc:ThreatCondition) REQUIRE tc.tc_id IS UNIQUE");
-      await session.run("CREATE CONSTRAINT threat_scenario_unique IF NOT EXISTS FOR (ts:ThreatScenario) REQUIRE ts.ts_id IS UNIQUE");
-      await session.run("DROP CONSTRAINT path_unique IF EXISTS");
-      await session.run(
-        `MATCH (p:AttackPath)
-         WITH p.analysis_batch_id AS analysis_batch_id, p.path_id AS path_id, p
-         ORDER BY coalesce(p.generated_at, datetime({epochMillis: 0})) DESC
-         WITH analysis_batch_id, path_id, collect(p) AS paths
-         WHERE analysis_batch_id IS NOT NULL AND path_id IS NOT NULL AND size(paths) > 1
-         FOREACH (duplicate IN tail(paths) | DETACH DELETE duplicate)`
-      );
-      await session.run(
-        "CREATE CONSTRAINT path_unique IF NOT EXISTS FOR (p:AttackPath) REQUIRE (p.analysis_batch_id, p.path_id) IS UNIQUE"
-      );
-      await session.run(
-        "MERGE (v:GraphVersion {id: $id}) ON CREATE SET v.value = $version ON MATCH SET v.value = coalesce(v.value, $version)",
-        { id: graphVersionNodeId, version: "v1" }
-      );
-    } finally {
-      await session.close();
-    }
+    await assertConstraintsPresent(["graph_version_unique", ...scopedIdentityConstraintNames]);
   }
 
   async getGraph(): Promise<GraphSnapshot> {

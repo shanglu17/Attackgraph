@@ -3,6 +3,7 @@ dist/
 .env
 .DS_Store
 coverage/
+*.tsbuildinfo
 .venv/
 .venv-dev/
 __pycache__/

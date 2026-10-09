@@ -16,8 +16,8 @@ Phase 1 不扩展新的适航分析功能，先建立后续通用化所需的安
 | P1.2 | Project/Model/Revision/Baseline 最小核心 | 两项目可复用业务编号；Approved Baseline 无更新入口 | Complete |
 | P1.3 | 遗留数据挂接与来源盘点 | 现有全局数据可 dry-run 挂接到默认遗留项目；冲突生成 MigrationIssue | Complete |
 | P1.4 | Revision 版本与统一写入入口 | 新写入强制 project/revision/expected-version/command/audit | Complete |
-| P1.5 | 内部 UUID 与项目内业务编号 | 全局业务 ID 约束退出；兼容 API 保留 legacy id | Ready |
-| P1.6 | 兼容读取、隔离与回归验收 | F3532/FeatureRule 回归、多项目隔离、迁移/回滚验证通过 | Planned |
+| P1.5 | 内部 UUID 与项目内业务编号 | 全局业务 ID 约束退出；兼容 API 保留 legacy id | Complete |
+| P1.6 | 兼容读取、隔离与回归验收 | F3532/FeatureRule 回归、多项目隔离、迁移/回滚验证通过 | Ready |
 
 ## 3. P1.1 范围
 
@@ -221,3 +221,44 @@ npm run legacy:attach -- verify --dataset do356a-appendix-d
 - 本批次不需要 schema migration：Revision version 和 AuditEvent 唯一约束已由 `0002_governance_core_constraints` 提供；
 - 集成测试业务数据按测试 Project 清理，没有修改已挂接的 Appendix D 项目；
 - P1.5 可开始处理内部 UUID、项目内业务编号和全局唯一约束退出。
+
+## 17. P1.5 范围
+
+### 实施
+
+- 建立 [作用域身份契约](./scoped-identity-contract.md)，统一 `id`、`business_id` 和 `legacy_id` 的职责；
+- 为 15 类已登记遗留节点和 `ASSET_EDGE` 关系补齐不可变内部 UUID、project/revision scope、业务编号与 legacy 反查字段；
+- 普通工程实体的业务编号在 `(project_id, revision_id, business_id)` 内唯一；`AttackPath` 额外包含 `analysis_batch_id`，避免不同运行的结果互相覆盖；
+- 新增 `0004_scoped_entity_identity`，先执行前置条件检查、字段回填、新约束建立和 postcondition 验证；
+- 新增 `0005_retire_global_business_constraints`，只有提供 destructive 确认与已验证 backup id 时才退出旧全局业务编号约束；
+- 新增非破坏性 `0006_legacy_graph_version_compatibility`，保证全新数据库显式迁移后仍可运行尚未退役的旧 GraphVersion 兼容入口，但不允许新写入依赖它；
+- 应用启动与仓储 `ensureConstraints()` 改为只读 schema compatibility 检查，不再创建、删除、去重或修复数据；
+- 新增显式 scope 的 legacy identity repository API，同时接受内部 UUID、`business_id`、`legacy_id` 和原 legacy key，但只返回规范内部 UUID；
+- 修复 Windows + Docker Desktop 下 `localhost` 解析为 IPv6 时的 Bolt 连接重置，连接配置统一规范到 IPv4 loopback。
+
+### 边界
+
+- 保留 `asset_id`、`edge_id`、`threatpoint_id` 等旧字段，不在 P1.5 删除旧字段或旧响应形状；
+- P1.5 只提供兼容身份解析边界，不一次性改写全部旧查询、导入、seed、F3532 和前端调用；这些入口的隔离与双读回归属于 P1.6；
+- `GraphVersion` 兼容入口仍保留，但新写入不得继续使用它作为全库并发边界；
+- 3 条缺少可靠来源定位的 Open MigrationIssue 不因身份迁移而自动关闭，仍由 Phase 2 SourceRecord 处理。
+
+## 18. P1.5 验收
+
+- 每个已登记遗留节点和 `ASSET_EDGE` 具有有效 UUID、project/revision scope、`business_id` 和 `legacy_id`；
+- 两个不同项目/revision 可复用同一个 Asset 和 ASSET_EDGE 业务编号，内部 UUID 不同；
+- legacy resolver 缺少 scope、跨 scope 或未知实体类型时不得猜测或全库查询；
+- 旧全局业务编号约束全部退出，新 UUID 与 scope 组合约束全部存在；
+- 迁移前必须生成可恢复 dump，并将 backup id/hash 写入破坏性迁移账本；
+- 迁移 `verify` 对 0001–0006 全部返回成功；
+- 应用启动只验证 schema，不执行 DDL 或业务数据修复。
+
+## 19. P1.5 完成记录（2026-10-09）
+
+- 迁移前 Neo4j dump 保存于被 `.gitignore` 排除的本地目录 `.tmp/neo4j-backups/p1.5-20261009-231509/neo4j.dump`；文件大小 131,075 字节，SHA-256 为 `B2B57F5A0321C59C2CCECD55940419EBE7198AD96523CEEA96D7B67079E8D441`；
+- `0004_scoped_entity_identity` checksum 为 `c3054e09f15898f4b0997b8e97fec3c9e77e3c83a0e2fe381b2da3f2e3dc03ac`，`0005_retire_global_business_constraints` checksum 为 `4c2f844cb9b302d77f301f3619e3998e2e35c2dc3b0d65a1b97fc93c25ce0f7b`，`0006_legacy_graph_version_compatibility` checksum 为 `bb8b129f9e9eacd5d1783a00d693c413cde33b07a3fd099990d238754f49610b`，均已 Applied 且 postcondition 通过；
+- 数据盘点确认 17 个 AssetNode、4 个 ThreatPoint、5 个 DO326A_Link、1 个 CommitAudit 和 14 条 ASSET_EDGE 均已具有 P1.5 作用域身份；
+- 15 个旧全局业务编号约束剩余数量为 0；新约束同时保护内部 UUID 和作用域业务编号；
+- 新增跨项目重复 `ASSET-001`/`EDGE-001` 集成用例，验证显式 scope 可解析到不同内部 UUID，错误 scope 不产生结果；
+- 后端单元与回归测试增至 60 项，Neo4j 集成测试增至 4/4；迁移 0001–0006 验证全部通过；
+- P1.6 进入 Ready，下一批次负责把现有读取入口系统性接入 scope/compatibility projection，并执行 F3532、FeatureRule、隔离和恢复回归。
