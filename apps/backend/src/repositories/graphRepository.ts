@@ -311,6 +311,10 @@ export class GraphRepository {
     }
   }
 
+  /**
+   * @deprecated Legacy global GraphVersion write path. New business writes must use
+   * RevisionUnitOfWork with project/revision scope and an expected revision version.
+   */
   async commitChangeSet(changeSet: GraphChangeSet, userId: string): Promise<{ new_version: string; commit_id: string }> {
     const session = getDriver().session();
     const commitId = crypto.randomUUID();
@@ -583,6 +587,7 @@ export class GraphRepository {
     }
   }
 
+  /** @deprecated Compatibility read for legacy clients; new workflows use Revision.version. */
   async getGraphVersion(): Promise<string> {
     const session = getDriver().session();
     try {

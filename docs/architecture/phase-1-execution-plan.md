@@ -15,8 +15,8 @@ Phase 1 不扩展新的适航分析功能，先建立后续通用化所需的安
 | P1.1 | 迁移账本、显式 CLI、跨平台测试入口 | dry-run/status 不写库；apply 有 actor/idempotency/audit 状态；测试入口跨平台 | Complete |
 | P1.2 | Project/Model/Revision/Baseline 最小核心 | 两项目可复用业务编号；Approved Baseline 无更新入口 | Complete |
 | P1.3 | 遗留数据挂接与来源盘点 | 现有全局数据可 dry-run 挂接到默认遗留项目；冲突生成 MigrationIssue | Complete |
-| P1.4 | Revision 版本与统一写入入口 | 新写入强制 project/revision/expected-version/command/audit | Ready |
-| P1.5 | 内部 UUID 与项目内业务编号 | 全局业务 ID 约束退出；兼容 API 保留 legacy id | Planned |
+| P1.4 | Revision 版本与统一写入入口 | 新写入强制 project/revision/expected-version/command/audit | Complete |
+| P1.5 | 内部 UUID 与项目内业务编号 | 全局业务 ID 约束退出；兼容 API 保留 legacy id | Ready |
 | P1.6 | 兼容读取、隔离与回归验收 | F3532/FeatureRule 回归、多项目隔离、迁移/回滚验证通过 | Planned |
 
 ## 3. P1.1 范围
@@ -179,3 +179,45 @@ npm run legacy:attach -- verify --dataset do356a-appendix-d
 - 后端单元与回归测试 56/56、Neo4j 集成测试 2/2、前端回归测试 5/5 通过，前后端完整构建通过；
 - `apps/frontend/tsconfig.tsbuildinfo` 已在 `.gitignore` 中，现从版本控制移除，避免构建缓存继续污染阶段提交；
 - 前端既有大 chunk 告警未增加，仍按 Phase 6 技术债处理。
+
+## 14. P1.4 范围
+
+### 实施
+
+- 新增 `RevisionUnitOfWork`，作为 P1.4 后所有新增 Revision 内容写入的强制事务入口；
+- 统一要求 project/revision/expected revision version/actor/command id、稳定事件类型和命令专用 canonicalizer；
+- 在 Neo4j 写锁内重新校验 Revision 的项目归属、Draft 状态和 expected version，成功写入时单调递增 Revision version；
+- 业务 mutation、Revision version 和 AuditEvent 在同一事务提交或共同回滚；
+- AuditEvent 保存版本前后值、请求摘要、摘要算法、canonicalizer、变更摘要和最小结果回执；
+- 提取共享 command receipt 校验，使 Project Governance 和 Revision 写入使用相同的事件复用、载荷冲突和旧回执规则；
+- 建立 [Revision 范围写入契约](./revision-write-contract.md) 和 legacy 隔离清单；
+- 将 `GraphRepository.commitChangeSet()` 与 `getGraphVersion()` 标记为 legacy compatibility API。
+
+### 边界
+
+- P1.4 不删除全局 GraphVersion，也不改变现有 UI 和导入请求格式；现有终端工作流继续走兼容入口；
+- P1.4 不提前切换 Asset/Threat/DataFlow 等实体的全局业务 ID 约束，该工作属于 P1.5；
+- P1.4 不一次性重写 F3532、标准知识、分析结果和 seed 的专用仓储；这些路径不得被新增能力继续引用，并在 P1.5-P1.6/Phase 2 分批收口；
+- P1.4 不暴露新的 HTTP API；版本化 API 与稳定错误响应属于 Phase 2。
+
+## 15. P1.4 验收
+
+- 缺少合法 project/revision scope、actor、command id 或正整数 expected version 时拒绝；
+- Revision 不属于指定 Project 时拒绝；
+- Closed/InReview Revision 不接受普通内容写入；
+- stale expected version 返回带 expected/current version 的结构化冲突；
+- 两个并发命令使用同一 expected version 时只有一个提交成功；
+- mutation 抛错时业务实体、Revision version 和 AuditEvent 全部回滚；
+- 相同 command id 和规范请求返回原结果且不再次执行 mutation；
+- command id 对应不同事件或请求摘要时拒绝；
+- 成功写入只产生一个包含 request fingerprint 和版本前后值的 AuditEvent；
+- 全局 GraphVersion 不被 `RevisionUnitOfWork` 读取或修改。
+
+## 16. P1.4 完成记录（2026-10-09）
+
+- `RevisionUnitOfWork` 已实现，并以数据库集成测试验证 scope、Draft 状态、乐观并发、显式写锁、事务回滚、幂等回执和审计；
+- 集成测试首次捕获“固定赋值导致两个并发事务都成功”的 lost update，现改为先获取 Revision 写锁并在锁内重新判断 version；
+- 后端单元与回归测试增至 58 项，Neo4j 集成测试增至 3/3；
+- 本批次不需要 schema migration：Revision version 和 AuditEvent 唯一约束已由 `0002_governance_core_constraints` 提供；
+- 集成测试业务数据按测试 Project 清理，没有修改已挂接的 Appendix D 项目；
+- P1.5 可开始处理内部 UUID、项目内业务编号和全局唯一约束退出。

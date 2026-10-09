@@ -11,12 +11,22 @@ export interface CommandFingerprint {
   request_canonicalizer: string;
 }
 
-type CanonicalValue = null | boolean | number | string | CanonicalValue[] | {
+export type CanonicalValue = null | boolean | number | string | CanonicalValue[] | {
   [key: string]: CanonicalValue;
 };
 
 function canonicalJson(value: CanonicalValue): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (value === null) return "null";
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw new TypeError("command fingerprint payload numbers must be finite");
+    }
+    return JSON.stringify(value);
+  }
+  if (typeof value === "boolean" || typeof value === "string") return JSON.stringify(value);
+  if (typeof value !== "object") {
+    throw new TypeError(`unsupported command fingerprint value: ${typeof value}`);
+  }
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   return `{${Object.keys(value)
     .sort()
@@ -24,7 +34,10 @@ function canonicalJson(value: CanonicalValue): string {
     .join(",")}}`;
 }
 
-function fingerprint(requestCanonicalizer: string, payload: CanonicalValue): CommandFingerprint {
+export function fingerprintCommandPayload(
+  requestCanonicalizer: string,
+  payload: CanonicalValue,
+): CommandFingerprint {
   const canonicalRequest = `${requestCanonicalizer}\n${canonicalJson(payload)}`;
   return {
     request_hash: createHash("sha256").update(canonicalRequest, "utf8").digest("hex"),
@@ -40,7 +53,7 @@ function trimmed(value: string): string {
 export function fingerprintCreateProjectWorkspace(
   input: CreateProjectWorkspaceInput,
 ): CommandFingerprint {
-  return fingerprint("governance.create-project-workspace/v1", {
+  return fingerprintCommandPayload("governance.create-project-workspace/v1", {
     actor: trimmed(input.actor),
     project: {
       business_id: trimmed(input.project.business_id),
@@ -65,7 +78,7 @@ export function fingerprintCreateProjectWorkspace(
 }
 
 export function fingerprintFreezeRevision(input: FreezeRevisionInput): CommandFingerprint {
-  return fingerprint("governance.freeze-revision/v1", {
+  return fingerprintCommandPayload("governance.freeze-revision/v1", {
     actor: trimmed(input.actor),
     project_id: input.project_id.toLowerCase(),
     revision_id: input.revision_id.toLowerCase(),
@@ -78,7 +91,7 @@ export function fingerprintFreezeRevision(input: FreezeRevisionInput): CommandFi
 }
 
 export function fingerprintApproveBaseline(input: ApproveBaselineInput): CommandFingerprint {
-  return fingerprint("governance.approve-baseline/v1", {
+  return fingerprintCommandPayload("governance.approve-baseline/v1", {
     actor: trimmed(input.actor),
     project_id: input.project_id.toLowerCase(),
     baseline_id: input.baseline_id.toLowerCase(),

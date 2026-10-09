@@ -35,6 +35,8 @@ adapter、导入器和生成器只能提交命令或 change set，不能持有�
 
 幂等重放只对“相同 command id、相同事件类型、相同规范请求摘要”成立。AuditEvent 必须记录请求摘要、摘要算法和 canonicalizer id/version；相同 command id 的请求语义发生变化时必须拒绝，不得返回第一次调用的结果。缺少这些指纹字段的历史回执不可验证，调用方必须使用新的 command id，不能把它当作安全重放。
 
+Revision 内容写入遵循 [Revision 范围写入契约](../revision-write-contract.md)：在同一事务内获取 Revision 写锁、重新校验 scope/status/expected version、递增 Revision version、执行业务 mutation 并写入 AuditEvent。全局 GraphVersion 只作为遗留兼容入口保留，不得被新增能力依赖。
+
 ### 删除规则
 
 - 业务删除默认使用 archive/retire；

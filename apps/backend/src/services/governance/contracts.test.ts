@@ -4,6 +4,7 @@ import {
   approveBaselineSchema,
   createProjectWorkspaceSchema,
   freezeRevisionSchema,
+  revisionWriteEnvelopeSchema,
 } from "./contracts.js";
 
 describe("governance command contracts", () => {
@@ -65,5 +66,26 @@ describe("governance command contracts", () => {
       rationale: "Reviewed",
     });
     assert.equal(invalidApproval.success, false);
+  });
+
+  it("normalizes revision write scope and rejects a non-positive expected version", () => {
+    const parsed = revisionWriteEnvelopeSchema.parse({
+      actor: "  modeler  ",
+      command_id: "  revision-write-1  ",
+      project_id: "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+      revision_id: "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB",
+      expected_revision_version: 2,
+    });
+    assert.equal(parsed.actor, "modeler");
+    assert.equal(parsed.project_id, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    assert.equal(parsed.revision_id, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+
+    assert.equal(
+      revisionWriteEnvelopeSchema.safeParse({
+        ...parsed,
+        expected_revision_version: 0,
+      }).success,
+      false,
+    );
   });
 });

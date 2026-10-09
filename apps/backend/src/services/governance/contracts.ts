@@ -15,6 +15,12 @@ const commandEnvelopeSchema = z.object({
   command_id: z.string().trim().min(1).max(200),
 });
 
+export const revisionWriteEnvelopeSchema = commandEnvelopeSchema.extend({
+  project_id: z.string().uuid().transform((value) => value.toLowerCase()),
+  revision_id: z.string().uuid().transform((value) => value.toLowerCase()),
+  expected_revision_version: z.number().int().positive(),
+});
+
 export const createProjectWorkspaceSchema = commandEnvelopeSchema.extend({
   project: z.object({
     business_id: businessIdSchema,
@@ -64,3 +70,4 @@ export const approveBaselineSchema = commandEnvelopeSchema.extend({
 export type CreateProjectWorkspaceInput = z.infer<typeof createProjectWorkspaceSchema>;
 export type FreezeRevisionInput = z.infer<typeof freezeRevisionSchema>;
 export type ApproveBaselineInput = z.infer<typeof approveBaselineSchema>;
+export type RevisionWriteEnvelope = z.infer<typeof revisionWriteEnvelopeSchema>;

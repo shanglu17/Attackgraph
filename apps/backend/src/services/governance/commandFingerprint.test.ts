@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   fingerprintApproveBaseline,
+  fingerprintCommandPayload,
   fingerprintCreateProjectWorkspace,
   fingerprintFreezeRevision,
 } from "./commandFingerprint.js";
@@ -92,5 +93,12 @@ describe("governance command fingerprints", () => {
     });
 
     assert.notEqual(first.request_hash, changed.request_hash);
+  });
+
+  it("rejects non-finite numbers instead of hashing them like null", () => {
+    assert.throws(
+      () => fingerprintCommandPayload("test.command/v1", { value: Number.NaN }),
+      /must be finite/,
+    );
   });
 });

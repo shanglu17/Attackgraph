@@ -19,8 +19,20 @@ import {
   fingerprintApproveBaseline,
   fingerprintCreateProjectWorkspace,
   fingerprintFreezeRevision,
-  type CommandFingerprint,
 } from "../services/governance/commandFingerprint.js";
+import {
+  assertCommandReceipt,
+  CommandPayloadMismatchError,
+  CommandReceiptUnverifiableError,
+  CommandReuseError,
+  findCommandReceipt,
+} from "../services/governance/commandReceipt.js";
+
+export {
+  CommandPayloadMismatchError,
+  CommandReceiptUnverifiableError,
+  CommandReuseError,
+};
 
 const workspaceCreatedEvent = "PROJECT_WORKSPACE_CREATED";
 const revisionFrozenEvent = "REVISION_FROZEN";
@@ -39,31 +51,6 @@ export class GovernanceNotFoundError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "GovernanceNotFoundError";
-  }
-}
-
-export class CommandReuseError extends Error {
-  constructor(commandId: string, actualEventType: string, expectedEventType: string) {
-    super(
-      `command_id '${commandId}' was already used for ${actualEventType}; expected ${expectedEventType}`,
-    );
-    this.name = "CommandReuseError";
-  }
-}
-
-export class CommandPayloadMismatchError extends Error {
-  constructor(commandId: string) {
-    super(`command_id '${commandId}' was already used with a different request payload`);
-    this.name = "CommandPayloadMismatchError";
-  }
-}
-
-export class CommandReceiptUnverifiableError extends Error {
-  constructor(commandId: string) {
-    super(
-      `command_id '${commandId}' refers to a legacy receipt without a compatible request fingerprint; use a new command id`,
-    );
-    this.name = "CommandReceiptUnverifiableError";
   }
 }
 
@@ -190,48 +177,6 @@ function mapBaseline(properties: Properties): Baseline {
   };
 }
 
-async function findCommandEvent(
-  transaction: ManagedTransaction,
-  commandId: string,
-): Promise<Properties | undefined> {
-  const result = await transaction.run(
-    "MATCH (event:AuditEvent {command_id: $command_id}) RETURN event",
-    { command_id: commandId },
-  );
-  return result.records.length === 0 ? undefined : nodeProperties(result.records[0], "event");
-}
-
-function assertEventType(
-  commandId: string,
-  properties: Properties,
-  expectedEventType: string,
-): void {
-  const actualEventType = toStringValue(properties.event_type);
-  if (actualEventType !== expectedEventType) {
-    throw new CommandReuseError(commandId, actualEventType, expectedEventType);
-  }
-}
-
-function assertRequestFingerprint(
-  commandId: string,
-  properties: Properties,
-  expected: CommandFingerprint,
-): void {
-  const actualHash = toOptionalString(properties.request_hash);
-  const actualAlgorithm = toOptionalString(properties.request_hash_algorithm);
-  const actualCanonicalizer = toOptionalString(properties.request_canonicalizer);
-  if (
-    actualHash === undefined ||
-    actualAlgorithm !== expected.request_hash_algorithm ||
-    actualCanonicalizer !== expected.request_canonicalizer
-  ) {
-    throw new CommandReceiptUnverifiableError(commandId);
-  }
-  if (actualHash !== expected.request_hash) {
-    throw new CommandPayloadMismatchError(commandId);
-  }
-}
-
 async function readWorkspace(
   transaction: ManagedTransaction,
   ids: { projectId: string; modelId: string; revisionId: string; profileId: string },
@@ -281,10 +226,9 @@ export class GovernanceRepository {
     const session = getDriver().session();
     try {
       return await session.executeWrite(async (transaction) => {
-        const priorEvent = await findCommandEvent(transaction, input.command_id);
+        const priorEvent = await findCommandReceipt(transaction, input.command_id);
         if (priorEvent) {
-          assertEventType(input.command_id, priorEvent, workspaceCreatedEvent);
-          assertRequestFingerprint(input.command_id, priorEvent, requestFingerprint);
+          assertCommandReceipt(input.command_id, priorEvent, workspaceCreatedEvent, requestFingerprint);
           return readWorkspace(
             transaction,
             {
@@ -393,10 +337,9 @@ export class GovernanceRepository {
     const session = getDriver().session();
     try {
       return await session.executeWrite(async (transaction) => {
-        const priorEvent = await findCommandEvent(transaction, input.command_id);
+        const priorEvent = await findCommandReceipt(transaction, input.command_id);
         if (priorEvent) {
-          assertEventType(input.command_id, priorEvent, revisionFrozenEvent);
-          assertRequestFingerprint(input.command_id, priorEvent, requestFingerprint);
+          assertCommandReceipt(input.command_id, priorEvent, revisionFrozenEvent, requestFingerprint);
           return {
             value: await readBaseline(transaction, toStringValue(priorEvent.result_baseline_id)),
             replayed: true,
@@ -487,10 +430,9 @@ export class GovernanceRepository {
     const session = getDriver().session();
     try {
       return await session.executeWrite(async (transaction) => {
-        const priorEvent = await findCommandEvent(transaction, input.command_id);
+        const priorEvent = await findCommandReceipt(transaction, input.command_id);
         if (priorEvent) {
-          assertEventType(input.command_id, priorEvent, baselineApprovedEvent);
-          assertRequestFingerprint(input.command_id, priorEvent, requestFingerprint);
+          assertCommandReceipt(input.command_id, priorEvent, baselineApprovedEvent, requestFingerprint);
           return {
             value: await readBaseline(transaction, toStringValue(priorEvent.result_baseline_id)),
             replayed: true,

@@ -15,7 +15,7 @@
     "legacy:attach": "tsx src/scripts/legacyAttach.ts",
     "standard:f3532:import": "tsx src/scripts/importF3532Standard.ts",
     "exp:do356a:baseline": "tsx src/scripts/runDo356aBaselineExperiment.ts",
-    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts"
+    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
