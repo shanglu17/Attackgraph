@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "test": "tsx --test src/services/f3532/f353203Generation.test.ts src/services/featureRules/evaluate.test.ts src/services/featureRules/cli.test.ts src/services/featureRules/pathTrace.test.ts src/services/featureRules/pathTrace.cli.test.ts src/routes/featureRules.test.ts",
+    "test": "tsx --test src/migrations/runner.test.ts src/services/f3532/f353203Generation.test.ts src/services/featureRules/evaluate.test.ts src/services/featureRules/cli.test.ts src/services/featureRules/pathTrace.test.ts src/services/featureRules/pathTrace.cli.test.ts src/routes/featureRules.test.ts",
     "start": "node dist/index.js",
     "clear": "tsx src/scripts/clearGraph.ts",
     "seed:sample": "tsx src/scripts/seedSample.ts",
     "seed:generic": "tsx src/scripts/seedGeneric.ts",
+    "db:migrate": "tsx src/scripts/migrate.ts",
     "standard:f3532:import": "tsx src/scripts/importF3532Standard.ts",
     "exp:do356a:baseline": "tsx src/scripts/runDo356aBaselineExperiment.ts",
     "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts"

@@ -169,7 +169,7 @@ Phase 0 于 2026-10-09 完成合并后重新评审并恢复 `Accepted`：
 2. 目标领域模型已确认 AnalysisRun/DerivedResult 为核心实体，method-specific payload 不属于通用核心领域模型；
 3. 能力矩阵、Crosswalk 和迁移设计已覆盖合并后的 FeatureRule preview 与 topology trace；
 4. Phase 0–7 路线图已接受，Phase 1 状态调整为 Ready；
-5. 前端测试命令的 Windows glob 可移植性登记为 `PH1-TOOLING-001`，责任范围为平台开发，目标在 Phase 1 出口前修复；该问题不影响显式文件运行的 5 项测试和当前构建结果。
+5. 前端测试命令的 Windows glob 可移植性登记为 `PH1-TOOLING-001`；该问题已于 2026-10-09 在 P1.1 通过跨平台测试发现脚本关闭。
 
 ## 12. 合并后验证基线（2026-10-08）
 
@@ -182,4 +182,4 @@ Phase 0 于 2026-10-09 完成合并后重新评审并恢复 `Accepted`：
 | 前端构建告警 | 待治理 | 存在超过 500 kB 的 minified chunk，应在 Phase 6 性能与交付检查中处理 |
 | 文档链接与格式 | 通过 | 架构目录内部 Markdown 链接可解析，`git diff --check` 无文档格式错误 |
 
-前端测试脚本的 Windows 可移植性问题已作为 `PH1-TOOLING-001` 显式推迟到 Phase 1，必须在 Phase 1 出口前关闭；不得以显式文件命令长期替代 workspace 标准测试入口。
+前端测试脚本的 Windows 可移植性问题曾作为 `PH1-TOOLING-001` 显式推迟到 Phase 1，现已在 P1.1 关闭；workspace 标准测试入口可直接发现并运行全部 `.test.ts` 文件。

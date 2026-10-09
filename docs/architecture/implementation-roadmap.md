@@ -59,7 +59,7 @@
 | 阶段 | 名称 | 主要结果 | 当前状态 |
 | --- | --- | --- | --- |
 | Phase 0 | 合并后基线与治理校准 | 统一路线图、领域边界、能力差距、ADR、迁移约束 | Complete |
-| Phase 1 | 项目化与写入治理基础 | Project/Model/Revision/Baseline、迁移账本、统一写入范围 | Ready |
+| Phase 1 | 项目化与写入治理基础 | Project/Model/Revision/Baseline、迁移账本、统一写入范围 | In Progress |
 | Phase 2 | 标准无关系统模型与契约 | 核心实体、来源、TraceLink、版本化 API、adapter 边界 | Planned |
 | Phase 3 | DO-326A/DO-356A 工程闭环 | TC/TS、风险、目标、要求、验证、证据与 profile | Planned |
 | Phase 4 | 可插拔分析与结果晋级 | AnalysisRun、DPS/规则/路径方法、候选到正式结果的门控 | Planned |

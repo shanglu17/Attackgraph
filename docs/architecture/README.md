@@ -2,18 +2,19 @@
 
 本目录记录 ASTRA 从 F3532/ZG-ONE 专用实现演进为通用适航安保工程辅助平台的目标架构。
 
-**Phase 0：合并后基线与治理校准** 已于 2026-10-09 重新接受。当前准备进入 **Phase 1：项目化与写入治理基础**；Phase 1 的实现不得绕过本目录已经接受的身份、版本、来源、分析和晋级约束。
+**Phase 0：合并后基线与治理校准** 已于 2026-10-09 重新接受。当前处于 **Phase 1：项目化与写入治理基础**；Phase 1 的实现不得绕过本目录已经接受的身份、版本、来源、分析和晋级约束。
 
 ## 阅读顺序
 
 1. [Phase 0–7 实施路线图](./implementation-roadmap.md)
-2. [Phase 0 架构基线](./phase-0-baseline.md)
-3. [目标领域模型](./target-domain-model.md)
-4. [适航安保领域术语表](./airworthiness-security-glossary.md)
-5. [DO-326A / DO-356A 能力差距矩阵](./do326a-do356a-capability-matrix.md)
-6. [实验性特征分析 Crosswalk](./experimental-analysis-crosswalk.md)
-7. [遗留数据迁移设计](./legacy-migration-plan.md)
-8. 架构决策记录：
+2. [Phase 1 执行计划](./phase-1-execution-plan.md)
+3. [Phase 0 架构基线](./phase-0-baseline.md)
+4. [目标领域模型](./target-domain-model.md)
+5. [适航安保领域术语表](./airworthiness-security-glossary.md)
+6. [DO-326A / DO-356A 能力差距矩阵](./do326a-do356a-capability-matrix.md)
+7. [实验性特征分析 Crosswalk](./experimental-analysis-crosswalk.md)
+8. [遗留数据迁移设计](./legacy-migration-plan.md)
+9. 架构决策记录：
    - [ADR-0001：产品定位与标准版本策略](./adr/0001-product-positioning-and-standard-versioning.md)
    - [ADR-0002：标准无关核心与适配器边界](./adr/0002-standard-neutral-core-and-adapters.md)
    - [ADR-0003：项目、模型、修订与基线](./adr/0003-project-model-revision-baseline.md)
