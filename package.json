@@ -13,6 +13,7 @@
     "seed:sample": "npm run seed:sample -w @attackgraph/backend",
     "seed:generic": "npm run seed:generic -w @attackgraph/backend",
     "db:migrate": "npm run db:migrate -w @attackgraph/backend --",
+    "legacy:attach": "npm run legacy:attach -w @attackgraph/backend --",
     "standard:f3532:import": "npm run standard:f3532:import -w @attackgraph/backend",
     "exp:do356a:baseline": "npm run exp:do356a:baseline -w @attackgraph/backend"
   },

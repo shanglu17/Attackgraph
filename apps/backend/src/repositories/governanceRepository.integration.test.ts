@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { randomUUID } from "node:crypto";
 import { closeDriver, getDriver } from "../db/neo4j.js";
-import { GovernanceConflictError, GovernanceRepository } from "./governanceRepository.js";
+import {
+  CommandPayloadMismatchError,
+  CommandReceiptUnverifiableError,
+  GovernanceConflictError,
+  GovernanceRepository,
+} from "./governanceRepository.js";
 
 const repository = new GovernanceRepository();
 const runId = randomUUID();
@@ -68,11 +73,44 @@ describe("GovernanceRepository", () => {
     assert.equal(workspaceA.revision.status, "Draft");
     assert.equal(workspaceA.standard_profile_version.maturity, "Draft");
 
+    await assert.rejects(
+      repository.createProjectWorkspace(
+        workspaceCommand(`MUST-NOT-BE-IGNORED-${runId}`, createACommandId),
+      ),
+      CommandPayloadMismatchError,
+    );
     const replayedWorkspace = await repository.createProjectWorkspace(
-      workspaceCommand(`IGNORED-ON-REPLAY-${runId}`, createACommandId),
+      workspaceCommand(`P1-2-${runId}-A`, createACommandId),
     );
     assert.equal(replayedWorkspace.replayed, true);
     assert.equal(replayedWorkspace.project.id, workspaceA.project.id);
+
+    const legacyCommandId = `legacy-receipt:${runId}:create-a`;
+    const legacySession = getDriver().session();
+    try {
+      await legacySession.run(
+        `CREATE (:AuditEvent {
+           id: $id,
+           command_id: $command_id,
+           event_type: 'PROJECT_WORKSPACE_CREATED',
+           project_id: $project_id,
+           occurred_at: datetime()
+         })`,
+        {
+          id: randomUUID(),
+          command_id: legacyCommandId,
+          project_id: workspaceA.project.id,
+        },
+      );
+    } finally {
+      await legacySession.close();
+    }
+    await assert.rejects(
+      repository.createProjectWorkspace(
+        workspaceCommand(`P1-2-${runId}-LEGACY`, legacyCommandId),
+      ),
+      CommandReceiptUnverifiableError,
+    );
 
     const freezeCommandId = `p1.2:${runId}:freeze-a`;
     const frozen = await repository.freezeRevision({
@@ -87,13 +125,24 @@ describe("GovernanceRepository", () => {
     assert.equal(frozen.value.status, "Frozen");
     assert.equal(frozen.value.version, 1);
 
+    await assert.rejects(
+      repository.freezeRevision({
+        actor: "phase1-integration-test",
+        command_id: freezeCommandId,
+        project_id: workspaceA.project.id,
+        revision_id: workspaceA.revision.id,
+        expected_revision_version: 1,
+        baseline: { business_id: "MUST-NOT-BE-IGNORED", content_hash: "b".repeat(64) },
+      }),
+      CommandPayloadMismatchError,
+    );
     const replayedFreeze = await repository.freezeRevision({
       actor: "phase1-integration-test",
       command_id: freezeCommandId,
       project_id: workspaceA.project.id,
       revision_id: workspaceA.revision.id,
       expected_revision_version: 1,
-      baseline: { business_id: "IGNORED-ON-REPLAY", content_hash: "b".repeat(64) },
+      baseline: { business_id: "BL-001", content_hash: "a".repeat(64) },
     });
     assert.equal(replayedFreeze.replayed, true);
     assert.equal(replayedFreeze.value.id, frozen.value.id);
@@ -111,13 +160,24 @@ describe("GovernanceRepository", () => {
     assert.equal(approved.value.version, 2);
     assert.equal(approved.value.content_hash, "a".repeat(64));
 
+    await assert.rejects(
+      repository.approveBaseline({
+        actor: "phase1-integration-test",
+        command_id: approveCommandId,
+        project_id: workspaceA.project.id,
+        baseline_id: frozen.value.id,
+        expected_baseline_version: 1,
+        rationale: "Must not be ignored",
+      }),
+      CommandPayloadMismatchError,
+    );
     const replayedApproval = await repository.approveBaseline({
       actor: "phase1-integration-test",
       command_id: approveCommandId,
       project_id: workspaceA.project.id,
       baseline_id: frozen.value.id,
       expected_baseline_version: 1,
-      rationale: "Ignored on replay",
+      rationale: "P1.2 controlled approval integration test",
     });
     assert.equal(replayedApproval.replayed, true);
     assert.equal(replayedApproval.value.version, 2);
@@ -141,10 +201,12 @@ describe("GovernanceRepository", () => {
       const auditResult = await session.run(
         `MATCH (event:AuditEvent)
          WHERE event.command_id STARTS WITH $prefix
-         RETURN count(event) AS count`,
+         RETURN count(event) AS count,
+                count(event.request_hash) AS fingerprint_count`,
         { prefix: `p1.2:${runId}:` },
       );
       assert.equal(auditResult.records[0].get("count").toNumber(), 4);
+      assert.equal(auditResult.records[0].get("fingerprint_count").toNumber(), 4);
     } finally {
       await session.close();
     }

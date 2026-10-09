@@ -33,7 +33,10 @@ export const createProjectWorkspaceSchema = commandEnvelopeSchema.extend({
     business_id: businessIdSchema,
     name: z.string().trim().min(1).max(200),
     profile_version: z.string().trim().min(1).max(80),
-    standard_references: z.array(z.string().trim().min(1).max(200)).min(1),
+    standard_references: z
+      .array(z.string().trim().min(1).max(200))
+      .min(1)
+      .transform((values) => [...new Set(values)].sort()),
   }),
 });
 

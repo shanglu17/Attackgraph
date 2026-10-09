@@ -15,6 +15,12 @@ import type {
   CreateProjectWorkspaceInput,
   FreezeRevisionInput,
 } from "../services/governance/contracts.js";
+import {
+  fingerprintApproveBaseline,
+  fingerprintCreateProjectWorkspace,
+  fingerprintFreezeRevision,
+  type CommandFingerprint,
+} from "../services/governance/commandFingerprint.js";
 
 const workspaceCreatedEvent = "PROJECT_WORKSPACE_CREATED";
 const revisionFrozenEvent = "REVISION_FROZEN";
@@ -42,6 +48,22 @@ export class CommandReuseError extends Error {
       `command_id '${commandId}' was already used for ${actualEventType}; expected ${expectedEventType}`,
     );
     this.name = "CommandReuseError";
+  }
+}
+
+export class CommandPayloadMismatchError extends Error {
+  constructor(commandId: string) {
+    super(`command_id '${commandId}' was already used with a different request payload`);
+    this.name = "CommandPayloadMismatchError";
+  }
+}
+
+export class CommandReceiptUnverifiableError extends Error {
+  constructor(commandId: string) {
+    super(
+      `command_id '${commandId}' refers to a legacy receipt without a compatible request fingerprint; use a new command id`,
+    );
+    this.name = "CommandReceiptUnverifiableError";
   }
 }
 
@@ -190,6 +212,26 @@ function assertEventType(
   }
 }
 
+function assertRequestFingerprint(
+  commandId: string,
+  properties: Properties,
+  expected: CommandFingerprint,
+): void {
+  const actualHash = toOptionalString(properties.request_hash);
+  const actualAlgorithm = toOptionalString(properties.request_hash_algorithm);
+  const actualCanonicalizer = toOptionalString(properties.request_canonicalizer);
+  if (
+    actualHash === undefined ||
+    actualAlgorithm !== expected.request_hash_algorithm ||
+    actualCanonicalizer !== expected.request_canonicalizer
+  ) {
+    throw new CommandReceiptUnverifiableError(commandId);
+  }
+  if (actualHash !== expected.request_hash) {
+    throw new CommandPayloadMismatchError(commandId);
+  }
+}
+
 async function readWorkspace(
   transaction: ManagedTransaction,
   ids: { projectId: string; modelId: string; revisionId: string; profileId: string },
@@ -235,12 +277,14 @@ async function readBaseline(
 
 export class GovernanceRepository {
   async createProjectWorkspace(input: CreateProjectWorkspaceInput): Promise<ProjectWorkspace> {
+    const requestFingerprint = fingerprintCreateProjectWorkspace(input);
     const session = getDriver().session();
     try {
       return await session.executeWrite(async (transaction) => {
         const priorEvent = await findCommandEvent(transaction, input.command_id);
         if (priorEvent) {
           assertEventType(input.command_id, priorEvent, workspaceCreatedEvent);
+          assertRequestFingerprint(input.command_id, priorEvent, requestFingerprint);
           return readWorkspace(
             transaction,
             {
@@ -295,6 +339,9 @@ export class GovernanceRepository {
            CREATE (event:AuditEvent {
              id: $audit_event_id, command_id: $command_id, actor: $actor,
              event_type: '${workspaceCreatedEvent}', occurred_at: datetime($now),
+             request_hash: $request_hash,
+             request_hash_algorithm: $request_hash_algorithm,
+             request_canonicalizer: $request_canonicalizer,
              project_id: $project_id, result_project_id: $project_id,
              result_model_id: $model_id, result_revision_id: $revision_id,
              result_profile_id: $profile_id
@@ -324,6 +371,7 @@ export class GovernanceRepository {
             command_id: input.command_id,
             actor: input.actor,
             now,
+            ...requestFingerprint,
           },
         );
         const record = result.records[0];
@@ -341,12 +389,14 @@ export class GovernanceRepository {
   }
 
   async freezeRevision(input: FreezeRevisionInput): Promise<CommandResult<Baseline>> {
+    const requestFingerprint = fingerprintFreezeRevision(input);
     const session = getDriver().session();
     try {
       return await session.executeWrite(async (transaction) => {
         const priorEvent = await findCommandEvent(transaction, input.command_id);
         if (priorEvent) {
           assertEventType(input.command_id, priorEvent, revisionFrozenEvent);
+          assertRequestFingerprint(input.command_id, priorEvent, requestFingerprint);
           return {
             value: await readBaseline(transaction, toStringValue(priorEvent.result_baseline_id)),
             replayed: true,
@@ -381,6 +431,9 @@ export class GovernanceRepository {
            CREATE (event:AuditEvent {
              id: $audit_event_id, command_id: $command_id, actor: $actor,
              event_type: '${revisionFrozenEvent}', occurred_at: datetime($now),
+             request_hash: $request_hash,
+             request_hash_algorithm: $request_hash_algorithm,
+             request_canonicalizer: $request_canonicalizer,
              project_id: $project_id, subject_id: revision.id,
              subject_version_before: $expected_revision_version,
              subject_version_after: revision.version,
@@ -400,6 +453,7 @@ export class GovernanceRepository {
             command_id: input.command_id,
             actor: input.actor,
             now,
+            ...requestFingerprint,
           },
         );
         if (result.records.length > 0) {
@@ -429,12 +483,14 @@ export class GovernanceRepository {
   }
 
   async approveBaseline(input: ApproveBaselineInput): Promise<CommandResult<Baseline>> {
+    const requestFingerprint = fingerprintApproveBaseline(input);
     const session = getDriver().session();
     try {
       return await session.executeWrite(async (transaction) => {
         const priorEvent = await findCommandEvent(transaction, input.command_id);
         if (priorEvent) {
           assertEventType(input.command_id, priorEvent, baselineApprovedEvent);
+          assertRequestFingerprint(input.command_id, priorEvent, requestFingerprint);
           return {
             value: await readBaseline(transaction, toStringValue(priorEvent.result_baseline_id)),
             replayed: true,
@@ -458,6 +514,9 @@ export class GovernanceRepository {
            CREATE (event:AuditEvent {
              id: $audit_event_id, command_id: $command_id, actor: $actor,
              event_type: '${baselineApprovedEvent}', occurred_at: datetime($now),
+             request_hash: $request_hash,
+             request_hash_algorithm: $request_hash_algorithm,
+             request_canonicalizer: $request_canonicalizer,
              project_id: $project_id, subject_id: baseline.id,
              subject_version_before: $expected_baseline_version,
              subject_version_after: baseline.version,
@@ -474,6 +533,7 @@ export class GovernanceRepository {
             command_id: input.command_id,
             actor: input.actor,
             now,
+            ...requestFingerprint,
           },
         );
         if (result.records.length > 0) {

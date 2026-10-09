@@ -14,8 +14,8 @@ Phase 1 不扩展新的适航分析功能，先建立后续通用化所需的安
 | --- | --- | --- | --- |
 | P1.1 | 迁移账本、显式 CLI、跨平台测试入口 | dry-run/status 不写库；apply 有 actor/idempotency/audit 状态；测试入口跨平台 | Complete |
 | P1.2 | Project/Model/Revision/Baseline 最小核心 | 两项目可复用业务编号；Approved Baseline 无更新入口 | Complete |
-| P1.3 | 遗留数据挂接与来源盘点 | 现有全局数据可 dry-run 挂接到默认遗留项目；冲突生成 MigrationIssue | Ready |
-| P1.4 | Revision 版本与统一写入入口 | 新写入强制 project/revision/expected-version/command/audit | Planned |
+| P1.3 | 遗留数据挂接与来源盘点 | 现有全局数据可 dry-run 挂接到默认遗留项目；冲突生成 MigrationIssue | Complete |
+| P1.4 | Revision 版本与统一写入入口 | 新写入强制 project/revision/expected-version/command/audit | Ready |
 | P1.5 | 内部 UUID 与项目内业务编号 | 全局业务 ID 约束退出；兼容 API 保留 legacy id | Planned |
 | P1.6 | 兼容读取、隔离与回归验收 | F3532/FeatureRule 回归、多项目隔离、迁移/回滚验证通过 | Planned |
 
@@ -99,7 +99,9 @@ npm run db:migrate -- verify
 - Baseline 创建时固定来源 Revision、StandardProfileVersion 和 SHA-256 content hash；
 - approve 要求 Frozen 状态和 expected baseline version；
 - Approved Baseline 不存在通用更新入口，再次使用新命令批准会返回冲突；
-- 相同 command id 的 create/freeze/approve 重放不产生重复结果；
+- 相同 command id 且规范请求一致的 create/freeze/approve 重放不产生重复结果；
+- 相同 command id 对应不同事件或不同规范请求时拒绝；AuditEvent 记录请求摘要、SHA-256 算法和命令专用 canonicalizer id/version；
+- 缺少请求指纹的历史 command receipt 不可验证，必须换用新的 command id；
 - 每次首次成功写入产生且只产生一个 AuditEvent；
 - 迁移后置检查、后端回归、Neo4j 集成测试、前端回归和完整构建通过。
 
@@ -108,8 +110,72 @@ npm run db:migrate -- verify
 - `0002_governance_core_constraints` 已通过显式 CLI 应用并验证；
 - MigrationRecord checksum：`43e744327580d58f5d26c7c3491a78493a911622811ee0dac5d9f0b7e43a3452`；
 - 新增 12 个治理核心唯一约束，均通过自动后置检查；
-- 后端单元与回归测试共 50 项断言通过；
-- Neo4j 集成测试 2/2 通过，其中治理核心测试覆盖跨项目业务编号复用、幂等重放、冻结、批准和 Approved 状态保护；
+- 后端单元与回归测试共 56 项通过，其中命令指纹测试覆盖字段顺序、集合规范化、身份、版本和批准理由；
+- Neo4j 集成测试 2/2 通过，其中治理核心测试覆盖跨项目业务编号复用、同载荷幂等重放、异载荷拒绝、旧回执拒绝、冻结、批准和 Approved 状态保护；
 - 前端回归测试 5/5 通过，前后端完整构建通过；
 - 集成测试创建的数据已按测试 Project 范围清理；迁移约束和 MigrationRecord 保留；
+- 前端既有大 chunk 告警未增加，仍按 Phase 6 技术债处理。
+
+## 10. P1.3 范围
+
+### 实施
+
+- 新增只读 `dry-run`，盘点已知遗留标签、数量、scope、旧业务编号、来源定位和数据集分类；
+- 默认使用中性的 `generic-legacy` 上下文，不再把未分类数据预设为某个合作项目；
+- 通过显式 Appendix D 标记识别仓库示例；若使用默认上下文，计划必须以 `DATASET_CLASSIFICATION_MISMATCH` 阻止执行；
+- 应用命令必须显式指定数据集、actor 和 command id；
+- 建立 LegacyAttachmentRun、MigrationIssue 和 AuditEvent，重复 command id 只重放既有结果；
+- 对可安全挂接的已知实体增加内部 UUID、project/model/revision scope、legacy id/label 和 Revision 成员关系；
+- 将全局 GraphVersion 原值保留为 Revision 的 `legacy_graph_version`，不删除原节点；
+- 对未知 schema、scope 冲突、重复/缺失旧 ID 和缺失来源定位生成结构化诊断；
+- 新增非破坏性迁移 `0003_legacy_attachment_support`，只创建运行账本和 MigrationIssue 约束。
+
+### 边界
+
+- 本批次只挂接和盘点，不执行 Asset/DataFlow/Threat/TraceLink 的语义归一化；
+- 来源缺失保持为 MigrationIssue，不通过节点名称、文件名或个人绝对路径猜测；SourceRecord 在 Phase 2 建立；
+- 已忽略的 ZG-ONE/F3532 保密资料不自动恢复、不扫描且不作为 P1.3 输入；未来如需兼容回归，必须由资料责任人明确提供授权或脱敏样例；
+- 不删除旧字段、旧节点或旧关系，不改变旧 API 的响应结构；
+- 完整遗留切换、双读和旧写入关闭仍属于 Phase 7。
+
+## 11. P1.3 操作入口
+
+```powershell
+# 默认中性上下文；若检测到 Appendix D 会阻止执行
+npm run legacy:attach -- dry-run
+
+# 显式盘点和挂接 Appendix D 示例
+npm run legacy:attach -- dry-run --dataset do356a-appendix-d
+npm run legacy:attach -- apply --dataset do356a-appendix-d --actor <actor-id> --command-id <command-id>
+npm run legacy:attach -- verify --dataset do356a-appendix-d
+```
+
+支持的数据集配置为 `generic-legacy` 和 `do356a-appendix-d`。`apply` 不接受隐式默认数据集，避免把混合数据错误归入一个项目。
+
+## 12. P1.3 验收
+
+- dry-run 不写数据库，并输出机器可读 inventory、issue、plan hash 和 blocked 状态；
+- Appendix D 数据使用默认上下文时被阻止，显式选择独立项目后才能执行；
+- 未知 schema 阻止执行，已知但不可安全覆盖的 scope 冲突生成 MigrationIssue；
+- 重复/缺失旧业务编号和缺失来源定位不被静默修复；
+- 每个已挂接遗留实体具有有效内部 UUID 和唯一 project/model/revision scope；
+- 每个已挂接实体存在到目标 Revision 的成员关系；
+- 关系两端不存在跨项目 scope；
+- 重复 command id 不产生重复项目、关系、问题或审计事件；
+- 不删除或覆盖遗留业务字段，迁移约束具有自动后置检查。
+
+## 13. P1.3 完成记录（2026-10-09）
+
+- `0003_legacy_attachment_support` 已通过显式 CLI 应用并验证；
+- MigrationRecord checksum：`d4f59f9453dca09cbd01a8f2bb8e3d7ed9f56e74c4bf6573a2f6348e646923c3`；
+- 默认 dry-run 正确识别当前图为 Appendix D，并以 1 条阻塞性分类问题拒绝挂接到中性遗留项目；
+- 显式 Appendix D dry-run 识别 27 个可挂接实体、0 个 scope 冲突；
+- 已创建独立 Project、Model、Draft Revision 和 Draft StandardProfileVersion，并非破坏性挂接 27 个遗留实体；
+- 挂接运行 id：`9afa1cb3-6010-4593-8201-27041d917504`，首次 plan hash：`553dc2e431923ec5f1a13fc5e0ff48da331462e0ea20ce36ce82a15cebf37dd7`；
+- 相同 command id 重放返回同一运行 id，未产生重复结果；
+- 当前保留 3 条 Open MigrationIssue：17 个 AssetNode、4 个 ThreatPoint、5 个 DO326A_Link 缺少可靠来源定位，留待 Phase 2 的 SourceRecord 处置；
+- 1 条不适用于 CommitAudit 的来源问题经受审计重检标记为 Superseded，未删除历史；
+- 最终验证：27 个实体已挂接、3 条 Open MigrationIssue、0 个未归属已知实体、0 个无效 UUID、0 个缺失 Revision 成员关系、0 个跨项目关系；
+- 后端单元与回归测试 56/56、Neo4j 集成测试 2/2、前端回归测试 5/5 通过，前后端完整构建通过；
+- `apps/frontend/tsconfig.tsbuildinfo` 已在 `.gitignore` 中，现从版本控制移除，避免构建缓存继续污染阶段提交；
 - 前端既有大 chunk 告警未增加，仍按 Phase 6 技术债处理。

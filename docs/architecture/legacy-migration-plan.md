@@ -9,7 +9,7 @@
 
 将当前全局 Neo4j 图安全迁移到 Project/Model/Revision/Baseline 架构，同时保留：
 
-- ZG-ONE/F3532 业务编号；
+- 当前数据库中经过授权的遗留业务编号；
 - DO-356A Appendix D 示例；
 - 已导入源数据和可恢复的来源定位；
 - AttackPath、FP、TC、TS 和标准映射；
@@ -33,12 +33,12 @@
 
 ## 3. 默认遗留上下文
 
-若运行迁移时没有提供项目配置，则创建：
+若运行迁移时没有提供项目配置，则创建中性的未分类遗留上下文：
 
 ```text
 Project
-  business_id: legacy-zg-one
-  name: ZG-ONE Legacy Migration
+  business_id: legacy-unclassified
+  name: Generic Legacy Migration
 
 Model
   business_id: legacy-primary-model
@@ -49,7 +49,7 @@ Revision
   status: Draft
 ```
 
-实际实施前允许通过迁移参数替换这些值。DO-356A Appendix D 示例若与 ZG-ONE 数据共存，应迁移为独立 Project，不能继续共享全局图。
+实际实施前允许通过迁移参数替换这些值。DO-356A Appendix D 示例必须迁移为独立 Project，不能与未分类数据继续共享全局图。仓库已忽略的 ZG-ONE/F3532 保密资料不属于本阶段迁移输入；若未来兼容回归确有需要，只能由资料责任人明确提供经过授权或脱敏的受控样例，不得从忽略目录自动恢复或提交。
 
 ## 4. 遗留对象映射
 
@@ -83,7 +83,7 @@ Revision
 - 检查数据库版本和现有约束；
 - 导出节点/关系数量、孤立引用、重复 ID 和空关键字段；
 - 创建可验证备份并记录 backup id/hash；
-- 记录当前 F3532 Golden 和 Appendix D 导出摘要；
+- 记录 Appendix D 导出摘要；只有明确提供授权或脱敏兼容样例时才记录对应 Golden；
 - 盘点已保存的 feature preview/path trace 输入输出、contract version 和 hash；
 - 将仓库外资料路径转换为待解析的 SourceRecord 清单，不复制或假定资料内容；
 - 若存在未知 schema 或未完成迁移，停止。
@@ -141,7 +141,7 @@ Revision
 - AttackPath 的 hop sequence 和 edge membership 不发生无解释变化；
 - topology trace 的节点/边顺序不得因集合规范化而重排；
 - 外部 reviewer/APPROVED/verified 声明不得自动增加平台 Reviewed/Approved 数量；
-- F3532 03 Golden 差异为零，或每项差异均有批准的迁移说明；
+- 对纳入迁移范围的授权 Golden，差异为零或每项差异均有批准的迁移说明；
 - 现有报告所需数据不得变为空；
 - 新旧总量差异能够由拆分、合并或过滤规则解释。
 

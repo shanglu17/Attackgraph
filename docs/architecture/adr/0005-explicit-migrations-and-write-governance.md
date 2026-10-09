@@ -26,11 +26,14 @@
 - expected version；
 - actor；
 - command/idempotency id；
+- 版本化的命令专用 canonicalizer 和规范请求摘要；
 - validation；
 - transaction；
 - AuditEvent。
 
 adapter、导入器和生成器只能提交命令或 change set，不能持有全局删除权限。
+
+幂等重放只对“相同 command id、相同事件类型、相同规范请求摘要”成立。AuditEvent 必须记录请求摘要、摘要算法和 canonicalizer id/version；相同 command id 的请求语义发生变化时必须拒绝，不得返回第一次调用的结果。缺少这些指纹字段的历史回执不可验证，调用方必须使用新的 command id，不能把它当作安全重放。
 
 ### 删除规则
 
@@ -61,7 +64,9 @@ adapter、导入器和生成器只能提交命令或 change set，不能持有�
 
 - 应用启动路径不包含业务 `DELETE`；
 - 写 API 没有 project/revision scope 时拒绝执行；
-- 重复 command id 不产生重复业务结果；
+- 相同 command id 与相同规范请求重放时不产生重复业务结果；
+- 相同 command id 对应不同事件类型或不同规范请求时明确拒绝；
+- command receipt 记录请求摘要、摘要算法和 canonicalizer id/version，缺少指纹的历史回执不可重放；
 - stale expected version 返回结构化冲突；
 - 每次成功写入都有对应 AuditEvent；
 - 每个迁移都有可自动检查的后置条件。
