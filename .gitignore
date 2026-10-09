@@ -3,8 +3,19 @@ dist/
 .env
 .DS_Store
 coverage/
+.venv/
+.venv-dev/
+__pycache__/
 .tmp/
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
 .claude/
+
+# Confidential artifacts from the separate F3532 collaboration project.
+/docs/F3532/
+/docs/asset-inventory-v2-design.md
+/docs/zg-one-tables.html
+/docs/内部数据流分析表_真实数据.xlsx
+/docs/运行结果.xlsx
+/docs/资产清单*.xlsx

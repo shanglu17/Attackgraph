@@ -23,9 +23,14 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 import sys
-SRC = sys.argv[1] if len(sys.argv) > 1 else \
-    r"D:/program download/weixin/xwechat_files/wxid_k5k44kfijop622_8d83/msg/file/2026-06/网络安保资产_边界及系统_接口和数据流清单_0623.xlsx"
-OUT = r"E:/document/airness/project/Attackgraph/docs/资产清单_v4_真实数据.xlsx"
+from pathlib import Path
+
+if len(sys.argv) < 2:
+    sys.exit('用法: python scripts/convert_source_to_v4.py "源工作簿路径" ["输出路径"]')
+SRC = Path(sys.argv[1])
+if not SRC.is_file():
+    sys.exit(f"源工作簿不存在: {SRC}")
+OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).resolve().parents[1] / "docs" / "资产清单_v4_真实数据.xlsx"
 STOP = "以下是样例，请勿填写此行以下内容"
 
 # ── styling helpers (mirror gen_template_v3.py) ──────────────────────────────

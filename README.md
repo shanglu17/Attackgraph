@@ -95,6 +95,16 @@ npm run seed:generic     # 通用示例
 
 ## 真实数据建模流程（ZG-ONE）
 
+Python 仅用于 Excel 转换与模板生成；前后端使用 Node.js。Windows 下先创建独立环境并安装脚本依赖：
+
+```powershell
+python -m venv .venv-dev
+.\.venv-dev\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv-dev\Scripts\python.exe scripts/convert_source_to_v4.py "源工作簿路径"
+```
+
+若安装了多个 Python，创建环境时请使用所需解释器的完整路径。转换器必须显式传入源工作簿路径，可用第二个参数指定输出路径；默认输出到当前项目的 `docs` 目录。
+
 ```
 原始清单(网络安保资产_边界及系统_接口和数据流清单_xxxx.xlsx)
    │  python scripts/convert_source_to_v4.py "<源表路径>"

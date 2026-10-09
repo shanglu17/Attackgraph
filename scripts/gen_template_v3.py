@@ -9,6 +9,7 @@ Source of truth = ZG-ONE vol1 (BI/BDF) + vol3 第四章 (SB/TA/F).
 模型: SB(信任边界) → BI(边界接口) → BDF(边界数据流)
 """
 import re
+from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -531,7 +532,7 @@ freeze(ws9)
 # ─────────────────────────────────────────────────────────────────────────────
 wb._sheets = [ws1, ws_bi, ws2, ws3, ws4, ws5, ws6, ws7, ws8, ws9]
 
-out = r"E:/document/airness/project/Attackgraph/docs/资产清单_v4_可导入.xlsx"
+out = Path(__file__).resolve().parents[1] / "docs" / "资产清单_v4_可导入.xlsx"
 wb.save(out)
 print("Saved:", out)
 print(f"  边界数据流表(BDF) rows: {len(rows_if) - 1}")
