@@ -1,7 +1,8 @@
 # Phase 1 执行计划：项目化与写入治理基础
 
-- 状态：In Progress
+- 状态：Complete
 - 开始日期：2026-10-09
+- 完成日期：2026-10-10
 - 前置基线：Phase 0 Accepted，代码基线 `7574362`
 
 ## 1. 目标
@@ -17,7 +18,7 @@ Phase 1 不扩展新的适航分析功能，先建立后续通用化所需的安
 | P1.3 | 遗留数据挂接与来源盘点 | 现有全局数据可 dry-run 挂接到默认遗留项目；冲突生成 MigrationIssue | Complete |
 | P1.4 | Revision 版本与统一写入入口 | 新写入强制 project/revision/expected-version/command/audit | Complete |
 | P1.5 | 内部 UUID 与项目内业务编号 | 全局业务 ID 约束退出；兼容 API 保留 legacy id | Complete |
-| P1.6 | 兼容读取、隔离与回归验收 | F3532/FeatureRule 回归、多项目隔离、迁移/回滚验证通过 | Ready |
+| P1.6 | 兼容读取、隔离与回归验收 | F3532/FeatureRule 回归、多项目隔离、迁移/回滚验证通过 | Complete |
 
 ## 3. P1.1 范围
 
@@ -262,3 +263,44 @@ npm run legacy:attach -- verify --dataset do356a-appendix-d
 - 新增跨项目重复 `ASSET-001`/`EDGE-001` 集成用例，验证显式 scope 可解析到不同内部 UUID，错误 scope 不产生结果；
 - 后端单元与回归测试增至 60 项，Neo4j 集成测试增至 4/4；迁移 0001–0006 验证全部通过；
 - P1.6 进入 Ready，下一批次负责把现有读取入口系统性接入 scope/compatibility projection，并执行 F3532、FeatureRule、隔离和恢复回归。
+
+## 20. P1.6 范围
+
+### 实施
+
+- 建立 [兼容读取与遗留写隔离契约](./compatibility-read-contract.md)；
+- 新增唯一的 `CompatibilityScopeRepository`：显式 `project_id + revision_id` 优先；旧客户端未传 scope 时只解析已登记的 `do356a-appendix-d` 遗留 revision；
+- 图快照、章节 4 报表、F3532 03/04 上下文、攻击路径、建模导出、DO-326A 链接、StandardMapping 和旧 CommitAudit 读取全部强制携带 project/revision scope；
+- 旧 JSON 响应形状保持不变，响应头返回 `X-ASTRA-Project-Id`、`X-ASTRA-Revision-Id` 和 `X-ASTRA-Scope-Source`；
+- 缺少一半 scope、跨项目 revision 或不存在的 scope 显式拒绝，不按业务编号、名称或“唯一项目”猜测；
+- 将仍依赖全局 GraphVersion、无 scope MERGE/DELETE 的遗留业务写端点统一隔离为 `409 LEGACY_GLOBAL_WRITE_QUARANTINED`；纯 preview、分析运行和报告读取继续可用；
+- 基线实验脚本默认不再执行全局 seed；`--seed-sample` 被隔离，防止实验命令替换受控项目数据；
+- 修复 `getF353204()` 在同一个 Neo4j session 并发运行查询导致的 open transaction 错误。
+
+### 边界
+
+- P1.6 不建立 Phase 2 的版本化 scoped command HTTP API，因此不把旧全局写实现包装成伪作用域接口；
+- 共享标准知识库 Clause/Artifact/Pipeline 读取仍按 standard id 全局复用；项目工程映射 `StandardMapping` 必须按 project/revision 读取；
+- FeatureRule preview/path trace 是显式输入包驱动的实验方法，不从 Neo4j 全库读取，继续按其 contract/scope/hash 规则回归；
+- 3 条来源定位 MigrationIssue 保持 Open，不在读取兼容层补造 SourceRecord。
+
+## 21. P1.6 验收
+
+- 两个项目/revision 中相同 Asset、Edge、Path、Mapping、TC/TS、DO-326A link 和 CommitAudit 编号的读取结果完全隔离；
+- 默认兼容 scope 精确解析到已登记 Appendix D revision，并在响应头公开解析结果；
+- 部分 scope、错误 project/revision 组合和未知 scope 不产生回退或跨项目结果；
+- 所有列入清单的旧全局写端点返回稳定 409 错误，数据库节点数不变；
+- Appendix D 挂接仍为 27 个实体、3 条 Open MigrationIssue；迁移 0001–0006 验证通过；
+- P1.5 dump 能在独立环境恢复，恢复后可重放 0004–0006，实体数量、作用域读取和约束状态与主库一致；
+- F3532、FeatureRule、前后端构建和既有测试无退化。
+
+## 22. P1.6 完成记录（2026-10-10）
+
+- HTTP 集成验证：默认 `/graph` 返回 17 个 Appendix D 资产并公开 scope 响应头；仅提供 `project_id` 返回 400；调用 `/admin/seed/sample` 返回 `409 LEGACY_GLOBAL_WRITE_QUARANTINED` 且数据库节点数不变；
+- 多项目隔离矩阵在两个项目中复用 `ASSET-001`、`EDGE-001`、`PATH-001`、`LINK-001`、`MAP-001`、`FC-001`、`TC-001`、`TS-001` 和 `COMMIT-001`，所有兼容投影均只返回所属 revision 数据；
+- Appendix D 真实数据只读回归得到 17 个 AssetNode、14 条 ASSET_EDGE、4 个 ThreatPoint；LegacyAttachment verify 为 27 个挂接实体、3 条 Open MigrationIssue、0 条诊断；
+- 默认 scope 双读计数与迁移前兼容全库视图一致：AssetNode 17/17、ThreatPoint 4/4、DO326A_Link 5/5、CommitAudit 1/1、ASSET_EDGE 14/14，差异为 0；
+- 使用 SHA-256 `B2B57F5A0321C59C2CCECD55940419EBE7198AD96523CEEA96D7B67079E8D441` 的 P1.5 dump 在临时卷恢复；初始状态为 0001–0003 Applied、0004–0006 Pending，重放后 0001–0006 全部验证通过；
+- 恢复库验证为 17 个资产、14 条边、4 个威胁点、55 个约束、0 个旧全局业务编号约束；临时容器和卷已清理，主库持续运行；
+- 前后端完整构建通过；后端单元/F3532/FeatureRule 回归 62/62、数据库与 HTTP 集成测试 10/10、前端测试 5/5 通过；前端既有大 chunk 告警未增加；
+- Phase 1 出口门槛已满足。Phase 2 进入 Ready，下一阶段提供标准无关模型契约和 scoped command API；VG-1 仍需等待 Phase 2 完成。

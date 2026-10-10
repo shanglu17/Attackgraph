@@ -16,7 +16,11 @@ app.use(router);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   const message = error instanceof Error ? error.message : "未知错误";
-  res.status(500).json({ message });
+  const statusCode =
+    typeof error === "object" && error !== null && "statusCode" in error
+      ? Number(error.statusCode)
+      : 500;
+  res.status(Number.isInteger(statusCode) && statusCode >= 400 && statusCode < 600 ? statusCode : 500).json({ message });
 });
 
 const start = async () => {

@@ -14,6 +14,7 @@ import {
   standardKnowledgeConstraintDefinitions,
 } from "../services/identity/scopedIdentity.js";
 import { assertConstraintsPresent } from "./schemaCompatibility.js";
+import type { ProjectRevisionScope } from "./compatibilityScopeRepository.js";
 
 const f3532StandardId = "ASTM-F3532-23";
 
@@ -358,13 +359,22 @@ export class StandardRepository {
     }
   }
 
-  async getMappings(standardId = f3532StandardId): Promise<StandardMapping[]> {
+  async getMappings(
+    scope: ProjectRevisionScope,
+    standardId = f3532StandardId,
+  ): Promise<StandardMapping[]> {
     await this.ensureConstraints();
     const session = getDriver().session();
     try {
-      const result = await session.run("MATCH (m:StandardMapping {standard_id: $standard_id}) RETURN m ORDER BY m.mapping_id", {
-        standard_id: standardId
-      });
+      const result = await session.run(
+        `MATCH (m:StandardMapping {
+           standard_id: $standard_id,
+           project_id: $project_id,
+           revision_id: $revision_id
+         })
+         RETURN m ORDER BY m.mapping_id`,
+        { ...scope, standard_id: standardId },
+      );
       return result.records.map((record) => {
         const props = record.get("m").properties as Record<string, unknown>;
         return {

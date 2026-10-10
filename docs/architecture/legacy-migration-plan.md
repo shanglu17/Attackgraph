@@ -125,6 +125,8 @@ Revision
 - 比较旧/新图数量、业务 ID、关系、报告和 Golden 输出；
 - 执行双读差异报告。
 
+P1.6 实施说明：旧读取 DTO 已通过固定 compatibility scope 投影到明确的 Project/Revision，并完成跨项目重复编号隔离测试。未提供 scope 的旧客户端仅绑定已登记 Appendix D revision；不按数据库现状猜测。仍依赖全局 GraphVersion 的旧写端点已隔离，等待 Phase 2 scoped command API 替代。
+
 ### M6：切换与弃用
 
 - 停止旧模型写入；

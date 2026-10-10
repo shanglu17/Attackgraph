@@ -1,14 +1,23 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import featureRulesRouter from "./featureRules.js";
 import { GraphChangeSetValidationError, GraphRepository } from "../repositories/graphRepository.js";
 import { F3532AnalysisRepository } from "../repositories/f3532AnalysisRepository.js";
 import { StandardRepository } from "../repositories/standardRepository.js";
+import {
+  CompatibilityScopeInputError,
+  CompatibilityScopeRepository,
+  type ResolvedCompatibilityScope,
+} from "../repositories/compatibilityScopeRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
 import { FpAnalysisService } from "../services/fpAnalysisService.js";
 import { CxfImportService, type CxfImportSummary } from "../services/cxfImportService.js";
 import { F3532InputImportService, type F3532InputImportSummary } from "../services/f3532InputImportService.js";
 import { F353204Service, f353204Defaults } from "../services/f353204Service.js";
 import { F353203GenerationService } from "../services/f3532/f353203GenerationService.js";
+import {
+  legacyGlobalWriteQuarantineCode,
+  legacyGlobalWriteQuarantineMessage,
+} from "../services/governance/legacyWriteQuarantine.js";
 import { ImportService } from "../services/importService.js";
 import {
   cxfImportRequestSchema,
@@ -35,6 +44,7 @@ router.use(featureRulesRouter);
 const graphRepo = new GraphRepository();
 const f3532AnalysisRepo = new F3532AnalysisRepository();
 const standardRepo = new StandardRepository();
+const compatibilityScopeRepo = new CompatibilityScopeRepository();
 const analysisService = new AnalysisService();
 const fpAnalysisService = new FpAnalysisService();
 const importService = new ImportService();
@@ -42,6 +52,38 @@ const cxfImportService = new CxfImportService();
 const f3532InputImportService = new F3532InputImportService();
 const f353204Service = new F353204Service();
 const f353203GenerationService = new F353203GenerationService();
+
+function scopeValue(req: Request, queryName: "project_id" | "revision_id", headerName: string): string | undefined {
+  const rawHeader = req.headers[headerName];
+  const rawQuery = req.query[queryName];
+  const headerValue = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+  const queryValue = Array.isArray(rawQuery) ? rawQuery[0] : rawQuery;
+  if (
+    headerValue !== undefined &&
+    queryValue !== undefined &&
+    String(headerValue).trim() !== String(queryValue).trim()
+  ) {
+    throw new CompatibilityScopeInputError(
+      `${queryName} conflicts between request header and query parameter`,
+    );
+  }
+  const value = headerValue ?? queryValue;
+  return value === undefined ? undefined : String(value);
+}
+
+async function resolveCompatibilityScope(
+  req: Request,
+  res: Response,
+): Promise<ResolvedCompatibilityScope> {
+  const scope = await compatibilityScopeRepo.resolve({
+    project_id: scopeValue(req, "project_id", "x-project-id"),
+    revision_id: scopeValue(req, "revision_id", "x-revision-id"),
+  });
+  res.setHeader("X-ASTRA-Project-Id", scope.project_id);
+  res.setHeader("X-ASTRA-Revision-Id", scope.revision_id);
+  res.setHeader("X-ASTRA-Scope-Source", scope.source);
+  return scope;
+}
 
 const emptyImportSummary = {
   asset_nodes: 0,
@@ -140,6 +182,40 @@ router.get("/health", async (_req, res) => {
   res.json({ ok: true });
 });
 
+const quarantinedLegacyWritePaths = [
+  "/standard/f3532/mappings",
+  "/admin/seed/sample",
+  "/admin/seed/generic",
+  "/imports/excel/single-sheet/commit",
+  "/imports/cxf-asset-inventory/commit",
+  "/imports/f3532-input/commit",
+  "/imports/fha/commit",
+  "/analysis/f3532/generate-04",
+  "/analysis/f3532/commit-04",
+  "/graph/changeset/validate",
+  "/graph/changeset/commit",
+  "/analysis/attack-paths/persist",
+  "/analysis/function-propagation/run",
+  "/analysis/f3532/generate-03/commit",
+  "/compliance/do326a-links",
+] as const;
+
+for (const path of quarantinedLegacyWritePaths) {
+  router.post(path, (_req, res) =>
+    res.status(409).json({
+      code: legacyGlobalWriteQuarantineCode,
+      message: legacyGlobalWriteQuarantineMessage,
+    }),
+  );
+}
+
+router.patch("/compliance/do326a-links/:link_id/review", (_req, res) =>
+  res.status(409).json({
+    code: legacyGlobalWriteQuarantineCode,
+    message: legacyGlobalWriteQuarantineMessage,
+  }),
+);
+
 router.post("/standard/f3532/import", async (req, res, next) => {
   try {
     const parsed = f3532StandardImportRequestSchema.safeParse(req.body);
@@ -186,9 +262,10 @@ router.get("/standard/f3532/artifacts", async (_req, res, next) => {
   }
 });
 
-router.get("/standard/f3532/mappings", async (_req, res, next) => {
+router.get("/standard/f3532/mappings", async (req, res, next) => {
   try {
-    const mappings = await standardRepo.getMappings();
+    const scope = await resolveCompatibilityScope(req, res);
+    const mappings = await standardRepo.getMappings(scope);
     return res.json({ count: mappings.length, mappings });
   } catch (error) {
     return next(error);
@@ -406,7 +483,8 @@ router.post("/imports/fha/commit", async (req, res, next) => {
 
 router.get("/fha/failure-conditions", async (_req, res, next) => {
   try {
-    const rows = await f3532AnalysisRepo.getFailureConditionContexts();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const rows = await f3532AnalysisRepo.getFailureConditionContexts(scope);
     return res.json({ count: rows.length, rows });
   } catch (error) {
     return next(error);
@@ -423,12 +501,13 @@ router.post("/analysis/f3532/generate-04", async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ generated: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
-    const inputs = await graphRepo.getFunctionPropagationInputs();
+    const scope = await resolveCompatibilityScope(req, res);
+    const inputs = await graphRepo.getFunctionPropagationInputs(scope);
     const refreshedPaths = fpAnalysisService.run({ ...inputs, group_by: "function" });
     await graphRepo.replaceFunctionPropagationPaths(refreshedPaths);
     const [failureConditions, paths] = await Promise.all([
-      f3532AnalysisRepo.getFailureConditionContexts(),
-      f3532AnalysisRepo.getThreatPathContexts()
+      f3532AnalysisRepo.getFailureConditionContexts(scope),
+      f3532AnalysisRepo.getThreatPathContexts(scope)
     ]);
     const result = f353204Service.generate(parsed.data, failureConditions, paths);
     return res.json({ generated: true, refreshed_path_count: refreshedPaths.length, ...result });
@@ -456,7 +535,8 @@ router.post("/analysis/f3532/commit-04", async (req, res, next) => {
 
 router.get("/reports/f3532/04", async (_req, res, next) => {
   try {
-    const report = await f3532AnalysisRepo.getF353204();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const report = await f3532AnalysisRepo.getF353204(scope);
     return res.json({
       threat_condition_count: report.threat_conditions.length,
       threat_scenario_count: report.threat_scenarios.length,
@@ -469,7 +549,8 @@ router.get("/reports/f3532/04", async (_req, res, next) => {
 
 router.get("/graph", async (_req, res, next) => {
   try {
-    const data = await graphRepo.getGraph();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const data = await graphRepo.getGraph(scope);
     res.json(data);
   } catch (error) {
     next(error);
@@ -523,7 +604,8 @@ router.post("/analysis/attack-paths/run", async (req, res, next) => {
       return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
 
-    const graph = await graphRepo.getGraph();
+    const scope = await resolveCompatibilityScope(req, res);
+    const graph = await graphRepo.getGraph(scope);
     const paths = analysisService.run({
       analysis_batch_id: parsed.data.analysis_batch_id,
       max_hops: parsed.data.max_hops,
@@ -556,7 +638,8 @@ router.post("/analysis/attack-paths/persist", async (req, res, next) => {
 router.get("/analysis/attack-paths", async (req, res, next) => {
   try {
     const analysisBatchId = req.query.analysis_batch_id ? String(req.query.analysis_batch_id) : undefined;
-    const paths = await graphRepo.getAttackPaths(analysisBatchId);
+    const scope = await resolveCompatibilityScope(req, res);
+    const paths = await graphRepo.getAttackPaths(scope, analysisBatchId);
     return res.json({ count: paths.length, paths });
   } catch (error) {
     return next(error);
@@ -573,7 +656,8 @@ router.get("/exports/modeling-result", async (req, res, next) => {
       });
     }
 
-    const bundle = await graphRepo.getModelingExportBundle(parsed.data.analysis_batch_id);
+    const scope = await resolveCompatibilityScope(req, res);
+    const bundle = await graphRepo.getModelingExportBundle(scope, parsed.data.analysis_batch_id);
     return res.json({
       metadata: {
         exported_at: new Date().toISOString(),
@@ -596,7 +680,8 @@ router.get("/exports/modeling-result", async (req, res, next) => {
 
 router.get("/reports/chapter4/trust-boundaries", async (_req, res, next) => {
   try {
-    const rows = await graphRepo.getTrustBoundaryReport();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const rows = await graphRepo.getTrustBoundaryReport(scope);
     return res.json({ count: rows.length, rows });
   } catch (error) {
     return next(error);
@@ -605,7 +690,8 @@ router.get("/reports/chapter4/trust-boundaries", async (_req, res, next) => {
 
 router.get("/reports/chapter4/boundary-data-flows", async (_req, res, next) => {
   try {
-    const rows = await graphRepo.getBoundaryDataFlowReport();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const rows = await graphRepo.getBoundaryDataFlowReport(scope);
     return res.json({ count: rows.length, rows });
   } catch (error) {
     return next(error);
@@ -614,7 +700,8 @@ router.get("/reports/chapter4/boundary-data-flows", async (_req, res, next) => {
 
 router.get("/reports/chapter4/function-propagation", async (_req, res, next) => {
   try {
-    const rows = await graphRepo.getFunctionPropagationReport();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const rows = await graphRepo.getFunctionPropagationReport(scope);
     return res.json({ count: rows.length, rows });
   } catch (error) {
     return next(error);
@@ -623,7 +710,8 @@ router.get("/reports/chapter4/function-propagation", async (_req, res, next) => 
 
 router.get("/reports/chapter4/internal-data-flows", async (_req, res, next) => {
   try {
-    const rows = await graphRepo.getInternalDataFlowReport();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const rows = await graphRepo.getInternalDataFlowReport(scope);
     return res.json({ count: rows.length, rows });
   } catch (error) {
     return next(error);
@@ -636,18 +724,23 @@ router.post("/analysis/function-propagation/run", async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
-    const inputs = await graphRepo.getFunctionPropagationInputs();
+    const scope = await resolveCompatibilityScope(req, res);
+    const inputs = await graphRepo.getFunctionPropagationInputs(scope);
     const fps = fpAnalysisService.run({ ...inputs, max_hops: parsed.data.max_hops, group_by: parsed.data.group_by });
     await graphRepo.replaceFunctionPropagationPaths(fps);
-    const rows = await graphRepo.getFunctionPropagationReport();
+    const rows = await graphRepo.getFunctionPropagationReport(scope);
     return res.json({ count: rows.length, fp_count: fps.length, rows });
   } catch (error) {
     return next(error);
   }
 });
 
-async function createF353203Preview(maxHops: number, mode: "preview" | "commit" | "loaded" = "preview") {
-  const facts = await graphRepo.getF353203GenerationFacts();
+async function createF353203Preview(
+  scope: ResolvedCompatibilityScope,
+  maxHops: number,
+  mode: "preview" | "commit" | "loaded" = "preview",
+) {
+  const facts = await graphRepo.getF353203GenerationFacts(scope);
   const result = f353203GenerationService.generate(facts, { max_hops: maxHops, mode });
   return {
     ...result,
@@ -662,7 +755,8 @@ router.post("/analysis/f3532/generate-03/preview", async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
-    const result = await createF353203Preview(parsed.data.max_hops);
+    const scope = await resolveCompatibilityScope(req, res);
+    const result = await createF353203Preview(scope, parsed.data.max_hops);
     if (parsed.data.group_by) {
       result.metadata.warnings.push(`group_by=${parsed.data.group_by} 已废弃并被忽略；v2 使用业务规则配置`);
     }
@@ -679,7 +773,8 @@ router.post("/analysis/f3532/generate-03", async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: "invalid params", errors: parsed.error.issues.map((issue) => issue.message) });
     }
-    const result = await createF353203Preview(parsed.data.max_hops);
+    const scope = await resolveCompatibilityScope(req, res);
+    const result = await createF353203Preview(scope, parsed.data.max_hops);
     result.metadata.warnings.push("兼容端点 /analysis/f3532/generate-03 当前仅执行只读预览；正式保存请调用 /commit");
     if (parsed.data.group_by) {
       result.metadata.warnings.push(`group_by=${parsed.data.group_by} 已废弃并被忽略；v2 使用业务规则配置`);
@@ -696,7 +791,8 @@ router.post("/analysis/f3532/generate-03/commit", async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ committed: false, errors: parsed.error.issues.map((issue) => issue.message) });
     }
-    const result = await createF353203Preview(parsed.data.max_hops, "commit");
+    const scope = await resolveCompatibilityScope(req, res);
+    const result = await createF353203Preview(scope, parsed.data.max_hops, "commit");
     if (result.metadata.graph_version !== parsed.data.expected_graph_version) {
       return res.status(409).json({
         committed: false,
@@ -718,7 +814,8 @@ router.post("/analysis/f3532/generate-03/commit", async (req, res, next) => {
 
 router.get("/reports/f3532/03", async (_req, res, next) => {
   try {
-    const result = await createF353203Preview(8, "loaded");
+    const scope = await resolveCompatibilityScope(_req, res);
+    const result = await createF353203Preview(scope, 8, "loaded");
     result.metadata.warnings.push("报告按当前 GraphVersion 只读重算；已提交路径的审核状态不会被覆盖");
     return res.json(result);
   } catch (error) {
@@ -728,7 +825,8 @@ router.get("/reports/f3532/03", async (_req, res, next) => {
 
 router.get("/compliance/do326a-links", async (_req, res, next) => {
   try {
-    const links = await graphRepo.getDo326ALinks();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const links = await graphRepo.getDo326ALinks(scope);
     return res.json({ count: links.length, links });
   } catch (error) {
     return next(error);
@@ -770,7 +868,8 @@ router.patch("/compliance/do326a-links/:link_id/review", async (req, res, next) 
 
 router.get("/audit/commits", async (_req, res, next) => {
   try {
-    const commits = await graphRepo.getAuditCommits();
+    const scope = await resolveCompatibilityScope(_req, res);
+    const commits = await graphRepo.getAuditCommits(scope);
     return res.json({ count: commits.length, commits });
   } catch (error) {
     return next(error);

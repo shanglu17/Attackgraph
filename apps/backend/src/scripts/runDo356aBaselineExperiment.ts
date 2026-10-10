@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { closeDriver } from "../db/neo4j.js";
 import { GraphRepository } from "../repositories/graphRepository.js";
+import { CompatibilityScopeRepository } from "../repositories/compatibilityScopeRepository.js";
 import { AnalysisService } from "../services/analysisService.js";
 import type { AssetEdge, AssetNode, ThreatPoint } from "../types/domain.js";
 
@@ -24,7 +25,7 @@ interface ExperimentOptions {
 
 function parseOptions(argv: string[]): ExperimentOptions {
   let maxHops = 6;
-  let seedSample = true;
+  let seedSample = false;
   let generatedBy = "do356a-baseline-experiment";
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -41,6 +42,11 @@ function parseOptions(argv: string[]): ExperimentOptions {
 
     if (arg === "--no-seed") {
       seedSample = false;
+      continue;
+    }
+
+    if (arg === "--seed-sample") {
+      seedSample = true;
       continue;
     }
 
@@ -167,15 +173,18 @@ function countByEntry<T extends { entry_point_id: string }>(items: T[]): Record<
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   const graphRepo = new GraphRepository();
+  const scopeRepo = new CompatibilityScopeRepository();
   const analysisService = new AnalysisService();
 
   await graphRepo.ensureConstraints();
   if (options.seedSample) {
-    const seed = await graphRepo.seedSampleData(`${options.generatedBy}-seed`);
-    console.log("Seeded DO-356A sample dataset", seed);
+    throw new Error(
+      "--seed-sample is quarantined because the legacy seed replaces global graph data; seed through a scoped Phase 2 import instead",
+    );
   }
 
-  const graph = await graphRepo.getGraph();
+  const scope = await scopeRepo.resolve();
+  const graph = await graphRepo.getGraph(scope);
   const analysisBatchId = `EXP-${Date.now()}`;
   const systemPaths = analysisService.run({
     analysis_batch_id: analysisBatchId,

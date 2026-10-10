@@ -48,5 +48,5 @@ ASTRA 不再把 `asset_id`、`TC.1`、`SI.1` 等用户可读编号当作全库�
 - 新业务写入通过 `RevisionUnitOfWork`，在同一事务中处理 scope、revision version、命令幂等和 AuditEvent；
 - schema 变更只通过显式 migration CLI；应用启动只做只读兼容性检查；
 - 删除旧全局约束前必须先建立新约束、验证所有实体身份，并提供可验证备份；
-- P1.5 保留旧字段和响应。旧读取入口的 scope 接入、双读差异和弃用安排在 P1.6；
+- P1.5 保留旧字段和响应；P1.6 已完成旧读取入口的 scope 接入，并隔离仍依赖全局身份的旧写端点；
 - identity 回填不能自动补造来源证据、评审决定或标准语义。

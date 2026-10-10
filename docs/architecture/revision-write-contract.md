@@ -77,7 +77,7 @@ HTTP/API 层在 Phase 2 建立版本化契约时负责把这些错误映射为�
 - sample/generic seed 的全库 reset；
 - `CommitAudit` 作为旧 GraphChangeSet 的审计记录。
 
-P1.5 负责内部 UUID 与项目内业务编号约束切换；P1.6 负责兼容读取、旧入口隔离回归和关闭可替代的 legacy 写路径；Phase 2 将导入统一为 parse → preview → scoped commit。P1.4 不以一次性改写这些遗留领域逻辑为代价扩大范围。
+P1.5 已完成内部 UUID 与项目内业务编号约束切换；P1.6 已完成兼容读取 scope 接入，并将仍绕过本契约的 legacy 写端点隔离为 `LEGACY_GLOBAL_WRITE_QUARANTINED`。Phase 2 将导入统一为 parse → preview → scoped commit，并以版本化命令替代这些端点；不得直接解除隔离。
 
 ## 7. 代码评审检查
 

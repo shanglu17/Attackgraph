@@ -24,6 +24,7 @@ import { resolveSystemIdentity, splitSystemNames } from "../config/f3532/systemA
 import { naturalSortUnique } from "../services/f3532/naturalSort.js";
 import { scopedIdentityConstraintNames } from "../services/identity/scopedIdentity.js";
 import { assertConstraintsPresent } from "./schemaCompatibility.js";
+import type { ProjectRevisionScope } from "./compatibilityScopeRepository.js";
 
 const graphVersionNodeId = "GRAPH_VERSION";
 
@@ -58,7 +59,7 @@ export class GraphRepository {
     await assertConstraintsPresent(["graph_version_unique", ...scopedIdentityConstraintNames]);
   }
 
-  async getGraph(): Promise<GraphSnapshot> {
+  async getGraph(scope: ProjectRevisionScope): Promise<GraphSnapshot> {
     const session = getDriver().session();
     try {
       const result = await session.executeRead(async (tx) => {
@@ -77,27 +78,45 @@ export class GraphRepository {
         ] =
           await Promise.all([
             tx.run("MATCH (v:GraphVersion {id: $id}) RETURN v.value AS graph_version", { id: graphVersionNodeId }),
-            tx.run("MATCH (a:AssetNode) RETURN a ORDER BY a.asset_id"),
             tx.run(
-              "MATCH (s:AssetNode)-[r:ASSET_EDGE]->(t:AssetNode) RETURN r.edge_id AS edge_id, s.asset_id AS source_asset_id, t.asset_id AS target_asset_id, r.link_type AS link_type, r.protocol_or_medium AS protocol_or_medium, r.direction AS direction, r.trust_level AS trust_level, r.security_mechanism AS security_mechanism, r.description AS description ORDER BY edge_id"
+              "MATCH (a:AssetNode {project_id: $project_id, revision_id: $revision_id}) RETURN a ORDER BY a.asset_id",
+              scope,
             ),
             tx.run(
-              "MATCH (th:ThreatPoint)-[:OVERLAY_ON]->(a:AssetNode) RETURN th.threatpoint_id AS threatpoint_id, th.name AS name, a.asset_id AS related_asset_id, th.stride_category AS stride_category, th.attack_vector AS attack_vector, th.entry_likelihood_level AS entry_likelihood_level, th.attack_complexity_level AS attack_complexity_level, th.threat_source AS threat_source, th.preconditions AS preconditions, th.detection_status AS detection_status, th.cve_reference AS cve_reference, th.expert_modifier AS expert_modifier, th.expert_adjustment_note AS expert_adjustment_note, th.mitigation_reference AS mitigation_reference ORDER BY threatpoint_id"
-            ),
-            tx.run("MATCH (l:DO326A_Link) RETURN l ORDER BY l.link_id"),
-            tx.run("MATCH (f:FunctionNode) RETURN f ORDER BY f.function_id"),
-            tx.run(
-              "MATCH (sb:TrustBoundary) OPTIONAL MATCH (sb)-[:HAS_INTERFACE]->(bi:BoundaryInterface) OPTIONAL MATCH (sb)-[:COVERS_DOMAIN]->(d:AssetNode) RETURN sb.boundary_id AS boundary_id, sb.name AS name, sb.description AS description, sb.enters_internal_propagation AS enters_internal_propagation, collect(DISTINCT bi.interface_id) AS interface_asset_ids, collect(DISTINCT d.asset_id) AS domain_asset_ids ORDER BY boundary_id"
+              "MATCH (s:AssetNode {project_id: $project_id, revision_id: $revision_id})-[r:ASSET_EDGE {project_id: $project_id, revision_id: $revision_id}]->(t:AssetNode {project_id: $project_id, revision_id: $revision_id}) RETURN r.edge_id AS edge_id, s.asset_id AS source_asset_id, t.asset_id AS target_asset_id, r.link_type AS link_type, r.protocol_or_medium AS protocol_or_medium, r.direction AS direction, r.trust_level AS trust_level, r.security_mechanism AS security_mechanism, r.description AS description ORDER BY edge_id",
+              scope,
             ),
             tx.run(
-              "MATCH (ta:ThreatActor) OPTIONAL MATCH (ta)-[:THREATENS]->(sb:TrustBoundary) RETURN ta.actor_id AS actor_id, ta.name AS name, ta.actor_type AS actor_type, ta.description AS description, collect(DISTINCT sb.boundary_id) AS boundary_ids ORDER BY actor_id"
-            ),
-            tx.run("MATCH (bi:BoundaryInterface) RETURN bi ORDER BY bi.interface_id"),
-            tx.run(
-              "MATCH (sdf:SystemDataFlow) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, sdf.failure_condition_ids AS failure_condition_ids, sdf.system_interface_id AS system_interface_id, sdf.producer_system_id AS producer_system_id, sdf.consumer_system_id AS consumer_system_id, sdf.topic_ids AS topic_ids, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id"
+              "MATCH (th:ThreatPoint {project_id: $project_id, revision_id: $revision_id})-[:OVERLAY_ON]->(a:AssetNode {project_id: $project_id, revision_id: $revision_id}) RETURN th.threatpoint_id AS threatpoint_id, th.name AS name, a.asset_id AS related_asset_id, th.stride_category AS stride_category, th.attack_vector AS attack_vector, th.entry_likelihood_level AS entry_likelihood_level, th.attack_complexity_level AS attack_complexity_level, th.threat_source AS threat_source, th.preconditions AS preconditions, th.detection_status AS detection_status, th.cve_reference AS cve_reference, th.expert_modifier AS expert_modifier, th.expert_adjustment_note AS expert_adjustment_note, th.mitigation_reference AS mitigation_reference ORDER BY threatpoint_id",
+              scope,
             ),
             tx.run(
-              "MATCH (fp:FunctionPropagationPath) OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode) OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow) RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type_label, fp.system_path_text AS system_path_text, fp.sdf_note AS sdf_note, fp.description AS description, collect(DISTINCT bdf.business_id) AS bdf_ids, collect(DISTINCT sdf.sdf_id) AS sdf_ids ORDER BY fp_id"
+              "MATCH (l:DO326A_Link {project_id: $project_id, revision_id: $revision_id}) RETURN l ORDER BY l.link_id",
+              scope,
+            ),
+            tx.run(
+              "MATCH (f:FunctionNode {project_id: $project_id, revision_id: $revision_id}) RETURN f ORDER BY f.function_id",
+              scope,
+            ),
+            tx.run(
+              "MATCH (sb:TrustBoundary {project_id: $project_id, revision_id: $revision_id}) OPTIONAL MATCH (sb)-[:HAS_INTERFACE]->(bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id}) OPTIONAL MATCH (sb)-[:COVERS_DOMAIN]->(d:AssetNode {project_id: $project_id, revision_id: $revision_id}) RETURN sb.boundary_id AS boundary_id, sb.name AS name, sb.description AS description, sb.enters_internal_propagation AS enters_internal_propagation, collect(DISTINCT bi.interface_id) AS interface_asset_ids, collect(DISTINCT d.asset_id) AS domain_asset_ids ORDER BY boundary_id",
+              scope,
+            ),
+            tx.run(
+              "MATCH (ta:ThreatActor {project_id: $project_id, revision_id: $revision_id}) OPTIONAL MATCH (ta)-[:THREATENS]->(sb:TrustBoundary {project_id: $project_id, revision_id: $revision_id}) RETURN ta.actor_id AS actor_id, ta.name AS name, ta.actor_type AS actor_type, ta.description AS description, collect(DISTINCT sb.boundary_id) AS boundary_ids ORDER BY actor_id",
+              scope,
+            ),
+            tx.run(
+              "MATCH (bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id}) RETURN bi ORDER BY bi.interface_id",
+              scope,
+            ),
+            tx.run(
+              "MATCH (sdf:SystemDataFlow {project_id: $project_id, revision_id: $revision_id}) OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id}) RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer, sdf.content AS content, sdf.data_flow_type AS data_flow_type, sdf.description AS description, sdf.failure_condition_ids AS failure_condition_ids, sdf.system_interface_id AS system_interface_id, sdf.producer_system_id AS producer_system_id, sdf.consumer_system_id AS consumer_system_id, sdf.topic_ids AS topic_ids, collect(DISTINCT f.function_id) AS function_ids ORDER BY sdf_id",
+              scope,
+            ),
+            tx.run(
+              "MATCH (fp:FunctionPropagationPath {project_id: $project_id, revision_id: $revision_id}) OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode {project_id: $project_id, revision_id: $revision_id}) OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow {project_id: $project_id, revision_id: $revision_id}) RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type_label, fp.system_path_text AS system_path_text, fp.sdf_note AS sdf_note, fp.description AS description, collect(DISTINCT bdf.business_id) AS bdf_ids, collect(DISTINCT sdf.sdf_id) AS sdf_ids ORDER BY fp_id",
+              scope,
             )
           ]);
         return {
@@ -568,11 +587,14 @@ export class GraphRepository {
     }
   }
 
-  async getModelingExportBundle(analysisBatchId?: string): Promise<ModelingExportBundle> {
+  async getModelingExportBundle(
+    scope: ProjectRevisionScope,
+    analysisBatchId?: string,
+  ): Promise<ModelingExportBundle> {
     const [graph, analysis_paths, do326a_links] = await Promise.all([
-      this.getGraph(),
-      this.getAttackPaths(analysisBatchId),
-      this.getDo326ALinks()
+      this.getGraph(scope),
+      this.getAttackPaths(scope, analysisBatchId),
+      this.getDo326ALinks(scope)
     ]);
 
     return {
@@ -583,18 +605,19 @@ export class GraphRepository {
   }
 
   /** vol3 §4.2 信任边界汇总表: SB | 说明 | 对应接口(BI) | 相关威胁主体(TA). */
-  async getTrustBoundaryReport(): Promise<TrustBoundaryReportRow[]> {
+  async getTrustBoundaryReport(scope: ProjectRevisionScope): Promise<TrustBoundaryReportRow[]> {
     const session = getDriver().session();
     try {
       const result = await session.executeRead((tx) =>
         tx.run(
-          `MATCH (sb:TrustBoundary)
-           OPTIONAL MATCH (sb)-[:HAS_INTERFACE]->(bi:BoundaryInterface)
-           OPTIONAL MATCH (ta:ThreatActor)-[:THREATENS]->(sb)
+          `MATCH (sb:TrustBoundary {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (sb)-[:HAS_INTERFACE]->(bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (ta:ThreatActor {project_id: $project_id, revision_id: $revision_id})-[:THREATENS]->(sb)
            RETURN sb.boundary_id AS boundary_id, sb.name AS name, sb.description AS description,
                   collect(DISTINCT bi.interface_id) AS interfaces,
                   collect(DISTINCT ta.actor_id) AS threat_actors
-           ORDER BY boundary_id`
+           ORDER BY boundary_id`,
+          scope,
         )
       );
       return result.records.map((record) => ({
@@ -621,20 +644,23 @@ export class GraphRepository {
    * e.g. SB-01 DATA carrying both an inbound 是 flow and outbound 否 read-outs — splits into a 是
    * row and a 否 row instead of collapsing to one 是 row.
    */
-  async getBoundaryDataFlowReport(): Promise<BoundaryDataFlowReportRow[]> {
+  async getBoundaryDataFlowReport(scope: ProjectRevisionScope): Promise<BoundaryDataFlowReportRow[]> {
     const session = getDriver().session();
     try {
       const result = await session.executeRead((tx) =>
         tx.run(
-          `MATCH (sb:TrustBoundary)-[:HAS_INTERFACE]->(bi:BoundaryInterface)-[:CARRIES|CARRIES_FLOW]->(bdf:AssetNode)
-           OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+          `MATCH (sb:TrustBoundary {project_id: $project_id, revision_id: $revision_id})-[:HAS_INTERFACE]->
+                 (bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id})-[:CARRIES|CARRIES_FLOW]->
+                 (bdf:AssetNode {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id})
            RETURN sb.boundary_id AS boundary_id, sb.name AS boundary_name,
                   bi.interface_id AS interface_id,
                   bdf.business_id AS bdf_id,
                   coalesce(bdf.data_flow_type, 'UNSPECIFIED') AS data_flow_type,
                   coalesce(bdf.enters_internal_propagation, sb.enters_internal_propagation, false) AS enters_internal_propagation,
                   collect(DISTINCT f.function_id) AS function_ids
-           ORDER BY boundary_id, data_flow_type, interface_id, bdf_id`
+           ORDER BY boundary_id, data_flow_type, interface_id, bdf_id`,
+          scope,
         )
       );
 
@@ -696,17 +722,17 @@ export class GraphRepository {
   }
 
   /** vol3 表4-5 功能传播路径(FP): FP | 数据类型 | 入口BI | 关联BDF | 关联SDF | 系统传播路径 | 影响功能. */
-  async getFunctionPropagationReport(): Promise<FunctionPropagationReportRow[]> {
+  async getFunctionPropagationReport(scope: ProjectRevisionScope): Promise<FunctionPropagationReportRow[]> {
     const session = getDriver().session();
     try {
       const result = await session.executeRead((tx) =>
         tx.run(
-          `MATCH (fp:FunctionPropagationPath)
-           OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode)
-           OPTIONAL MATCH (bi:BoundaryInterface)-[:CARRIES|CARRIES_FLOW]->(bdf)
-           OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(fb:FunctionNode)
-           OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow)
-           OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(fs:FunctionNode)
+          `MATCH (fp:FunctionPropagationPath {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id})-[:CARRIES|CARRIES_FLOW]->(bdf)
+           OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(fb:FunctionNode {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (fp)-[:INCLUDES_SDF]->(sdf:SystemDataFlow {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(fs:FunctionNode {project_id: $project_id, revision_id: $revision_id})
            RETURN fp.fp_id AS fp_id, fp.data_type_label AS data_type,
                   fp.system_path_text AS system_path, fp.sdf_note AS sdf_note,
                   collect(DISTINCT bi.interface_id) AS entry_bis,
@@ -714,7 +740,8 @@ export class GraphRepository {
                   collect(DISTINCT sdf.sdf_id) AS sdf_ids,
                   collect(DISTINCT fb.function_id) AS bdf_function_ids,
                   collect(DISTINCT fs.function_id) AS sdf_function_ids
-           ORDER BY fp_id`
+           ORDER BY fp_id`,
+          scope,
         )
       );
 
@@ -747,7 +774,7 @@ export class GraphRepository {
    * are NOT reachable from any boundary entry (pure internal flows). Reuses the FP traversal logic
    * (collectBoundaryReachableSdfIds) for the reachable set; does not change FP/report output.
    */
-  async getInternalDataFlowReport(): Promise<InternalDataFlowReportRow[]> {
+  async getInternalDataFlowReport(scope: ProjectRevisionScope): Promise<InternalDataFlowReportRow[]> {
     const isIms = (name: string): boolean => name.trim().toUpperCase() === "IMS";
     const session = getDriver().session();
     let sdfRows: Array<{
@@ -761,12 +788,13 @@ export class GraphRepository {
     try {
       const result = await session.executeRead((tx) =>
         tx.run(
-          `MATCH (sdf:SystemDataFlow)
-           OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+          `MATCH (sdf:SystemDataFlow {project_id: $project_id, revision_id: $revision_id})
+           OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id})
            RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer,
                   sdf.data_flow_type AS data_flow_type, sdf.content AS content,
                   collect(DISTINCT f.function_id) AS function_ids
-           ORDER BY sdf_id`
+           ORDER BY sdf_id`,
+          scope,
         )
       );
       const toIds = (value: unknown): string[] =>
@@ -783,7 +811,7 @@ export class GraphRepository {
       await session.close();
     }
 
-    const inputs = await this.getFunctionPropagationInputs();
+    const inputs = await this.getFunctionPropagationInputs(scope);
     const reachable = collectBoundaryReachableSdfIds(inputs);
 
     const originClass = (producer: string, consumer: string): string => {
@@ -823,30 +851,32 @@ export class GraphRepository {
   }
 
   /** Reads BDF start points (with entry subsystem from BI) + SDF edges for FP analysis. */
-  async getFunctionPropagationInputs(): Promise<FpAnalysisInput> {
+  async getFunctionPropagationInputs(scope: ProjectRevisionScope): Promise<FpAnalysisInput> {
     const session = getDriver().session();
     try {
       const { bdfRes, sdfRes } = await session.executeRead(async (tx) => {
         const [bdfRes, sdfRes] = await Promise.all([
           tx.run(
-            `MATCH (bdf:AssetNode) WHERE bdf.boundary_interface_id IS NOT NULL
-             OPTIONAL MATCH (bi:BoundaryInterface {interface_id: bdf.boundary_interface_id})
-             OPTIONAL MATCH (sb:TrustBoundary {boundary_id: bi.boundary_id})
-             OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+            `MATCH (bdf:AssetNode {project_id: $project_id, revision_id: $revision_id}) WHERE bdf.boundary_interface_id IS NOT NULL
+             OPTIONAL MATCH (bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id, interface_id: bdf.boundary_interface_id})
+             OPTIONAL MATCH (sb:TrustBoundary {project_id: $project_id, revision_id: $revision_id, boundary_id: bi.boundary_id})
+             OPTIONAL MATCH (bdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id})
              RETURN bdf.business_id AS business_id, bdf.data_flow_type AS data_flow_type,
                     bdf.boundary_interface_id AS boundary_interface_id,
                     bi.access_object AS entry_subsystem, bi.external_entity AS external_entity,
                     bi.boundary_id AS entry_boundary,
                     coalesce(bdf.enters_internal_propagation, sb.enters_internal_propagation) AS enters_internal_propagation,
                     collect(DISTINCT f.function_id) AS function_ids
-             ORDER BY business_id`
+             ORDER BY business_id`,
+            scope,
           ),
           tx.run(
-            `MATCH (sdf:SystemDataFlow)
-             OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
+            `MATCH (sdf:SystemDataFlow {project_id: $project_id, revision_id: $revision_id})
+             OPTIONAL MATCH (sdf)-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id})
              RETURN sdf.sdf_id AS sdf_id, sdf.producer AS producer, sdf.consumer AS consumer,
                     sdf.data_flow_type AS data_flow_type, collect(DISTINCT f.function_id) AS function_ids
-             ORDER BY sdf_id`
+             ORDER BY sdf_id`,
+            scope,
           )
         ]);
         return { bdfRes, sdfRes };
@@ -919,8 +949,8 @@ export class GraphRepository {
   }
 
   /** Reads the structured F3532 facts used by deterministic 03 generation. No write occurs. */
-  async getF353203GenerationFacts(): Promise<F353203GenerationFacts> {
-    const snapshot = await this.getGraph();
+  async getF353203GenerationFacts(scope: ProjectRevisionScope): Promise<F353203GenerationFacts> {
+    const snapshot = await this.getGraph(scope);
     const warnings: string[] = [];
     const boundaryInterfaces = snapshot.boundary_interfaces.map((item) => {
       const external = item.external_entity ? resolveSystemIdentity(item.external_entity) : undefined;
@@ -1171,16 +1201,17 @@ export class GraphRepository {
     }
   }
 
-  async getAttackPaths(analysisBatchId?: string): Promise<AttackPath[]> {
+  async getAttackPaths(scope: ProjectRevisionScope, analysisBatchId?: string): Promise<AttackPath[]> {
     const session = getDriver().session();
     try {
-      const where = analysisBatchId ? "WHERE p.analysis_batch_id = $analysis_batch_id" : "";
+      const batchFilter = analysisBatchId ? "AND p.analysis_batch_id = $analysis_batch_id" : "";
       const result = await session.run(
-        `MATCH (p:AttackPath) ${where}
-         OPTIONAL MATCH (p)-[tr:TRAVERSES]->(a:AssetNode)
+        `MATCH (p:AttackPath {project_id: $project_id, revision_id: $revision_id})
+         WHERE true ${batchFilter}
+         OPTIONAL MATCH (p)-[tr:TRAVERSES]->(a:AssetNode {project_id: $project_id, revision_id: $revision_id})
          WITH p, collect({hop: tr.hop, edge_id: tr.edge_id, asset_id: a.asset_id, edge_factor: tr.edge_factor}) AS traverses
          RETURN p.path_id AS path_id, p.analysis_batch_id AS analysis_batch_id, p.entry_point_id AS entry_point_id, p.target_asset_id AS target_asset_id, p.hop_sequence AS hop_sequence, p.hop_count AS hop_count, p.path_probability AS path_probability, p.raw_score AS raw_score, p.dps_score AS dps_score, p.heuristic_score AS heuristic_score, p.normalized_score AS normalized_score, p.priority_label AS priority_label, p.is_low_priority AS is_low_priority, p.score_config_version AS score_config_version, p.explanations AS explanations, p.generated_by AS generated_by, toString(p.generated_at) AS generated_at, traverses ORDER BY p.raw_score DESC`,
-        { analysis_batch_id: analysisBatchId }
+        { ...scope, analysis_batch_id: analysisBatchId }
       );
       return result.records.map((record) => ({
         path_id: record.get("path_id") as string,
@@ -1214,11 +1245,12 @@ export class GraphRepository {
     }
   }
 
-  async getAuditCommits(): Promise<AuditRecord[]> {
+  async getAuditCommits(scope: ProjectRevisionScope): Promise<AuditRecord[]> {
     const session = getDriver().session();
     try {
       const result = await session.run(
-        "MATCH (c:CommitAudit) RETURN c.commit_id AS commit_id, c.user_id AS user_id, toString(c.created_at) AS created_at, c.summary AS summary, c.new_version AS new_version ORDER BY c.created_at DESC LIMIT 100"
+        "MATCH (c:CommitAudit {project_id: $project_id, revision_id: $revision_id}) RETURN c.commit_id AS commit_id, c.user_id AS user_id, toString(c.created_at) AS created_at, c.summary AS summary, c.new_version AS new_version ORDER BY c.created_at DESC LIMIT 100",
+        scope,
       );
       return result.records.map((record) => ({
         commit_id: record.get("commit_id") as string,
@@ -1232,10 +1264,13 @@ export class GraphRepository {
     }
   }
 
-  async getDo326ALinks(): Promise<DO326ALink[]> {
+  async getDo326ALinks(scope: ProjectRevisionScope): Promise<DO326ALink[]> {
     const session = getDriver().session();
     try {
-      const result = await session.run("MATCH (l:DO326A_Link) RETURN l ORDER BY l.link_id");
+      const result = await session.run(
+        "MATCH (l:DO326A_Link {project_id: $project_id, revision_id: $revision_id}) RETURN l ORDER BY l.link_id",
+        scope,
+      );
       return result.records.map((record) => {
         const properties = record.get("l").properties as Record<string, unknown>;
         return {

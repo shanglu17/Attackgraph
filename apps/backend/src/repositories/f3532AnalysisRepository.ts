@@ -1,6 +1,7 @@
 import { getDriver } from "../db/neo4j.js";
 import type { FhaImportRequest } from "../types/api.js";
 import type { FailureCondition, ThreatCondition, ThreatScenario, ThreatActorType } from "../types/domain.js";
+import type { ProjectRevisionScope } from "./compatibilityScopeRepository.js";
 
 export interface FailureConditionContext extends FailureCondition {
   bdf_ids: string[];
@@ -97,22 +98,23 @@ export class F3532AnalysisRepository {
     }
   }
 
-  async getFailureConditionContexts(): Promise<FailureConditionContext[]> {
+  async getFailureConditionContexts(scope: ProjectRevisionScope): Promise<FailureConditionContext[]> {
     const session = getDriver().session();
     try {
       const result = await session.run(
-        `MATCH (fc:FailureCondition)
-         OPTIONAL MATCH (flow)-[:TRACES_TO]->(fc)
+        `MATCH (fc:FailureCondition {project_id: $project_id, revision_id: $revision_id})
+         OPTIONAL MATCH (flow {project_id: $project_id, revision_id: $revision_id})-[:TRACES_TO]->(fc)
          WHERE flow:SystemDataFlow OR flow:AssetNode
-         OPTIONAL MATCH (flow)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
-         OPTIONAL MATCH (fp:FunctionPropagationPath)-[:INCLUDES_SDF|INCLUDES_BDF]->(flow)
+         OPTIONAL MATCH (flow)-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id})
+         OPTIONAL MATCH (fp:FunctionPropagationPath {project_id: $project_id, revision_id: $revision_id})-[:INCLUDES_SDF|INCLUDES_BDF]->(flow)
          RETURN fc,
                 collect(DISTINCT CASE WHEN flow:AssetNode THEN flow.business_id END) AS bdf_ids,
                 collect(DISTINCT CASE WHEN flow:SystemDataFlow THEN flow.sdf_id END) AS sdf_ids,
                 collect(DISTINCT f.function_id) AS function_ids,
                 collect(DISTINCT fp.fp_id) AS path_ids,
                 collect(DISTINCT CASE WHEN flow:SystemDataFlow THEN flow.consumer ELSE flow.asset_name END) AS affected_assets
-         ORDER BY fc.failure_condition_id`
+         ORDER BY fc.failure_condition_id`,
+        scope,
       );
       return result.records.map((record) => {
         const props = record.get("fc").properties as Record<string, unknown>;
@@ -137,21 +139,22 @@ export class F3532AnalysisRepository {
     }
   }
 
-  async getThreatPathContexts(): Promise<ThreatPathContext[]> {
+  async getThreatPathContexts(scope: ProjectRevisionScope): Promise<ThreatPathContext[]> {
     const session = getDriver().session();
     try {
       const result = await session.run(
-        `MATCH (fp:FunctionPropagationPath)
-         OPTIONAL MATCH (fp)-[:INCLUDES_SDF|INCLUDES_BDF]->(flow)-[:SUPPORTS_FUNCTION]->(f:FunctionNode)
-         OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode)
-         OPTIONAL MATCH (bi:BoundaryInterface)-[:CARRIES|CARRIES_FLOW]->(bdf)
-         OPTIONAL MATCH (sb:TrustBoundary)-[:HAS_INTERFACE]->(bi)
-         OPTIONAL MATCH (ta:ThreatActor)-[:THREATENS]->(sb)
+        `MATCH (fp:FunctionPropagationPath {project_id: $project_id, revision_id: $revision_id})
+         OPTIONAL MATCH (fp)-[:INCLUDES_SDF|INCLUDES_BDF]->(flow {project_id: $project_id, revision_id: $revision_id})-[:SUPPORTS_FUNCTION]->(f:FunctionNode {project_id: $project_id, revision_id: $revision_id})
+         OPTIONAL MATCH (fp)-[:INCLUDES_BDF]->(bdf:AssetNode {project_id: $project_id, revision_id: $revision_id})
+         OPTIONAL MATCH (bi:BoundaryInterface {project_id: $project_id, revision_id: $revision_id})-[:CARRIES|CARRIES_FLOW]->(bdf)
+         OPTIONAL MATCH (sb:TrustBoundary {project_id: $project_id, revision_id: $revision_id})-[:HAS_INTERFACE]->(bi)
+         OPTIONAL MATCH (ta:ThreatActor {project_id: $project_id, revision_id: $revision_id})-[:THREATENS]->(sb)
          RETURN fp.fp_id AS path_id, fp.system_path_text AS system_path,
                 collect(DISTINCT f.function_id) AS function_ids,
                 collect(DISTINCT sb.boundary_id) AS boundary_ids,
                 collect(DISTINCT {actor_id: ta.actor_id, actor_name: ta.name, actor_type: ta.actor_type}) AS threat_actors
-         ORDER BY path_id`
+         ORDER BY path_id`,
+        scope,
       );
       return result.records.map((record) => ({
         path_id: String(record.get("path_id")),
@@ -257,13 +260,22 @@ export class F3532AnalysisRepository {
     }
   }
 
-  async getF353204(): Promise<{ threat_conditions: ThreatCondition[]; threat_scenarios: ThreatScenario[] }> {
+  async getF353204(
+    scope: ProjectRevisionScope,
+  ): Promise<{ threat_conditions: ThreatCondition[]; threat_scenarios: ThreatScenario[] }> {
     const session = getDriver().session();
     try {
-      const [tcResult, tsResult] = await Promise.all([
-        session.run("MATCH (tc:ThreatCondition) RETURN tc ORDER BY tc.tc_id"),
-        session.run("MATCH (ts:ThreatScenario) RETURN ts ORDER BY ts.ts_id")
-      ]);
+      const { tcResult, tsResult } = await session.executeRead(async (tx) => {
+        const tcResult = await tx.run(
+          "MATCH (tc:ThreatCondition {project_id: $project_id, revision_id: $revision_id}) RETURN tc ORDER BY tc.tc_id",
+          scope,
+        );
+        const tsResult = await tx.run(
+          "MATCH (ts:ThreatScenario {project_id: $project_id, revision_id: $revision_id}) RETURN ts ORDER BY ts.ts_id",
+          scope,
+        );
+        return { tcResult, tsResult };
+      });
       return {
         threat_conditions: tcResult.records.map((record) => record.get("tc").properties as ThreatCondition),
         threat_scenarios: tsResult.records.map((record) => record.get("ts").properties as ThreatScenario)
