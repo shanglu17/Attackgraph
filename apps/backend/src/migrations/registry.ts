@@ -6,6 +6,7 @@ import { migration0005 } from "./0005RetireGlobalBusinessConstraints.js";
 import { migration0006 } from "./0006LegacyGraphVersionCompatibility.js";
 import { migration0007 } from "./0007SystemModelCore.js";
 import { migration0008 } from "./0008SystemModelElementIdentity.js";
+import { migration0009 } from "./0009DraftThreatIdentity.js";
 import type { MigrationDefinition } from "./types.js";
 
 export const migrationRegistry: MigrationDefinition[] = [
@@ -17,4 +18,5 @@ export const migrationRegistry: MigrationDefinition[] = [
   migration0006,
   migration0007,
   migration0008,
+  migration0009,
 ];

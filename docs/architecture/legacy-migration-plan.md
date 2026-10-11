@@ -127,6 +127,8 @@ Revision
 
 P1.6 实施说明：旧读取 DTO 已通过固定 compatibility scope 投影到明确的 Project/Revision，并完成跨项目重复编号隔离测试。未提供 scope 的旧客户端仅绑定已登记 Appendix D revision；不按数据库现状猜测。仍依赖全局 GraphVersion 的旧写端点已隔离，等待 Phase 2 scoped command API 替代。
 
+VG-1 来源补录说明（2026-10-11）：资料责任人已确认遗留 Appendix D 数据来源为 **DO-356A Appendix D**。系统通过 revision-scoped、幂等且审计化的命令创建 `DO356A-APPENDIX-D-SOURCE`，为 26 个原缺失定位的实体建立 `DERIVED_FROM_SOURCE`，并将 3 条 `MISSING_SOURCE_LOCATOR` issue 标记为 Resolved。登记内容限于标准/附录标识和确认元数据，不复制受限标准正文；逻辑身份 hash 与源文件二进制 hash 分开解释。
+
 ### M6：切换与弃用
 
 - 停止旧模型写入；

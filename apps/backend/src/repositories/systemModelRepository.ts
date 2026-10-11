@@ -21,6 +21,7 @@ const entityDefinitions: Array<{
   { collection: "security_boundaries", label: "SecurityBoundary", type: "SecurityBoundary" },
   { collection: "external_entities", label: "ExternalEntity", type: "ExternalEntity" },
   { collection: "evidence_records", label: "EvidenceRecord", type: "EvidenceRecord" },
+  { collection: "draft_threats", label: "DraftThreat", type: "DraftThreat" },
 ];
 
 export interface ExistingSystemModelScope {
@@ -38,6 +39,7 @@ export interface CreatedSystemModelIds extends Record<string, string[]> {
   security_boundaries: string[];
   external_entities: string[];
   evidence_records: string[];
+  draft_threats: string[];
   trace_links: string[];
 }
 
@@ -83,7 +85,6 @@ function restore<T>(properties: Record<string, unknown>): T & { id: string } {
   delete output.revision_id;
   delete output.entity_type;
   delete output.created_at;
-  delete output.created_by;
   return output as T & { id: string };
 }
 
@@ -183,6 +184,9 @@ export class SystemModelRepository {
       if (item.interface_business_id) requireIdentity("Interface", item.interface_business_id, item.business_id);
       for (const ref of item.supported_function_business_ids) requireIdentity("Function", ref, item.business_id);
     }
+    for (const item of payload.entities.draft_threats) {
+      requireIdentity("Asset", item.target_asset_business_id, item.business_id);
+    }
     for (const link of payload.entities.trace_links) {
       requireIdentity(link.source.type, link.source.business_id, link.business_id);
       requireIdentity(link.target.type, link.target.business_id, link.business_id);
@@ -206,6 +210,7 @@ export class SystemModelRepository {
     const created: CreatedSystemModelIds = {
       sources: [randomUUID()], assets: [], functions: [], interfaces: [], data_flows: [],
       security_boundaries: [], external_entities: [], evidence_records: [], trace_links: [],
+      draft_threats: [],
     };
     const sourceId = created.sources[0];
     await transaction.run(
@@ -373,6 +378,12 @@ export class SystemModelRepository {
          business_id: function_id})
        MERGE (flow)-[:SUPPORTS_FUNCTION]->(function)`, scope,
     );
+    await transaction.run(
+      `MATCH (threat:DraftThreat {project_id: $project_id, revision_id: $revision_id})
+       MATCH (asset:Asset {project_id: $project_id, revision_id: $revision_id,
+         business_id: threat.target_asset_business_id})
+       MERGE (threat)-[:TARGETS]->(asset)`, scope,
+    );
   }
 
   async read(projectId: string, revisionId: string): Promise<StoredSystemModel> {
@@ -391,7 +402,7 @@ export class SystemModelRepository {
           revision_id: revisionId,
           revision_version: numeric(revisionResult.records[0].get("version")),
           sources: [],
-          entities: { assets: [], functions: [], interfaces: [], data_flows: [], security_boundaries: [], external_entities: [], evidence_records: [], trace_links: [] },
+          entities: { assets: [], functions: [], interfaces: [], data_flows: [], security_boundaries: [], external_entities: [], evidence_records: [], draft_threats: [], trace_links: [] },
         };
         const sources = await transaction.run(
           `MATCH (source:SourceRecord {project_id: $project_id, revision_id: $revision_id}) RETURN source ORDER BY source.business_id`,

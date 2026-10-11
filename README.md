@@ -18,6 +18,7 @@
 - **内部数据流分析**：识别"不从任何边界进入的纯内部流"，以 IMS 为核心归类。
 - **vol3 第四章报表**：4.2 信任边界汇总 / 4.3 边界数据流分析 / 4.4 内部数据流分析 / 4.5 功能传播路径，可一键导出 Excel。
 - **审查工作台**：ReactFlow 拓扑、路径排名、ChangeSet 编辑器（表单/JSON）、原子提交与版本冲突检测。
+- **VG-1 通用追踪链**：基于 Project / Revision / StandardProfileVersion 建立 Draft Threat 与 TraceLink，冻结 Baseline，并在报告中心查看或导出含来源、actor、状态和生成器版本的 JSON 报告。
 
 ---
 
@@ -133,6 +134,8 @@ npm run clear              # 清空 Neo4j 图谱
 npm run seed:sample        # 写入 DO-356A 示例数据
 npm run seed:generic       # 写入通用示例数据
 npm run exp:do356a:baseline# 运行 DO-356A 基线实验
+npm run db:migrate -- plan # 查看显式迁移计划
+npm run vg1:demo           # 幂等建立并验证 VG-1 受控演示链路
 ```
 
 ---
@@ -155,6 +158,12 @@ npm run exp:do356a:baseline# 运行 DO-356A 基线实验
 | GET | `/reports/chapter4/internal-data-flows` | 4.4 内部数据流分析 |
 | GET | `/reports/chapter4/function-propagation` | 4.5 功能传播路径 |
 | GET | `/exports/modeling-result` | 导出完整建模结果(JSON) |
+| POST | `/api/v2/governance/workspaces` | 创建 Project/Model/Revision/Profile 工作空间 |
+| POST | `/api/v2/system-model/import/{preview,commit}` | 通用系统模型预览与 revision-scoped 提交 |
+| GET | `/api/v2/system-model` | 读取指定 project/revision 的通用系统模型 |
+| POST | `/api/v2/governance/revisions/freeze` | 按报告内容摘要冻结 Revision 为 Baseline |
+| GET | `/api/v2/traceability/report` | 查看 Revision 或 Baseline 追踪报告 |
+| GET | `/api/v2/traceability/report/export` | 导出追踪报告 JSON |
 | GET/POST | `/compliance/do326a-links` | DO-326A 合规链接 |
 | POST | `/admin/seed/{sample,generic}` | 写入示例数据 |
 | GET | `/audit/commits` | 审计记录 |

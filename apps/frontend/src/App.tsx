@@ -31,6 +31,7 @@ import {
 import { AppWorkspaceNav, type AppWorkspace } from "./app/AppWorkspaceNav";
 import { ImportWorkspace } from "./features/imports/ImportWorkspace";
 import { ChangeSetStudio } from "./features/changes/ChangeSetStudio";
+import { Vg1TraceabilityPanel } from "./features/reports/Vg1TraceabilityPanel";
 import type {
   AssetNode,
   AttackPath,
@@ -689,12 +690,13 @@ export function App() {
           </div>
 
           <div className={activeWorkspace === "reports" ? "review-section report-section" : "hidden"}>
-          <div className="section-heading">
-            <div>
-              <h2 className="section-title">报告中心</h2>
-              <p>生成、检查并导出 F3532 03 与第四章分析结果。</p>
+            <Vg1TraceabilityPanel disabled={busy} onStatusChange={setMessage} />
+            <div className="section-heading">
+              <div>
+                <h2 className="section-title">报告中心</h2>
+                <p>生成、检查并导出通用追踪、F3532 03 与第四章分析结果。</p>
+              </div>
             </div>
-          </div>
           <div className="toolbar wrap">
             <button className="button primary" onClick={handleGenerateF353203} disabled={busy}>
               预览 F3532 03

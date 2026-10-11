@@ -1,0 +1,18 @@
+{
+  "source_id": "VG1-SOURCE-001",
+  "title": "VG-1 controlled DO-356A traceability fixture",
+  "authorization_note": "Repository-owned synthetic fixture; contains identifiers only and no standards text.",
+  "asset": {
+    "business_id": "VG1-ASSET-001",
+    "name": "Flight Data Gateway"
+  },
+  "evidence": {
+    "business_id": "VG1-EVIDENCE-001",
+    "reference": "VG1-REF-01"
+  },
+  "draft_threat": {
+    "business_id": "VG1-THREAT-001",
+    "name": "Untrusted data reaches the gateway",
+    "standard_reference": "DO-356A / project reference VG1-REF-01"
+  }
+}

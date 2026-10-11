@@ -12,6 +12,7 @@ import type {
   F353204Defaults,
   F353204GenerationResult,
   FailureCondition,
+  FreezeRevisionCommand,
   FhaImportRequest,
   FunctionPropagationReportRow,
   GraphChangeSet,
@@ -30,6 +31,8 @@ import type {
   SystemModelPreviewResult,
   ThreatCondition,
   ThreatScenario,
+  TraceabilityReport,
+  TraceabilityReportQuery,
   TrustBoundaryReportRow
 } from "./types";
 
@@ -39,11 +42,13 @@ async function ensureOk(response: Response, fallbackMessage: string): Promise<vo
   if (!response.ok) {
     let detail = fallbackMessage;
     try {
-      const payload = (await response.json()) as { message?: string; errors?: string[] };
+      const payload = (await response.json()) as { message?: string; errors?: Array<string | { field?: string; message?: string }> };
       if (payload?.message) {
         detail = payload.message;
       } else if (payload?.errors?.length) {
-        detail = payload.errors.join("; ");
+        detail = payload.errors.map((error) =>
+          typeof error === "string" ? error : `${error.field ? `${error.field}: ` : ""}${error.message ?? "invalid request"}`
+        ).join("; ");
       }
     } catch {
       // ignore JSON parse failure
@@ -86,6 +91,51 @@ export async function getSystemModel(projectId: string, revisionId: string): Pro
   const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
   const response = await fetch(`${baseUrl}/api/v2/system-model?${query.toString()}`);
   await ensureOk(response, "Failed to load system model");
+  return response.json();
+}
+
+function traceabilityQuery(input: TraceabilityReportQuery): string {
+  const query = new URLSearchParams({ project_id: input.project_id });
+  if (input.revision_id) query.set("revision_id", input.revision_id);
+  if (input.baseline_id) query.set("baseline_id", input.baseline_id);
+  return query.toString();
+}
+
+export async function getTraceabilityReport(
+  input: TraceabilityReportQuery,
+  actor: string
+): Promise<TraceabilityReport> {
+  const response = await fetch(`${baseUrl}/api/v2/traceability/report?${traceabilityQuery(input)}`, {
+    headers: { "x-user-id": actor }
+  });
+  await ensureOk(response, "Failed to load traceability report");
+  return response.json();
+}
+
+export async function exportTraceabilityReport(input: TraceabilityReportQuery, actor: string): Promise<void> {
+  const response = await fetch(`${baseUrl}/api/v2/traceability/report/export?${traceabilityQuery(input)}`, {
+    headers: { "x-user-id": actor }
+  });
+  await ensureOk(response, "Failed to export traceability report");
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? "astra-traceability-report.json";
+  const url = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function freezeRevision(
+  command: FreezeRevisionCommand
+): Promise<{ value: NonNullable<TraceabilityReport["context"]["baseline"]>; replayed: boolean }> {
+  const response = await fetch(`${baseUrl}/api/v2/governance/revisions/freeze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to freeze revision");
   return response.json();
 }
 

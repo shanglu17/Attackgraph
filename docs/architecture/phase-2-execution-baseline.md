@@ -61,6 +61,8 @@
 
 Phase 2 完成。下一步只能进入 VG-1 的最小纵向链路，不应直接铺开 Phase 3 的完整领域广度。
 
-## 6. 保留问题
+## 6. 保留问题及后续处置
 
-Phase 1 登记的 3 条 legacy provenance `MigrationIssue` 仍保持 Open：现有 Appendix D/F3532 节点缺少可验证的来源定位。Phase 2 已提供 `SourceRecord` 和字段级定位承载机制，但不会用文件名、节点名称或个人路径猜测来源，也不会为通过验收而伪造溯源。VG-1 若选用这些遗留节点，必须先补充经确认的来源记录；若使用 v2 受控示例导入，则不受这些遗留问题影响。
+Phase 2 完成时，Phase 1 登记的 3 条 legacy provenance `MigrationIssue` 仍保持 Open：现有 Appendix D/F3532 节点缺少可验证的来源定位。Phase 2 已提供 `SourceRecord` 和字段级定位承载机制，但不会用文件名、节点名称或个人路径猜测来源，也不会为通过验收而伪造溯源。
+
+2026-10-11 后续处置：资料责任人确认该数据来自 **DO-356A Appendix D**。VG-1 以受审命令建立 `DO356A-APPENDIX-D-SOURCE`，将 26 个需要来源的遗留实体连接到该 SourceRecord，并关闭上述 3 条 issue；verify 结果为 27 个已挂接实体、0 条 Open issue、0 条诊断。这里只登记标准与附录标识，不复制标准正文；`content_hash` 的范围明确为逻辑来源身份 `DO-356A|Appendix D`，不冒充标准文件二进制摘要。

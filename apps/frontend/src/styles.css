@@ -793,4 +793,10 @@
 .feature-rules-panel details { margin-block: 12px; }
 .feature-rules-panel summary { cursor: pointer; font-weight: 600; }
 .feature-rules-panel li { margin-block: 8px; }
+
+/* VG-1 report fields stay compact; report tables scroll inside their own panel. */
+.vg1-traceability-panel .toolbar { align-items: end; }
+.vg1-traceability-panel .field-stack { flex: 1 1 220px; min-width: 0; }
+.vg1-traceability-panel .input-field { width: 100%; flex: none; flex-basis: auto; }
+.vg1-traceability-panel .scroll-panel { overflow: auto; }
 .feature-rules-wrap { overflow-wrap: anywhere; }

@@ -1,6 +1,7 @@
 export type {
   Asset as CoreAsset,
   DataFlow as CoreDataFlow,
+  DraftThreat,
   EvidenceRecord as CoreEvidenceRecord,
   ExternalEntity as CoreExternalEntity,
   SecurityBoundary as CoreSecurityBoundary,
@@ -12,6 +13,9 @@ export type {
   SystemModelCommitResult,
   SystemModelPreviewRequest,
   SystemModelPreviewResult,
+  FreezeRevisionCommand,
+  TraceabilityReport,
+  TraceabilityReportQuery,
   TraceLink as CoreTraceLink,
 } from "@attackgraph/contracts";
 

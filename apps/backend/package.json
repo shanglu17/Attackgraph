@@ -16,10 +16,12 @@
     "seed:generic": "tsx src/scripts/seedGeneric.ts",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "legacy:attach": "tsx src/scripts/legacyAttach.ts",
+    "legacy:confirm-appendix-d-source": "tsx src/scripts/confirmAppendixDProvenance.ts",
     "standard:f3532:import": "tsx src/scripts/importF3532Standard.ts",
     "exp:do356a:baseline": "tsx src/scripts/runDo356aBaselineExperiment.ts",
+    "vg1:demo": "tsx src/scripts/runVg1Demo.ts",
     "pretest:integration": "npm run build -w @attackgraph/contracts",
-    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/repositories/systemModelRepository.integration.test.ts src/routes/compatibilityScope.integration.test.ts"
+    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/repositories/systemModelRepository.integration.test.ts src/routes/compatibilityScope.integration.test.ts src/routes/vg1Traceability.integration.test.ts"
   },
   "dependencies": {
     "@attackgraph/contracts": "0.1.0",

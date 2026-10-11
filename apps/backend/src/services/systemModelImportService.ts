@@ -45,6 +45,7 @@ function counts(payload: SystemModelImportPayload): SystemModelCounts {
     security_boundaries: payload.entities.security_boundaries.length,
     external_entities: payload.entities.external_entities.length,
     evidence_records: payload.entities.evidence_records.length,
+    draft_threats: payload.entities.draft_threats.length,
     trace_links: payload.entities.trace_links.length,
   };
 }
@@ -70,6 +71,7 @@ export function validateSystemModelImport(
     ["SecurityBoundary", payload.entities.security_boundaries],
     ["ExternalEntity", payload.entities.external_entities],
     ["EvidenceRecord", payload.entities.evidence_records],
+    ["DraftThreat", payload.entities.draft_threats],
     ["TraceLink", payload.entities.trace_links],
   ] as const;
 
@@ -103,6 +105,9 @@ export function validateSystemModelImport(
     requireIdentity("Asset", entity.consumer_asset_business_id, `DataFlow:${entity.business_id}`);
     if (entity.interface_business_id) requireIdentity("Interface", entity.interface_business_id, `DataFlow:${entity.business_id}`);
     for (const fn of entity.supported_function_business_ids) requireIdentity("Function", fn, `DataFlow:${entity.business_id}`);
+  }
+  for (const entity of payload.entities.draft_threats) {
+    requireIdentity("Asset", entity.target_asset_business_id, `DraftThreat:${entity.business_id}`);
   }
   for (const link of payload.entities.trace_links) {
     requireIdentity(link.source.type, link.source.business_id, `TraceLink:${link.business_id}`);
