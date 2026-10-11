@@ -1,3 +1,20 @@
+export type {
+  Asset as CoreAsset,
+  DataFlow as CoreDataFlow,
+  EvidenceRecord as CoreEvidenceRecord,
+  ExternalEntity as CoreExternalEntity,
+  SecurityBoundary as CoreSecurityBoundary,
+  SourceRecord as CoreSourceRecord,
+  StoredSystemModel,
+  SystemFunction as CoreFunction,
+  SystemInterface as CoreInterface,
+  SystemModelCommitRequest,
+  SystemModelCommitResult,
+  SystemModelPreviewRequest,
+  SystemModelPreviewResult,
+  TraceLink as CoreTraceLink,
+} from "@attackgraph/contracts";
+
 export type PriorityLabel = "High" | "Medium" | "Low";
 export type ReviewStatus = "Draft" | "Reviewed" | "Approved";
 export type FhaSeverity = "Catastrophic" | "Hazardous" | "Major" | "Minor" | "NoSafetyEffect" | "Unknown";

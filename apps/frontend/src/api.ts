@@ -23,6 +23,11 @@ import type {
   StandardClause,
   StandardKnowledgeSummary,
   StandardMapping,
+  StoredSystemModel,
+  SystemModelCommitRequest,
+  SystemModelCommitResult,
+  SystemModelPreviewRequest,
+  SystemModelPreviewResult,
   ThreatCondition,
   ThreatScenario,
   TrustBoundaryReportRow
@@ -50,6 +55,37 @@ async function ensureOk(response: Response, fallbackMessage: string): Promise<vo
 export async function getGraph(): Promise<GraphData> {
   const response = await fetch(`${baseUrl}/graph`);
   await ensureOk(response, "Failed to load graph");
+  return response.json();
+}
+
+export async function previewSystemModelImport(
+  payload: SystemModelPreviewRequest
+): Promise<SystemModelPreviewResult> {
+  const response = await fetch(`${baseUrl}/api/v2/system-model/import/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  await ensureOk(response, "Failed to preview system model import");
+  return response.json();
+}
+
+export async function commitSystemModelImport(
+  payload: SystemModelCommitRequest
+): Promise<SystemModelCommitResult> {
+  const response = await fetch(`${baseUrl}/api/v2/system-model/import/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  await ensureOk(response, "Failed to commit system model import");
+  return response.json();
+}
+
+export async function getSystemModel(projectId: string, revisionId: string): Promise<StoredSystemModel> {
+  const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
+  const response = await fetch(`${baseUrl}/api/v2/system-model?${query.toString()}`);
+  await ensureOk(response, "Failed to load system model");
   return response.json();
 }
 

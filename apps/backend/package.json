@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run build -w @attackgraph/contracts",
     "dev": "tsx watch src/index.ts",
+    "prebuild": "npm run build -w @attackgraph/contracts",
     "build": "tsc -p tsconfig.json",
-    "test": "tsx --test src/migrations/runner.test.ts src/services/governance/contracts.test.ts src/services/governance/commandFingerprint.test.ts src/services/governance/legacyWriteQuarantine.test.ts src/services/identity/scopedIdentity.test.ts src/services/legacyMigration/legacyAttachment.test.ts src/services/f3532/f353203Generation.test.ts src/services/featureRules/evaluate.test.ts src/services/featureRules/cli.test.ts src/services/featureRules/pathTrace.test.ts src/services/featureRules/pathTrace.cli.test.ts src/routes/featureRules.test.ts",
+    "pretest": "npm run build -w @attackgraph/contracts",
+    "test": "tsx --test src/migrations/runner.test.ts src/services/governance/contracts.test.ts src/services/governance/commandFingerprint.test.ts src/services/governance/legacyWriteQuarantine.test.ts src/services/identity/scopedIdentity.test.ts src/services/legacyMigration/legacyAttachment.test.ts src/services/systemModelImportService.test.ts src/services/f3532/f353203Generation.test.ts src/services/featureRules/evaluate.test.ts src/services/featureRules/cli.test.ts src/services/featureRules/pathTrace.test.ts src/services/featureRules/pathTrace.cli.test.ts src/routes/featureRules.test.ts",
     "start": "node dist/index.js",
     "clear": "tsx src/scripts/clearGraph.ts",
     "seed:sample": "tsx src/scripts/seedSample.ts",
@@ -15,9 +18,11 @@
     "legacy:attach": "tsx src/scripts/legacyAttach.ts",
     "standard:f3532:import": "tsx src/scripts/importF3532Standard.ts",
     "exp:do356a:baseline": "tsx src/scripts/runDo356aBaselineExperiment.ts",
-    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/routes/compatibilityScope.integration.test.ts"
+    "pretest:integration": "npm run build -w @attackgraph/contracts",
+    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/repositories/systemModelRepository.integration.test.ts src/routes/compatibilityScope.integration.test.ts"
   },
   "dependencies": {
+    "@attackgraph/contracts": "0.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",

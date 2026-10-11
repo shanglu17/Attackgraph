@@ -1,0 +1,63 @@
+{
+  "project_id": "00000000-0000-4000-8000-000000000001",
+  "revision_id": "00000000-0000-4000-8000-000000000002",
+  "expected_revision_version": 1,
+  "actor": "example-user",
+  "command_id": "example-system-model-import-001",
+  "import": {
+    "contract_version": "system-model.v2",
+    "source": {
+      "business_id": "SRC-GENERIC-001",
+      "source_type": "json",
+      "name": "Generic system model example",
+      "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "application/json",
+      "parser_name": "generic-json",
+      "parser_version": "1.0.0"
+    },
+    "entities": {
+      "assets": [
+        { "business_id": "ASSET-A", "name": "Producer", "category": "System" },
+        { "business_id": "ASSET-B", "name": "Consumer", "category": "System" }
+      ],
+      "functions": [
+        { "business_id": "FN-1", "name": "Exchange operational data" }
+      ],
+      "interfaces": [
+        {
+          "business_id": "IF-1",
+          "name": "Logical link",
+          "interface_type": "Logical",
+          "direction": "Bidirectional",
+          "asset_business_ids": ["ASSET-A", "ASSET-B"]
+        }
+      ],
+      "data_flows": [
+        {
+          "business_id": "FLOW-1",
+          "name": "Operational data",
+          "producer_asset_business_id": "ASSET-A",
+          "consumer_asset_business_id": "ASSET-B",
+          "interface_business_id": "IF-1",
+          "supported_function_business_ids": ["FN-1"],
+          "source_locator": {
+            "sheet": "Data Flows",
+            "row": 2,
+            "field_locators": { "name": "B2", "producer_asset_business_id": "C2" }
+          }
+        }
+      ],
+      "security_boundaries": [],
+      "external_entities": [],
+      "evidence_records": [],
+      "trace_links": [
+        {
+          "business_id": "TRACE-1",
+          "link_type": "RELATED_TO",
+          "source": { "type": "DataFlow", "business_id": "FLOW-1" },
+          "target": { "type": "Function", "business_id": "FN-1" }
+        }
+      ]
+    }
+  }
+}
