@@ -1,0 +1,24 @@
+{
+  "source_reference": {
+    "standard": "DO-356A",
+    "section": "Appendix D",
+    "provenance_note": "The example structure is project-controlled and identifies DO-356A Appendix D as its source. It does not reproduce standard text."
+  },
+  "asset": {
+    "business_id": "P3-ASSET-DATALINK",
+    "name": "Synthetic aircraft data-link function"
+  },
+  "evidence": {
+    "business_id": "P3-EVIDENCE-TEST",
+    "reference": "repository://examples/phase3-appendix-d-source.json"
+  },
+  "engineering": {
+    "threat_point": "Untrusted external message entry",
+    "threat_condition": "Integrity of an operational message may be lost",
+    "threat_scenario": "A crafted message reaches the target through the exposed interface",
+    "objective": "Preserve message integrity before operational use",
+    "requirement": "The receiving function shall reject messages that fail authenticity verification",
+    "control": "Message authentication and freshness validation",
+    "verification": "Inject invalid and replayed messages and verify rejection"
+  }
+}

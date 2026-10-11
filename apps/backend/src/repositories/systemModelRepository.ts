@@ -250,7 +250,7 @@ export class SystemModelRepository {
         `MATCH (revision:Revision {id: $revision_id, project_id: $project_id})
          MATCH (source:SourceRecord {id: $source_id, project_id: $project_id, revision_id: $revision_id})
          UNWIND $rows AS row
-         CREATE (entity:SystemModelElement:${definition.label})
+         CREATE (entity:CoreEntity:SystemModelElement:${definition.label})
          SET entity = row.properties,
              entity.id = row.id,
              entity.project_id = $project_id,
@@ -295,7 +295,7 @@ export class SystemModelRepository {
            entity_type: row.source.type, business_id: row.source.business_id})
          MATCH (to:SystemModelElement {project_id: $project_id, revision_id: $revision_id,
            entity_type: row.target.type, business_id: row.target.business_id})
-         CREATE (link:SystemModelElement:TraceLink)
+         CREATE (link:CoreEntity:SystemModelElement:TraceLink)
          SET link = row.properties,
              link.id = row.id, link.project_id = $project_id, link.revision_id = $revision_id,
              link.entity_type = 'TraceLink', link.source_type = row.source.type,

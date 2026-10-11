@@ -2,7 +2,7 @@
 
 本目录记录 ASTRA 从 F3532/ZG-ONE 专用实现演进为通用适航安保工程辅助平台的目标架构。
 
-**Phase 0：合并后基线与治理校准** 已于 2026-10-09 重新接受，**Phase 1：项目化与写入治理基础**、**Phase 2：标准无关系统模型与契约** 已于 2026-10-10 完成，**VG-1 首条可交付纵向链路** 已于 2026-10-11 通过。当前 **Phase 3：DO-326A/DO-356A 工程闭环** 进入 Ready。
+**Phase 0：合并后基线与治理校准** 已于 2026-10-09 重新接受，**Phase 1：项目化与写入治理基础**、**Phase 2：标准无关系统模型与契约** 已于 2026-10-10 完成，**VG-1 首条可交付纵向链路** 已于 2026-10-11 通过，**Phase 3：DO-326A/DO-356A 工程闭环** 已于 2026-10-11 完成。当前 **Phase 4：可插拔分析与结果晋级** 进入 Ready。
 
 ## 阅读顺序
 
@@ -10,17 +10,19 @@
 2. [Phase 1 执行计划](./phase-1-execution-plan.md)
 3. [Phase 2 执行基线](./phase-2-execution-baseline.md)
 4. [VG-1 执行基线](./vg1-execution-baseline.md)
-5. [System Model v2 API 契约](./system-model-v2-api.md)
-6. [Revision 范围写入契约](./revision-write-contract.md)
-7. [作用域身份契约](./scoped-identity-contract.md)
-8. [兼容读取与遗留写隔离契约](./compatibility-read-contract.md)
-9. [Phase 0 架构基线](./phase-0-baseline.md)
-10. [目标领域模型](./target-domain-model.md)
-11. [适航安保领域术语表](./airworthiness-security-glossary.md)
-12. [DO-326A / DO-356A 能力差距矩阵](./do326a-do356a-capability-matrix.md)
-13. [实验性特征分析 Crosswalk](./experimental-analysis-crosswalk.md)
-14. [遗留数据迁移设计](./legacy-migration-plan.md)
-15. 架构决策记录：
+5. [Phase 3 执行基线](./phase-3-execution-baseline.md)
+6. [Engineering Case v1 API 契约](./engineering-case-v1-api.md)
+7. [System Model v2 API 契约](./system-model-v2-api.md)
+8. [Revision 范围写入契约](./revision-write-contract.md)
+9. [作用域身份契约](./scoped-identity-contract.md)
+10. [兼容读取与遗留写隔离契约](./compatibility-read-contract.md)
+11. [Phase 0 架构基线](./phase-0-baseline.md)
+12. [目标领域模型](./target-domain-model.md)
+13. [适航安保领域术语表](./airworthiness-security-glossary.md)
+14. [DO-326A / DO-356A 能力差距矩阵](./do326a-do356a-capability-matrix.md)
+15. [实验性特征分析 Crosswalk](./experimental-analysis-crosswalk.md)
+16. [遗留数据迁移设计](./legacy-migration-plan.md)
+17. 架构决策记录：
    - [ADR-0001：产品定位与标准版本策略](./adr/0001-product-positioning-and-standard-versioning.md)
    - [ADR-0002：标准无关核心与适配器边界](./adr/0002-standard-neutral-core-and-adapters.md)
    - [ADR-0003：项目、模型、修订与基线](./adr/0003-project-model-revision-baseline.md)
@@ -48,4 +50,4 @@
 - Neo4j 标签、关系、约束与迁移脚本
 - 导入模板、分析结果、标准映射与报告导出
 
-当前实现行为以仓库代码和阶段执行基线为准。Phase 0–2 与 VG-1 已实现的能力可按其验收记录使用；Phase 3–7 的目标结构在实现前不得误写为已有能力。
+当前实现行为以仓库代码和阶段执行基线为准。Phase 0–3 与 VG-1 已实现的能力可按其验收记录使用；Phase 4–7 的目标结构在实现前不得误写为已有能力。

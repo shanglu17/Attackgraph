@@ -129,7 +129,7 @@ test("VG-1 creates, views, freezes and exports a traceable DO-356A Draft chain",
   });
   const report = await json<TraceabilityReport>(reportResponse);
   assert.equal(report.metadata.contract_version, "traceability-report.v1");
-  assert.equal(report.metadata.generator_version, "astra.traceability-report/1.0.0");
+  assert.equal(report.metadata.generator_version, "astra.traceability-report/2.0.0");
   assert.equal(report.metadata.generated_by, "vg1-reviewer");
   assert.equal(report.metadata.integrity_status, "not_frozen");
   assert.deepEqual(report.context.standard_profile_version.standard_references, ["DO-326A", "DO-356A"]);

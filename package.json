@@ -18,7 +18,8 @@
     "legacy:confirm-appendix-d-source": "npm run legacy:confirm-appendix-d-source -w @attackgraph/backend --",
     "standard:f3532:import": "npm run standard:f3532:import -w @attackgraph/backend",
     "exp:do356a:baseline": "npm run exp:do356a:baseline -w @attackgraph/backend",
-    "vg1:demo": "npm run vg1:demo -w @attackgraph/backend"
+    "vg1:demo": "npm run vg1:demo -w @attackgraph/backend",
+    "phase3:demo": "npm run phase3:demo -w @attackgraph/backend"
   },
   "dependencies": {
     "mammoth": "^1.12.0"

@@ -797,6 +797,16 @@
 /* VG-1 report fields stay compact; report tables scroll inside their own panel. */
 .vg1-traceability-panel .toolbar { align-items: end; }
 .vg1-traceability-panel .field-stack { flex: 1 1 220px; min-width: 0; }
+.engineering-case-panel .field-stack { flex: 1 1 210px; min-width: 0; }
+.report-tabs { margin-bottom: 12px; }
+.engineering-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.engineering-summary-grid article { display: grid; gap: 2px; padding: 10px; border: 1px solid #cbd7ea; border-radius: 8px; background: #f7f9fc; }
+.engineering-summary-grid strong { font-size: 1.35rem; color: #173f74; }
+.engineering-summary-grid span { color: #53657d; font-size: 0.82rem; }
+.engineering-review-form { margin-top: 14px; padding-top: 12px; border-top: 1px solid #d5dfed; }
+@media (max-width: 620px) {
+  .engineering-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .vg1-traceability-panel .input-field { width: 100%; flex: none; flex-basis: auto; }
 .vg1-traceability-panel .scroll-panel { overflow: auto; }
 .feature-rules-wrap { overflow-wrap: anywhere; }

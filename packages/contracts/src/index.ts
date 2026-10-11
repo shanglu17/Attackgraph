@@ -89,11 +89,16 @@ export const evidenceRecordSchema = z.object({
 
 export const traceEndpointTypeSchema = z.enum([
   "Asset", "Function", "Interface", "DataFlow", "SecurityBoundary", "ExternalEntity", "EvidenceRecord", "DraftThreat",
+  "ProfileConfiguration", "TailoringDecision", "ThreatPoint", "ThreatCondition", "ThreatScenario", "RiskAssessment",
+  "SecurityObjective", "SecurityRequirement", "Control", "VerificationCase",
 ]);
 
 export const traceLinkSchema = z.object({
   business_id: businessIdSchema,
-  link_type: z.enum(["DERIVED_FROM", "SATISFIES", "SUPPORTS", "ALLOCATED_TO", "RELATED_TO"]),
+  link_type: z.enum([
+    "DERIVED_FROM", "SATISFIES", "SUPPORTS", "ALLOCATED_TO", "RELATED_TO", "IDENTIFIES",
+    "REALIZES", "MITIGATES", "VERIFIES", "EVIDENCES", "ASSESSES",
+  ]),
   source: z.object({ type: traceEndpointTypeSchema, business_id: businessIdSchema }),
   target: z.object({ type: traceEndpointTypeSchema, business_id: businessIdSchema }),
   rationale: optionalText,
@@ -207,6 +212,210 @@ export interface StoredSystemModel {
   };
 }
 
+export const engineeringCaseContractVersion = "engineering-case.v1" as const;
+export const engineeringStatusSchema = z.enum(["Draft", "Reviewed", "Approved", "Rejected"]);
+const standardReferencesSchema = z.array(z.string().trim().min(1).max(240)).min(1).max(100);
+const engineeringBaseSchema = baseEntitySchema.extend({
+  status: z.literal("Draft").default("Draft"),
+  standard_references: standardReferencesSchema,
+});
+const systemElementReferenceSchema = z.object({
+  type: z.enum(["Asset", "Function", "Interface", "DataFlow", "SecurityBoundary", "ExternalEntity"]),
+  business_id: businessIdSchema,
+});
+
+export const profileConfigurationSchema = engineeringBaseSchema.extend({
+  standard_profile_version_business_id: businessIdSchema,
+  do326a_process_activities: tagList,
+  do326a_work_products: tagList,
+  do356a_methods: tagList,
+  do356a_data_fields: tagList,
+  do356a_work_products: tagList,
+  adapters: z.array(z.object({
+    adapter_id: businessIdSchema,
+    adapter_version: z.string().trim().min(1).max(80),
+    enabled: z.boolean(),
+  })).max(20).default([]),
+});
+
+export const tailoringDecisionSchema = engineeringBaseSchema.extend({
+  standard_reference: z.string().trim().min(1).max(240),
+  applicability: z.enum(["Applicable", "NotApplicable", "Tailored"]),
+  rationale: z.string().trim().min(1).max(2_000),
+});
+
+export const threatPointSchema = engineeringBaseSchema.extend({
+  target: systemElementReferenceSchema,
+  exposure_type: z.string().trim().min(1).max(160),
+  applicability: z.enum(["Applicable", "NotApplicable", "NeedsReview"]),
+});
+
+export const threatConditionSchema = engineeringBaseSchema.extend({
+  affected_elements: z.array(systemElementReferenceSchema).min(1).max(100),
+  security_attributes: z.array(z.enum(["Confidentiality", "Integrity", "Availability"])).min(1),
+  operational_context: z.string().trim().min(1).max(2_000),
+  effect: z.string().trim().min(1).max(2_000),
+  severity_reference: z.string().trim().min(1).max(240),
+  assumptions: tagList,
+});
+
+export const threatScenarioSchema = engineeringBaseSchema.extend({
+  threat_source: z.string().trim().min(1).max(240),
+  preconditions: z.array(z.string().trim().min(1).max(1_000)).max(100).default([]),
+  actions: z.array(z.string().trim().min(1).max(1_000)).min(1).max(100),
+  entry_point_business_ids: z.array(businessIdSchema).min(1).max(100),
+  target: systemElementReferenceSchema,
+  threat_condition_business_ids: z.array(businessIdSchema).min(1).max(100),
+  existing_control_business_ids: z.array(businessIdSchema).max(100).default([]),
+});
+
+export const riskAssessmentSchema = engineeringBaseSchema.extend({
+  threat_scenario_business_id: businessIdSchema,
+  method_id: businessIdSchema,
+  method_version: z.string().trim().min(1).max(80),
+  computed_result: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  engineering_judgement: z.string().trim().min(1).max(2_000),
+  treatment: z.enum(["Accept", "Avoid", "Mitigate", "Transfer", "NeedsReview"]),
+  rationale: z.string().trim().min(1).max(2_000),
+});
+
+export const securityObjectiveSchema = engineeringBaseSchema.extend({
+  risk_assessment_business_ids: z.array(businessIdSchema).min(1).max(100),
+  statement: z.string().trim().min(1).max(2_000),
+  allocated_elements: z.array(systemElementReferenceSchema).min(1).max(100),
+});
+
+export const securityRequirementSchema = engineeringBaseSchema.extend({
+  security_objective_business_ids: z.array(businessIdSchema).min(1).max(100),
+  statement: z.string().trim().min(1).max(2_000),
+  rationale: z.string().trim().min(1).max(2_000),
+  owner: z.string().trim().min(1).max(240),
+  verification_criteria: z.array(z.string().trim().min(1).max(1_000)).min(1).max(100),
+  allocated_elements: z.array(systemElementReferenceSchema).min(1).max(100),
+});
+
+export const controlSchema = engineeringBaseSchema.extend({
+  security_requirement_business_ids: z.array(businessIdSchema).min(1).max(100),
+  implementation_status: z.enum(["Proposed", "Implemented", "Verified", "Ineffective"]),
+  allocated_elements: z.array(systemElementReferenceSchema).min(1).max(100),
+});
+
+export const verificationCaseSchema = engineeringBaseSchema.extend({
+  verifies: z.array(z.object({
+    type: z.enum(["SecurityRequirement", "Control"]),
+    business_id: businessIdSchema,
+  })).min(1).max(100),
+  method: z.string().trim().min(1).max(500),
+  environment: z.string().trim().min(1).max(1_000),
+  procedure: z.string().trim().min(1).max(4_000),
+  acceptance_criteria: z.array(z.string().trim().min(1).max(1_000)).min(1).max(100),
+  outcome: z.enum(["NotRun", "Pass", "Fail", "Inconclusive"]),
+  result: optionalText,
+  evidence_record_business_ids: z.array(businessIdSchema).max(100).default([]),
+});
+
+export const engineeringTraceLinkSchema = traceLinkSchema.extend({
+  source: z.object({ type: traceEndpointTypeSchema, business_id: businessIdSchema }),
+  target: z.object({ type: traceEndpointTypeSchema, business_id: businessIdSchema }),
+  standard_reference: z.string().trim().min(1).max(240).optional(),
+});
+
+export const engineeringCasePayloadSchema = z.object({
+  contract_version: z.literal(engineeringCaseContractVersion),
+  source_record_business_id: businessIdSchema,
+  profile_configuration: profileConfigurationSchema,
+  tailoring_decisions: z.array(tailoringDecisionSchema).default([]),
+  threat_points: z.array(threatPointSchema).default([]),
+  threat_conditions: z.array(threatConditionSchema).default([]),
+  threat_scenarios: z.array(threatScenarioSchema).default([]),
+  risk_assessments: z.array(riskAssessmentSchema).default([]),
+  security_objectives: z.array(securityObjectiveSchema).default([]),
+  security_requirements: z.array(securityRequirementSchema).default([]),
+  controls: z.array(controlSchema).default([]),
+  verification_cases: z.array(verificationCaseSchema).default([]),
+  trace_links: z.array(engineeringTraceLinkSchema).default([]),
+});
+
+export const engineeringCaseCommitRequestSchema = z.object({
+  actor: z.string().trim().min(1).max(200),
+  command_id: z.string().trim().min(1).max(200),
+  project_id: z.string().uuid().transform((value) => value.toLowerCase()),
+  revision_id: z.string().uuid().transform((value) => value.toLowerCase()),
+  expected_revision_version: z.number().int().positive(),
+  case: engineeringCasePayloadSchema,
+});
+
+export const engineeringCaseQuerySchema = systemModelQuerySchema;
+export const reviewDecisionSchema = z.object({
+  business_id: businessIdSchema,
+  subject: z.object({ type: traceEndpointTypeSchema, business_id: businessIdSchema, version: z.number().int().positive() }),
+  decision: z.enum(["Accept", "Approve", "Reject", "Return"]),
+  rationale: z.string().trim().min(1).max(2_000),
+  reviewer_role: z.string().trim().min(1).max(160),
+  supersedes_business_id: businessIdSchema.optional(),
+});
+export const reviewDecisionCommandSchema = z.object({
+  actor: z.string().trim().min(1).max(200),
+  command_id: z.string().trim().min(1).max(200),
+  project_id: z.string().uuid().transform((value) => value.toLowerCase()),
+  revision_id: z.string().uuid().transform((value) => value.toLowerCase()),
+  expected_revision_version: z.number().int().positive(),
+  review: reviewDecisionSchema,
+});
+
+export type ProfileConfiguration = z.infer<typeof profileConfigurationSchema>;
+export type TailoringDecision = z.infer<typeof tailoringDecisionSchema>;
+export type EngineeringThreatPoint = z.infer<typeof threatPointSchema>;
+export type EngineeringThreatCondition = z.infer<typeof threatConditionSchema>;
+export type EngineeringThreatScenario = z.infer<typeof threatScenarioSchema>;
+export type RiskAssessment = z.infer<typeof riskAssessmentSchema>;
+export type SecurityObjective = z.infer<typeof securityObjectiveSchema>;
+export type SecurityRequirement = z.infer<typeof securityRequirementSchema>;
+export type Control = z.infer<typeof controlSchema>;
+export type VerificationCase = z.infer<typeof verificationCaseSchema>;
+export type EngineeringTraceLink = z.infer<typeof engineeringTraceLinkSchema>;
+export type EngineeringCasePayload = z.infer<typeof engineeringCasePayloadSchema>;
+export type EngineeringCaseCommitRequest = z.infer<typeof engineeringCaseCommitRequestSchema>;
+export type EngineeringCaseQuery = z.infer<typeof engineeringCaseQuerySchema>;
+export type ReviewDecision = z.infer<typeof reviewDecisionSchema>;
+export type ReviewDecisionCommand = z.infer<typeof reviewDecisionCommandSchema>;
+
+export interface StoredEngineeringCase extends EngineeringCasePayload {
+  project_id: string;
+  revision_id: string;
+  revision_version: number;
+  profile_configuration: ProfileConfiguration & { id: string; revision_version: number };
+  tailoring_decisions: Array<TailoringDecision & { id: string; revision_version: number }>;
+  threat_points: Array<EngineeringThreatPoint & { id: string; revision_version: number }>;
+  threat_conditions: Array<EngineeringThreatCondition & { id: string; revision_version: number }>;
+  threat_scenarios: Array<EngineeringThreatScenario & { id: string; revision_version: number }>;
+  risk_assessments: Array<RiskAssessment & { id: string; revision_version: number }>;
+  security_objectives: Array<SecurityObjective & { id: string; revision_version: number }>;
+  security_requirements: Array<SecurityRequirement & { id: string; revision_version: number }>;
+  controls: Array<Control & { id: string; revision_version: number }>;
+  verification_cases: Array<VerificationCase & { id: string; revision_version: number }>;
+  trace_links: Array<EngineeringTraceLink & { id: string }>;
+  review_decisions: Array<ReviewDecision & { id: string; reviewer: string; decided_at: string }>;
+}
+
+export interface EngineeringCaseCommitResult {
+  contract_version: typeof engineeringCaseContractVersion;
+  committed: boolean;
+  replayed: boolean;
+  audit_event_id: string;
+  new_revision_version: number;
+  created_ids: Record<string, string[]>;
+}
+
+export interface ReviewDecisionResult {
+  recorded: boolean;
+  replayed: boolean;
+  audit_event_id: string;
+  new_revision_version: number;
+  subject_status: z.infer<typeof engineeringStatusSchema>;
+  decision_id: string;
+}
+
 export const traceabilityReportContractVersion = "traceability-report.v1" as const;
 
 export const traceabilityReportQuerySchema = z.object({
@@ -283,6 +492,7 @@ export interface TraceabilityReport {
   draft_threats: Array<DraftThreat & { id: string }>;
   evidence_records: Array<EvidenceRecord & { id: string }>;
   trace_links: Array<TraceLink & { id: string }>;
+  engineering_case?: StoredEngineeringCase;
   chains: TraceabilityReportChain[];
   audit: Array<{ event_type: string; actor: string; occurred_at: string; command_id: string }>;
 }

@@ -17,6 +17,9 @@ export type {
   TraceabilityReport,
   TraceabilityReportQuery,
   TraceLink as CoreTraceLink,
+  StoredEngineeringCase,
+  ReviewDecisionCommand,
+  ReviewDecisionResult,
 } from "@attackgraph/contracts";
 
 export type PriorityLabel = "High" | "Medium" | "Low";

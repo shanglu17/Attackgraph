@@ -76,7 +76,7 @@ test("checked-in generic import example conforms to the shared commit contract",
   assert.equal(systemModelCommitRequestSchema.safeParse(example).success, true);
 });
 
-test("Phase 2 and VG-1 core modules do not depend on F3532 adapters", async () => {
+test("Phase 2, VG-1 and Phase 3 core modules do not depend on F3532 adapters", async () => {
   const files = [
     "../repositories/systemModelRepository.ts",
     "../repositories/traceabilityReportRepository.ts",
@@ -85,6 +85,9 @@ test("Phase 2 and VG-1 core modules do not depend on F3532 adapters", async () =
     "../routes/systemModel.ts",
     "../routes/governance.ts",
     "../routes/traceabilityReport.ts",
+    "../repositories/engineeringCaseRepository.ts",
+    "./engineeringCaseService.ts",
+    "../routes/engineeringCase.ts",
   ];
   for (const relative of files) {
     const source = await readFile(fileURLToPath(new URL(relative, import.meta.url)), "utf8");

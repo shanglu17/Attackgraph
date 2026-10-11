@@ -33,6 +33,9 @@ import type {
   ThreatScenario,
   TraceabilityReport,
   TraceabilityReportQuery,
+  StoredEngineeringCase,
+  ReviewDecisionCommand,
+  ReviewDecisionResult,
   TrustBoundaryReportRow
 } from "./types";
 
@@ -91,6 +94,23 @@ export async function getSystemModel(projectId: string, revisionId: string): Pro
   const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
   const response = await fetch(`${baseUrl}/api/v2/system-model?${query.toString()}`);
   await ensureOk(response, "Failed to load system model");
+  return response.json();
+}
+
+export async function getEngineeringCase(projectId: string, revisionId: string): Promise<StoredEngineeringCase> {
+  const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
+  const response = await fetch(`${baseUrl}/api/v2/engineering-cases?${query.toString()}`);
+  await ensureOk(response, "Failed to load engineering case");
+  return response.json();
+}
+
+export async function recordReviewDecision(command: ReviewDecisionCommand): Promise<ReviewDecisionResult> {
+  const response = await fetch(`${baseUrl}/api/v2/engineering-cases/review-decisions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to record review decision");
   return response.json();
 }
 

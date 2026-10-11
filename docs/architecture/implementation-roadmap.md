@@ -180,6 +180,8 @@ Project → Model → Revision → DO-326A/DO-356A StandardProfileVersion
 
 ## 9. Phase 3：DO-326A/DO-356A 工程闭环
 
+状态：**Complete（2026-10-11）**。执行与验收证据见 [Phase 3 执行基线](./phase-3-execution-baseline.md)，Phase 4 转为 Ready。
+
 ### 目标
 
 用标准 profile 驱动完整但不越权的工程链路，而不是把标准编号固化到核心类型中。
@@ -202,6 +204,8 @@ Project → Model → Revision → DO-326A/DO-356A StandardProfileVersion
 - 报告能够解析到确切 profile、revision/baseline 和来源。
 
 ## 10. Phase 4：可插拔分析与结果晋级
+
+状态：**Ready**。
 
 ### 目标
 
