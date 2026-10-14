@@ -9,7 +9,7 @@
     "prebuild": "npm run build -w @attackgraph/contracts",
     "build": "tsc -p tsconfig.json",
     "pretest": "npm run build -w @attackgraph/contracts",
-    "test": "tsx --test src/migrations/runner.test.ts src/services/governance/contracts.test.ts src/services/governance/commandFingerprint.test.ts src/services/governance/legacyWriteQuarantine.test.ts src/services/identity/scopedIdentity.test.ts src/services/legacyMigration/legacyAttachment.test.ts src/services/systemModelImportService.test.ts src/services/engineeringCaseService.test.ts src/services/f3532/f353203Generation.test.ts src/services/featureRules/evaluate.test.ts src/services/featureRules/cli.test.ts src/services/featureRules/pathTrace.test.ts src/services/featureRules/pathTrace.cli.test.ts src/routes/featureRules.test.ts",
+    "test": "tsx --test src/migrations/runner.test.ts src/services/governance/contracts.test.ts src/services/governance/commandFingerprint.test.ts src/services/governance/legacyWriteQuarantine.test.ts src/services/identity/scopedIdentity.test.ts src/services/legacyMigration/legacyAttachment.test.ts src/services/systemModelImportService.test.ts src/services/engineeringCaseService.test.ts src/services/analysis/analysisFramework.test.ts src/services/f3532/f353203Generation.test.ts src/services/featureRules/evaluate.test.ts src/services/featureRules/cli.test.ts src/services/featureRules/pathTrace.test.ts src/services/featureRules/pathTrace.cli.test.ts src/routes/featureRules.test.ts",
     "start": "node dist/index.js",
     "clear": "tsx src/scripts/clearGraph.ts",
     "seed:sample": "tsx src/scripts/seedSample.ts",
@@ -21,8 +21,9 @@
     "exp:do356a:baseline": "tsx src/scripts/runDo356aBaselineExperiment.ts",
     "vg1:demo": "tsx src/scripts/runVg1Demo.ts",
     "phase3:demo": "tsx src/scripts/runPhase3Demo.ts",
+    "phase4:demo": "tsx src/scripts/runPhase4Demo.ts",
     "pretest:integration": "npm run build -w @attackgraph/contracts",
-    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/repositories/systemModelRepository.integration.test.ts src/repositories/engineeringCase.integration.test.ts src/routes/compatibilityScope.integration.test.ts src/routes/vg1Traceability.integration.test.ts"
+    "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/repositories/systemModelRepository.integration.test.ts src/repositories/engineeringCase.integration.test.ts src/repositories/analysisFramework.integration.test.ts src/routes/compatibilityScope.integration.test.ts src/routes/vg1Traceability.integration.test.ts"
   },
   "dependencies": {
     "@attackgraph/contracts": "0.1.0",

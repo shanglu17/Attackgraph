@@ -9,8 +9,9 @@ import {
 import { SystemModelRepository } from "../repositories/systemModelRepository.js";
 import { TraceabilityReportRepository } from "../repositories/traceabilityReportRepository.js";
 import { EngineeringCaseRepository } from "../repositories/engineeringCaseRepository.js";
+import { AnalysisRepository } from "../repositories/analysisRepository.js";
 
-export const traceabilityReportGeneratorVersion = "astra.traceability-report/2.0.0";
+export const traceabilityReportGeneratorVersion = "astra.traceability-report/2.1.0";
 
 function canonicalJson(value: unknown): string {
   if (value === null || typeof value === "boolean" || typeof value === "string") return JSON.stringify(value);
@@ -35,15 +36,18 @@ export class TraceabilityReportService {
     private readonly reportRepository = new TraceabilityReportRepository(),
     private readonly systemModelRepository = new SystemModelRepository(),
     private readonly engineeringCaseRepository = new EngineeringCaseRepository(),
+    private readonly analysisRepository = new AnalysisRepository(),
   ) {}
 
   async generate(query: TraceabilityReportQuery, actor: string): Promise<TraceabilityReport> {
     const context = await this.reportRepository.resolveContext(query);
     const model = await this.systemModelRepository.read(query.project_id, context.revision.id);
-    const [traceSources, audit, engineeringCase] = await Promise.all([
+    const [traceSources, audit, engineeringCase, analysisRuns, promotions] = await Promise.all([
       this.reportRepository.readTraceSourceMap(query.project_id, context.revision.id),
       this.reportRepository.readAudit(query.project_id, context.revision.id),
       this.engineeringCaseRepository.read(query.project_id, context.revision.id),
+      this.analysisRepository.readRuns(query.project_id, context.revision.id),
+      this.analysisRepository.readPromotions(query.project_id, context.revision.id),
     ]);
 
     const endpointIndex = new Map<string, TraceabilityReportEndpoint>();
@@ -75,6 +79,13 @@ export class TraceabilityReportService {
         for (const item of values) addEndpoint(type, item.business_id, item.name, item.status);
       }
     }
+    for (const run of analysisRuns) {
+      addEndpoint("AnalysisRun", run.business_id, run.method.name, run.stale ? "Stale" : run.status);
+      for (const result of run.results) addEndpoint("DerivedResult", result.business_id, result.result_kind, result.machine_status);
+    }
+    for (const promotion of promotions) {
+      addEndpoint(promotion.target_type, promotion.target_business_id, promotion.target_name, promotion.target_status);
+    }
 
     const allTraceLinks = [...model.entities.trace_links, ...(engineeringCase?.trace_links ?? [])];
     const chains: TraceabilityReportChain[] = allTraceLinks.map((link) => {
@@ -98,6 +109,19 @@ export class TraceabilityReportService {
         source_record_business_id: traceSources.get(link.business_id) ?? engineeringCase?.source_record_business_id,
       };
     });
+    for (const promotion of promotions) {
+      const source = endpointIndex.get(`${promotion.target_type}:${promotion.target_business_id}`);
+      const target = endpointIndex.get(`DerivedResult:${promotion.derived_result_business_id}`);
+      if (!source || !target) throw new Error(`analysis promotion '${promotion.business_id}' has an unresolved report endpoint`);
+      const run = analysisRuns.find((item) => item.id === promotion.run_id);
+      chains.push({
+        trace_link_business_id: promotion.trace_link_business_id,
+        link_type: "DERIVED_FROM",
+        source,
+        target,
+        source_record_business_id: run?.source_record_business_id,
+      });
+    }
 
     const stableSnapshot = {
       project: context.project,
@@ -111,6 +135,8 @@ export class TraceabilityReportService {
       trace_links: model.entities.trace_links,
       chains,
       engineering_case: engineeringCase ? { ...engineeringCase, revision_version: undefined } : undefined,
+      analysis_runs: analysisRuns.length > 0 ? analysisRuns : undefined,
+      promotions: promotions.length > 0 ? promotions : undefined,
     };
     const hash = contentHash(stableSnapshot);
     const integrityStatus = context.baseline
@@ -134,6 +160,8 @@ export class TraceabilityReportService {
       evidence_records: model.entities.evidence_records,
       trace_links: allTraceLinks,
       engineering_case: engineeringCase,
+      analysis_runs: analysisRuns,
+      promotions,
       chains,
       audit,
     };

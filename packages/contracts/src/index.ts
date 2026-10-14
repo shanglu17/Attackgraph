@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { StoredAnalysisRun, StoredPromotion } from "./analysis.js";
+export * from "./analysis.js";
 
 export const systemModelContractVersion = "system-model.v2" as const;
 
@@ -91,6 +93,7 @@ export const traceEndpointTypeSchema = z.enum([
   "Asset", "Function", "Interface", "DataFlow", "SecurityBoundary", "ExternalEntity", "EvidenceRecord", "DraftThreat",
   "ProfileConfiguration", "TailoringDecision", "ThreatPoint", "ThreatCondition", "ThreatScenario", "RiskAssessment",
   "SecurityObjective", "SecurityRequirement", "Control", "VerificationCase",
+  "AnalysisRun", "DerivedResult", "AttackPath",
 ]);
 
 export const traceLinkSchema = z.object({
@@ -493,6 +496,8 @@ export interface TraceabilityReport {
   evidence_records: Array<EvidenceRecord & { id: string }>;
   trace_links: Array<TraceLink & { id: string }>;
   engineering_case?: StoredEngineeringCase;
+  analysis_runs: StoredAnalysisRun[];
+  promotions: StoredPromotion[];
   chains: TraceabilityReportChain[];
   audit: Array<{ event_type: string; actor: string; occurred_at: string; command_id: string }>;
 }

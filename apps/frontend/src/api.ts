@@ -36,7 +36,16 @@ import type {
   StoredEngineeringCase,
   ReviewDecisionCommand,
   ReviewDecisionResult,
-  TrustBoundaryReportRow
+  TrustBoundaryReportRow,
+  AnalysisMethodDefinition,
+  AnalysisRunCommand,
+  AnalysisRunResult,
+  DerivedResultReviewCommand,
+  DerivedResultReviewResult,
+  PromotionCommand,
+  PromotionResult,
+  StoredAnalysisRun,
+  StoredPromotion
 } from "./types";
 
 const baseUrl = "http://localhost:4000";
@@ -111,6 +120,53 @@ export async function recordReviewDecision(command: ReviewDecisionCommand): Prom
     body: JSON.stringify(command)
   });
   await ensureOk(response, "Failed to record review decision");
+  return response.json();
+}
+
+export async function getAnalysisMethods(): Promise<AnalysisMethodDefinition[]> {
+  const response = await fetch(`${baseUrl}/api/v2/analysis/methods`);
+  await ensureOk(response, "Failed to load analysis methods");
+  const payload = await response.json() as { methods: AnalysisMethodDefinition[] };
+  return payload.methods;
+}
+
+export async function getAnalysisRuns(projectId: string, revisionId: string): Promise<StoredAnalysisRun[]> {
+  const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
+  const response = await fetch(`${baseUrl}/api/v2/analysis/runs?${query.toString()}`);
+  await ensureOk(response, "Failed to load analysis runs");
+  const payload = await response.json() as { runs: StoredAnalysisRun[] };
+  return payload.runs;
+}
+
+export async function getAnalysisPromotions(projectId: string, revisionId: string): Promise<StoredPromotion[]> {
+  const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
+  const response = await fetch(`${baseUrl}/api/v2/analysis/promotions?${query.toString()}`);
+  await ensureOk(response, "Failed to load analysis promotions");
+  const payload = await response.json() as { promotions: StoredPromotion[] };
+  return payload.promotions;
+}
+
+export async function createAnalysisRun(command: AnalysisRunCommand): Promise<AnalysisRunResult> {
+  const response = await fetch(`${baseUrl}/api/v2/analysis/runs`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to create analysis run");
+  return response.json();
+}
+
+export async function reviewDerivedResult(command: DerivedResultReviewCommand): Promise<DerivedResultReviewResult> {
+  const response = await fetch(`${baseUrl}/api/v2/analysis/derived-results/review-decisions`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to review derived result");
+  return response.json();
+}
+
+export async function promoteDerivedResult(command: PromotionCommand): Promise<PromotionResult> {
+  const response = await fetch(`${baseUrl}/api/v2/analysis/promotions`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to promote derived result");
   return response.json();
 }
 

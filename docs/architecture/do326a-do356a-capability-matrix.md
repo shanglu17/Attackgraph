@@ -32,10 +32,10 @@
 | Threat Point | Phase 3 已完成 | 通用 `ThreatPoint` + 受控来源 | 遗留图仍保留旧 `ThreatPoint` 读取 | 仅表达可利用入口/暴露点 | Phase 3 |
 | Threat Condition | Phase 3 已完成 | revision-scoped `ThreatCondition`、来源、人审、追踪 | 遗留 F3532 仓储仅作兼容读取 | 项目级 TC、影响、来源、评审和追踪 | Phase 3 |
 | Threat Scenario | Phase 3 已完成 | 结构化主体、入口、动作、目标和 TC 关联 | AttackPath 仍待 Phase 4 统一分析外壳 | 主体、入口、动作、目标、TC、路径的完整场景 | Phase 3/4 |
-| 攻击路径搜索 | 已有 | DFS/DPS、循环和范围剪枝 | 算法与工程结论边界不清；配置和输入摘要不足 | 可插拔路径引擎、AnalysisRun、可重现结果 | Phase 4 |
-| 特征规则预览 | 已有/实验性 | 严格 Zod 契约、四值逻辑、scope/policy/evidence 门控、input hash | 使用研究侧 Asset/Feature/Evidence/Scope/Policy DTO；无项目/revision 上下文；调用方审核声明未认证 | 注册为 `AnalysisMethodDefinition`（`maturity=experimental`）并接入 AnalysisRun，保留专用 DTO | Phase 4 |
-| 拓扑候选追踪 | 已有/实验性 | 显式资产映射、allowed edges、方向语义、搜索上限和 mapping hash | 使用全局 graph_version；边缺逐边证据；拓扑可达不等于攻击可行 | project/revision-scoped、evidence-aware 的 `topology_only` DerivedResult 和显式晋级 | Phase 4 |
-| 路径解释 | 部分 | explanations、F3532 evidence | 主要是字符串；缺统一证据结构 | 结构化规则命中、事实引用和决策依据 | Phase 4 |
+| 攻击路径搜索 | Phase 4 已完成 | DFS/DPS 与 F3532 方法适配器、AnalysisRun、输入快照和稳定摘要 | 旧 DFS 不能证明搜索空间穷尽，故保守标记 partial | 可插拔路径引擎、AnalysisRun、可重现结果 | Phase 4 |
+| 特征规则预览 | Phase 4 已完成/实验性 | 注册为 `AnalysisMethodDefinition`，接入 project/revision-scoped AnalysisRun；调用方 reviewer 字段不生成 ReviewDecision | method-specific DTO 仍为实验契约 | 保留专用 DTO 与显式人审边界 | Phase 4 |
+| 拓扑候选追踪 | Phase 4 已完成/实验性 | 图和映射快照、完整性/终止原因、`topology_only` DerivedResult、逐边证据晋级门禁 | 拓扑本身仍不能证明攻击可行 | evidence-aware 候选和显式晋级 | Phase 4 |
+| 路径解释 | Phase 4 核心完成 | 结构化 diagnostics、完整性、终止原因、结果 payload 和来源快照 | 跨方法统一解释视图仍可在 Phase 6 增强 | 结构化规则命中、事实引用和决策依据 | Phase 4/6 |
 | 风险评估 | Phase 3 核心完成 | `RiskAssessment` 分离 computed result 与 engineering judgement | 分析运行可重现性待 Phase 4 | 绑定方法、对象、结果和人工决定 | Phase 3/4 |
 | Security Objective | Phase 3 已完成 | 一等目标、风险关联、分配、状态和追踪 | 变更影响待 Phase 5 | 一等目标、分配、状态和追踪 | Phase 3/5 |
 | Security Requirement | Phase 3 已完成 | 一等要求、目标关联、分配和验证准则 | 完整职责分离待 Phase 6 | 要求与目标、设计元素、验证项关联 | Phase 3/6 |
@@ -45,7 +45,7 @@
 | 标准条款知识 | 部分 | Clause/Artifact/Stage 知识图谱 | 导入接口写死 F3532；标准全文授权边界未治理 | 通用标准元数据与授权导入 profile | Phase 2 |
 | 标准追踪 | 部分/需重构 | `DO326ALink`、`StandardMapping` | 两套模型；关系类型有限；目标类型硬编码 | 统一有类型 `TraceLink` | Phase 2/3 |
 | 评审与批准 | Phase 3 核心完成 | 独立 `ReviewDecision`、对象版本、角色、理由、退回/替代 | ReviewSession、Comment 和职责分离策略待 Phase 6 | 完整评审协作与角色校验 | Phase 3/6 |
-| 变更影响分析 | 缺失 | GraphVersion 只能拒绝旧提交 | 不知道哪些分析/要求/证据受影响 | 基线差异、依赖传播和 stale 标记 | Phase 4/5 |
+| 变更影响分析 | 部分 | AnalysisRun 在后续系统模型/工程案例写入后可判定 stale | 尚未沿完整依赖图传播影响，也没有处置工作流 | 基线差异、依赖传播和 stale 标记 | Phase 4/5 |
 | 审计 | 部分 | `CommitAudit` | 摘要有限；不同仓储绕开审计；无防篡改策略 | 覆盖全部状态变化的 AuditEvent | Phase 1/6 |
 | 导入预览 | 已有 | 单表、CXF、F3532 preview/commit | 多套错误结构和模板逻辑 | adapter 导入契约、统一诊断和幂等提交 | Phase 2 |
 | 报告和导出 | 部分 | JSON、F3532 03/04、第四章 Excel | 报告与 F3532/ZG-ONE 紧耦合；字段缺来源链接 | profile 驱动工作产品与追踪矩阵 | Phase 3/5 |

@@ -20,6 +20,15 @@ export type {
   StoredEngineeringCase,
   ReviewDecisionCommand,
   ReviewDecisionResult,
+  AnalysisMethodDefinition,
+  AnalysisRunCommand,
+  AnalysisRunResult,
+  DerivedResultReviewCommand,
+  DerivedResultReviewResult,
+  PromotionCommand,
+  PromotionResult,
+  StoredAnalysisRun,
+  StoredPromotion,
 } from "@attackgraph/contracts";
 
 export type PriorityLabel = "High" | "Medium" | "Low";

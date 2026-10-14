@@ -117,7 +117,7 @@ export class EngineeringCaseRepository {
         "MATCH (revision:Revision {id: $revision_id, project_id: $project_id}) " +
         "MATCH (source:SourceRecord {project_id: $project_id, revision_id: $revision_id, business_id: $source_business_id}) " +
         "UNWIND $rows AS row CREATE (entity:CoreEntity:EngineeringElement:" + type + " {id: row.id, project_id: $project_id, revision_id: $revision_id, " +
-        "business_id: row.business_id, entity_type: $entity_type, name: row.name, status: row.status, payload_json: row.payload_json, " +
+        "business_id: row.business_id, legacy_id: row.business_id, entity_type: $entity_type, name: row.name, status: row.status, payload_json: row.payload_json, " +
         "contract_version: $contract_version, revision_version: $revision_version, created_at: datetime(), created_by: $actor}) " +
         "CREATE (revision)-[:CONTAINS]->(entity) CREATE (entity)-[:DERIVED_FROM_SOURCE]->(source)";
       await transaction.run(query, {

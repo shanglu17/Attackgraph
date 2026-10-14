@@ -96,30 +96,34 @@ export function traceFeaturePaths(rawInput: unknown, rawGraph: Topology, rawMapp
         ...decision.evidence_refs, ...(mapping?.evidence_refs ?? [])]),
       paths: [] as TracePath[], truncated: false, edge_evidence_status: "not_supplied_by_graph" as const };
     if (!candidateDecisions.has(decision.decision) || !decision.executed)
-      return { ...base, status: "decision_not_candidate" as const };
+      return { ...base, status: "decision_not_candidate" as const, completeness: "unknown" as const, termination_reason: "completed" as const };
     if (!decision.prototype_asset_id || !nodes.has(decision.prototype_asset_id))
-      return { ...base, status: "asset_unmapped" as const };
+      return { ...base, status: "asset_unmapped" as const, completeness: "unknown" as const, termination_reason: "completed" as const };
     if (!mapping || mapping.allowed_edge_ids.length === 0 || mapping.target_asset_ids.length === 0)
-      return { ...base, status: "scope_unmapped" as const };
+      return { ...base, status: "scope_unmapped" as const, completeness: "unknown" as const, termination_reason: "completed" as const };
     if (mapping.evidence_refs.length === 0 || !mapping.evidence_refs.every(id => {
       const item = evidence.get(id)!;
       return item.review_status === "verified" && Object.values(item.source_locator).some(v => v !== null);
-    })) return { ...base, status: "mapping_evidence_unverified" as const };
+    })) return { ...base, status: "mapping_evidence_unverified" as const, completeness: "unknown" as const, termination_reason: "completed" as const };
 
     const adjacency = adjacencyFor(mapping);
     const targets = new Set(mapping.target_asset_ids);
     const paths: TracePath[] = [];
     let truncated = false;
+    let terminationReason: "search_space_exhausted" | "hop_limit" | "path_limit" | "expansion_limit" = "search_space_exhausted";
     let expansions = 0;
     function walk(current: string, assetIds: string[], edgeIds: string[], reverseEdgeIds: string[], visited: Set<string>) {
       if (truncated) return;
       if (edgeIds.length >= maxHops) {
-        if ((adjacency.get(current) ?? []).some(hop => !visited.has(hop.next_asset_id))) truncated = true;
+        if ((adjacency.get(current) ?? []).some(hop => !visited.has(hop.next_asset_id))) {
+          truncated = true;
+          terminationReason = "hop_limit";
+        }
         return;
       }
       for (const hop of adjacency.get(current) ?? []) {
         if (visited.has(hop.next_asset_id)) continue;
-        if (expansions >= maxExpansions) { truncated = true; return; }
+        if (expansions >= maxExpansions) { truncated = true; terminationReason = "expansion_limit"; return; }
         expansions++;
         const nextAssets = [...assetIds, hop.next_asset_id];
         const nextEdges = [...edgeIds, hop.edge_id];
@@ -127,7 +131,7 @@ export function traceFeaturePaths(rawInput: unknown, rawGraph: Topology, rawMapp
         if (targets.has(hop.next_asset_id)) {
           paths.push({ asset_ids: nextAssets, edge_ids: nextEdges,
             reverse_edge_ids: nextReverse, hop_count: nextEdges.length, topology_only: true });
-          if (paths.length === maxPaths) { truncated = true; return; }
+          if (paths.length === maxPaths) { truncated = true; terminationReason = "path_limit"; return; }
         }
         const nextVisited = new Set(visited); nextVisited.add(hop.next_asset_id);
         walk(hop.next_asset_id, nextAssets, nextEdges, nextReverse, nextVisited);
@@ -136,6 +140,8 @@ export function traceFeaturePaths(rawInput: unknown, rawGraph: Topology, rawMapp
     }
     walk(decision.prototype_asset_id, [decision.prototype_asset_id], [], [], new Set([decision.prototype_asset_id]));
     return { ...base, paths, truncated,
+      completeness: truncated ? "partial" as const : "complete" as const,
+      termination_reason: terminationReason,
       status: paths.length ? "topology_candidate" as const :
         truncated ? "search_incomplete" as const : "no_path_in_snapshot" as const };
   });

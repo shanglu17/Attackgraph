@@ -8,7 +8,7 @@
   ThreatSource
 } from "../types/domain.js";
 
-interface AnalysisInput {
+export interface AnalysisInput {
   analysis_batch_id: string;
   max_hops: number;
   generated_by: string;

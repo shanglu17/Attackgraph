@@ -8,6 +8,8 @@ import { migration0007 } from "./0007SystemModelCore.js";
 import { migration0008 } from "./0008SystemModelElementIdentity.js";
 import { migration0009 } from "./0009DraftThreatIdentity.js";
 import { migration0010 } from "./0010EngineeringCaseCore.js";
+import { migration0011 } from "./0011AnalysisFramework.js";
+import { migration0012 } from "./0012EngineeringLegacyIdentityCompatibility.js";
 import type { MigrationDefinition } from "./types.js";
 
 export const migrationRegistry: MigrationDefinition[] = [
@@ -21,4 +23,6 @@ export const migrationRegistry: MigrationDefinition[] = [
   migration0008,
   migration0009,
   migration0010,
+  migration0011,
+  migration0012,
 ];

@@ -32,6 +32,7 @@ import { AppWorkspaceNav, type AppWorkspace } from "./app/AppWorkspaceNav";
 import { ImportWorkspace } from "./features/imports/ImportWorkspace";
 import { ChangeSetStudio } from "./features/changes/ChangeSetStudio";
 import { AssuranceReviewWorkspace } from "./features/reports/AssuranceReviewWorkspace";
+import { AnalysisReviewWorkspace } from "./features/analysis/AnalysisReviewWorkspace";
 import type {
   AssetNode,
   AttackPath,
@@ -648,45 +649,47 @@ export function App() {
 
         <aside className={activeWorkspace === "analysis" || activeWorkspace === "reports" ? "panel right review-panel" : "hidden"}>
           <div className={activeWorkspace === "analysis" ? "review-section" : "hidden"}>
-          <div className="section-heading">
-            <div>
-              <h2 className="section-title">攻击路径审查</h2>
-              <p>按优先级检查分析结果，选择路径后会在拓扑中高亮。</p>
-            </div>
-          </div>
-          <div className="toolbar wrap">
-            <input
-              className="input-field"
-              value={exportBatchId}
-              onChange={(event) => setExportBatchId(event.target.value)}
-              placeholder="analysis_batch_id (optional)"
-            />
-            <button className="button" onClick={handleExportResult} disabled={busy}>
-              Export Modeling JSON
-            </button>
-          </div>
-
-          <h3>Path Ranking</h3>
-          <div className="scroll-panel path-scroll-panel">
-            <div className="list path-list">
-              {paths.map((path) => (
-                <button
-                  key={path.path_id}
-                  type="button"
-                  className={`item vertical clickable ${selectedPathId === path.path_id ? "active" : ""}`}
-                  onClick={() => setSelectedPathId(path.path_id)}
-                >
-                  <strong>
-                    {path.priority_label} / {path.path_id}
-                  </strong>
-                  <span>{path.hop_sequence}</span>
-                  <span>normalized={path.normalized_score.toFixed(3)}</span>
-                  <span>{path.is_low_priority ? "low priority" : "mitigation queue"}</span>
+            <AnalysisReviewWorkspace onStatusChange={setMessage}>
+              <div className="section-heading">
+                <div>
+                  <h2 className="section-title">攻击路径审查</h2>
+                  <p>按优先级检查分析结果，选择路径后会在拓扑中高亮。</p>
+                </div>
+              </div>
+              <div className="toolbar wrap">
+                <input
+                  className="input-field"
+                  value={exportBatchId}
+                  onChange={(event) => setExportBatchId(event.target.value)}
+                  placeholder="analysis_batch_id (optional)"
+                />
+                <button className="button" onClick={handleExportResult} disabled={busy}>
+                  Export Modeling JSON
                 </button>
-              ))}
-              {paths.length === 0 ? <div className="item vertical">Run analysis to populate attack paths.</div> : null}
-            </div>
-          </div>
+              </div>
+
+              <h3>Path Ranking</h3>
+              <div className="scroll-panel path-scroll-panel">
+                <div className="list path-list">
+                  {paths.map((path) => (
+                    <button
+                      key={path.path_id}
+                      type="button"
+                      className={`item vertical clickable ${selectedPathId === path.path_id ? "active" : ""}`}
+                      onClick={() => setSelectedPathId(path.path_id)}
+                    >
+                      <strong>
+                        {path.priority_label} / {path.path_id}
+                      </strong>
+                      <span>{path.hop_sequence}</span>
+                      <span>normalized={path.normalized_score.toFixed(3)}</span>
+                      <span>{path.is_low_priority ? "low priority" : "mitigation queue"}</span>
+                    </button>
+                  ))}
+                  {paths.length === 0 ? <div className="item vertical">Run analysis to populate attack paths.</div> : null}
+                </div>
+              </div>
+            </AnalysisReviewWorkspace>
           </div>
 
           <div className={activeWorkspace === "reports" ? "review-section report-section" : "hidden"}>

@@ -1,0 +1,47 @@
+{
+  "feature_input": {
+    "contract_version": "feature-preview-0.1",
+    "scenario_id": "PHASE4-CONTROLLED-EXAMPLE",
+    "assets": [{
+      "asset_id": "RESEARCH-ASSET-A", "asset_type": "INT", "name": "Controlled example interface",
+      "layer": null, "operational_phase": ["flight"], "evidence_refs": ["FACT-E"],
+      "prototype_asset_id": "ASSET-A", "version": "1"
+    }],
+    "features": [{
+      "feature_record_id": "FEATURE-A", "asset_id": "RESEARCH-ASSET-A",
+      "EXP": [{ "feature_id": "external_reachable", "state": "present", "scope": ["SCOPE-A"], "evidence_refs": ["FACT-E"], "note": "controlled example" }],
+      "TRU": [], "PCX": [], "EXE": [], "INF": [], "FUN": [],
+      "protections": [{ "feature_id": "strong_mutual_auth", "state": "absent", "scope": ["SCOPE-A"], "evidence_refs": ["FACT-E"], "note": "controlled example" }],
+      "context": { "operational_phase": ["flight"], "access_window": null, "modification_window": null, "assumptions": [], "evidence_refs": ["FACT-E"] },
+      "evidence_refs": ["FACT-E"], "version": "1"
+    }],
+    "rules": [{
+      "rule_id": "CONTROLLED-RULE-1", "asset_type": "INT",
+      "required_features": [{ "any_of": ["external_reachable"] }],
+      "supporting_features": [], "excluding_features": ["strong_mutual_auth"], "context_requirements": [],
+      "output_threat_id": "T.INT.UNAU", "explanation_template": "Controlled example only", "version": "1",
+      "source": "project-controlled-example", "source_required_text": "Synthetic acceptance input",
+      "exclusion_effect": "block", "review_status": "APPROVED", "reviewer": "example-data-owner",
+      "review_basis": "Synthetic acceptance fixture", "enabled": true, "review_notes": []
+    }],
+    "evidence": [
+      { "evidence_id": "FACT-E", "source": "project-controlled-example", "source_locator": { "section": "phase4", "page": null, "figure": null, "sheet": null, "row": null }, "excerpt": null, "source_sha256": null, "extraction_method": "manual", "confidence": null, "review_status": "verified", "version": "1" },
+      { "evidence_id": "REVIEW-E", "source": "project-controlled-example", "source_locator": { "section": "phase4", "page": null, "figure": null, "sheet": null, "row": null }, "excerpt": null, "source_sha256": null, "extraction_method": "manual", "confidence": null, "review_status": "verified", "version": "1" },
+      { "evidence_id": "MAP-E", "source": "project-controlled-example", "source_locator": { "section": "phase4", "page": null, "figure": null, "sheet": null, "row": null }, "excerpt": null, "source_sha256": null, "extraction_method": "manual", "confidence": null, "review_status": "verified", "version": "1" }
+    ],
+    "scopes": [{ "scope_id": "SCOPE-A", "asset_id": "RESEARCH-ASSET-A", "boundary_id": "CONTROLLED-BOUNDARY", "operational_phase": "flight", "attacker_profile": "external", "evidence_refs": ["FACT-E"] }],
+    "policies": [{
+      "rule_id": "CONTROLLED-RULE-1", "rule_version": "1", "version": "1",
+      "applicable_attacker_profiles": ["external"], "feature_version": "1", "applicable_phases": ["flight"],
+      "review_evidence_refs": ["REVIEW-E"],
+      "protection_actions": [{ "feature_id": "strong_mutual_auth", "action": "block", "effect_description": "Controlled policy", "basis_evidence_refs": ["REVIEW-E"] }]
+    }]
+  },
+  "graph": {
+    "graph_version": "PHASE4-GRAPH-1",
+    "asset_nodes": [{ "asset_id": "ASSET-A" }, { "asset_id": "ASSET-B" }],
+    "asset_edges": [{ "edge_id": "EDGE-A-B", "source_asset_id": "ASSET-A", "target_asset_id": "ASSET-B", "direction": "Unidirectional" }]
+  },
+  "mappings": [{ "scope_id": "SCOPE-A", "allowed_edge_ids": ["EDGE-A-B"], "target_asset_ids": ["ASSET-B"], "evidence_refs": ["MAP-E"] }],
+  "options": { "max_hops": 3, "max_paths_per_decision": 20, "max_expansions_per_decision": 1000 }
+}
