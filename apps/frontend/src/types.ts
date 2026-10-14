@@ -29,6 +29,13 @@ export type {
   PromotionResult,
   StoredAnalysisRun,
   StoredPromotion,
+  ImpactPreview,
+  ImpactAssessmentCommand,
+  ImpactAssessmentResult,
+  ImpactDispositionCommand,
+  ImpactDispositionResult,
+  StoredImpactAssessment,
+  AssuranceWorkProduct,
 } from "@attackgraph/contracts";
 
 export type PriorityLabel = "High" | "Medium" | "Low";

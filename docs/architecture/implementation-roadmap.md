@@ -66,8 +66,8 @@
 | VG-1 | 首条可交付纵向链路 | 分析工程师、评审人员、演示与试点用户 | 在一个项目内查看一条 DO-356A 追踪链，并导出带来源、版本和状态的报告 | 至少保留一个可运行、可演示、可复现、可导出的试点产品切片 | Complete |
 | Phase 3 | DO-326A/DO-356A 工程闭环 | 分析工程师、适航安保评审人员 | TC/TS、风险、目标、要求、验证和证据形成 profile 驱动闭环 | 可交付首个正式工程闭环版本，但高级分析、影响传播和完整工作台仍受限 | Complete |
 | Phase 4 | 可插拔分析与结果晋级 | 分析工程师、方法开发者、评审人员 | 可重现分析运行、候选解释及人工晋级流程 | 可交付受控分析平台，但完整变更影响与工作产品能力仍不完备 | Complete |
-| Phase 5 | 追踪、变更影响与工作产品 | 项目负责人、评审人员、报告编制人员 | 基线差异、stale 传播、追踪矩阵和 profile 驱动报告 | 可交付主要工程与报告能力，但角色治理、运维质量和发布切换尚未完成 | Ready |
-| Phase 6 | 评审工作台、质量与运维 | 全部日常用户及平台运维 | 完整评审工作台、角色审计、E2E 证据和备份恢复能力 | 可进入受控试运行，但遗留数据正式切换和发布证据尚未完成 | Planned |
+| Phase 5 | 追踪、变更影响与工作产品 | 项目负责人、评审人员、报告编制人员 | 基线差异、stale 传播、追踪矩阵和 profile 驱动报告 | 可交付主要工程与报告能力，但角色治理、运维质量和发布切换尚未完成 | Complete |
+| Phase 6 | 评审工作台、质量与运维 | 全部日常用户及平台运维 | 完整评审工作台、角色审计、E2E 证据和备份恢复能力 | 可进入受控试运行，但遗留数据正式切换和发布证据尚未完成 | Ready |
 | Phase 7 | 遗留迁移与发布验收 | 项目组织、运维、质量与发布负责人 | 遗留数据完成受控切换，并形成可审计发布证据包 | 达到本路线图定义的正式发布状态，但仍不自动构成适航批准声明 | Planned |
 
 ## 5. Phase 0：合并后基线与治理校准
@@ -205,7 +205,7 @@ Project → Model → Revision → DO-326A/DO-356A StandardProfileVersion
 
 ## 10. Phase 4：可插拔分析与结果晋级
 
-状态：**Complete（2026-10-14）**。实现与验收证据见 [Phase 4 执行基线](./phase-4-execution-baseline.md)，Phase 5 转为 Ready。
+状态：**Complete（2026-10-14）**。实现与验收证据见 [Phase 4 执行基线](./phase-4-execution-baseline.md)；其后 Phase 5 已完成并转入 Phase 6。
 
 ### 目标
 
@@ -230,6 +230,10 @@ Project → Model → Revision → DO-326A/DO-356A StandardProfileVersion
 - asserted reviewer metadata 不会被当作平台 ReviewDecision。
 
 ## 11. Phase 5：追踪、变更影响与工作产品
+
+状态：Complete（2026-10-14）
+
+执行证据：[Phase 5 执行基线](./phase-5-execution-baseline.md)
 
 ### 目标
 

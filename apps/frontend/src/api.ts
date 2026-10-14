@@ -43,6 +43,13 @@ import type {
   DerivedResultReviewCommand,
   DerivedResultReviewResult,
   PromotionCommand,
+  ImpactPreview,
+  ImpactAssessmentCommand,
+  ImpactAssessmentResult,
+  ImpactDispositionCommand,
+  ImpactDispositionResult,
+  StoredImpactAssessment,
+  AssuranceWorkProduct,
   PromotionResult,
   StoredAnalysisRun,
   StoredPromotion
@@ -213,6 +220,67 @@ export async function freezeRevision(
   });
   await ensureOk(response, "Failed to freeze revision");
   return response.json();
+}
+
+export async function previewChangeImpact(input: {
+  project_id: string;
+  from: { revision_id?: string; baseline_id?: string };
+  to: { revision_id?: string; baseline_id?: string };
+}): Promise<ImpactPreview> {
+  const response = await fetch(`${baseUrl}/api/v2/impact-assessments/preview`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input)
+  });
+  await ensureOk(response, "Failed to preview change impact");
+  return response.json();
+}
+
+export async function createChangeImpactAssessment(command: ImpactAssessmentCommand): Promise<ImpactAssessmentResult> {
+  const response = await fetch(`${baseUrl}/api/v2/impact-assessments`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to create change impact assessment");
+  return response.json();
+}
+
+export async function getChangeImpactAssessments(projectId: string, revisionId: string): Promise<StoredImpactAssessment[]> {
+  const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
+  const response = await fetch(`${baseUrl}/api/v2/impact-assessments?${query}`);
+  await ensureOk(response, "Failed to load change impact assessments");
+  return (await response.json() as { assessments: StoredImpactAssessment[] }).assessments;
+}
+
+export async function recordImpactDisposition(command: ImpactDispositionCommand): Promise<ImpactDispositionResult> {
+  const response = await fetch(`${baseUrl}/api/v2/impact-assessments/dispositions`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(command)
+  });
+  await ensureOk(response, "Failed to record impact disposition");
+  return response.json();
+}
+
+function workProductQuery(input: { project_id: string; revision_id?: string; baseline_id?: string; actor: string }): string {
+  const query = new URLSearchParams({ project_id: input.project_id, actor: input.actor });
+  if (input.revision_id) query.set("revision_id", input.revision_id);
+  if (input.baseline_id) query.set("baseline_id", input.baseline_id);
+  return query.toString();
+}
+
+export async function getAssuranceWorkProduct(input: { project_id: string; revision_id?: string; baseline_id?: string; actor: string }): Promise<AssuranceWorkProduct> {
+  const response = await fetch(`${baseUrl}/api/v2/impact-assessments/work-product?${workProductQuery(input)}`);
+  await ensureOk(response, "Failed to generate assurance work product");
+  return response.json();
+}
+
+export async function exportAssuranceWorkProduct(input: { project_id: string; revision_id?: string; baseline_id?: string; actor: string }): Promise<void> {
+  const response = await fetch(`${baseUrl}/api/v2/impact-assessments/work-product/export?${workProductQuery(input)}`);
+  await ensureOk(response, "Failed to export assurance work product");
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? "astra-assurance-work-product.json";
+  const url = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function validateChangeSet(changeSet: GraphChangeSet): Promise<{ valid: boolean; errors: string[] }> {

@@ -45,10 +45,10 @@
 | 标准条款知识 | 部分 | Clause/Artifact/Stage 知识图谱 | 导入接口写死 F3532；标准全文授权边界未治理 | 通用标准元数据与授权导入 profile | Phase 2 |
 | 标准追踪 | 部分/需重构 | `DO326ALink`、`StandardMapping` | 两套模型；关系类型有限；目标类型硬编码 | 统一有类型 `TraceLink` | Phase 2/3 |
 | 评审与批准 | Phase 3 核心完成 | 独立 `ReviewDecision`、对象版本、角色、理由、退回/替代 | ReviewSession、Comment 和职责分离策略待 Phase 6 | 完整评审协作与角色校验 | Phase 3/6 |
-| 变更影响分析 | 部分 | AnalysisRun 在后续系统模型/工程案例写入后可判定 stale | 尚未沿完整依赖图传播影响，也没有处置工作流 | 基线差异、依赖传播和 stale 标记 | Phase 4/5 |
+| 变更影响分析 | Phase 5 已完成 | revision/baseline 差异、确定性传播、ChangeImpactAssessment、Accept/Reanalyze/Waive/Defer | 更复杂的组织级影响策略可在后续扩展 | 基线差异、依赖传播、stale 标记和人工作出决定 | Phase 4/5 |
 | 审计 | 部分 | `CommitAudit` | 摘要有限；不同仓储绕开审计；无防篡改策略 | 覆盖全部状态变化的 AuditEvent | Phase 1/6 |
 | 导入预览 | 已有 | 单表、CXF、F3532 preview/commit | 多套错误结构和模板逻辑 | adapter 导入契约、统一诊断和幂等提交 | Phase 2 |
-| 报告和导出 | 部分 | JSON、F3532 03/04、第四章 Excel | 报告与 F3532/ZG-ONE 紧耦合；字段缺来源链接 | profile 驱动工作产品与追踪矩阵 | Phase 3/5 |
+| 报告和导出 | Phase 5 核心完成 | profile 驱动 DO-326A/DO-356A 区段、追踪矩阵、缺口、覆盖率、影响处置和 JSON 导出 | 文档排版、协作审签和发布包仍待 Phase 6/7 | profile 驱动工作产品与追踪矩阵 | Phase 3/5 |
 | 多项目隔离 | 缺失 | 全局唯一约束 | ID 冲突、查询和删除均可能跨项目 | 所有读写强制 project/revision scope | Phase 1 |
 | 用户与权限 | 缺失 | `x-user-id` 固定文本 | 无身份真实性和职责分离 | 单用户兼容 + 可扩展 RBAC | Phase 6 |
 | API 契约 | 部分 | Zod + TS 类型 | 后端、前端、schema 三份定义；无 API 版本 | 版本化 API 和生成客户端类型 | Phase 2 |

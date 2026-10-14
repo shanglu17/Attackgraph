@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { StoredAnalysisRun, StoredPromotion } from "./analysis.js";
 export * from "./analysis.js";
+export * from "./impact.js";
 
 export const systemModelContractVersion = "system-model.v2" as const;
 
