@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   legacyPlanHash,
+  nonProjectLabels,
   resolveLegacyContext,
   stableIssueKey,
   type LegacyAttachmentPlan,
@@ -17,6 +18,8 @@ describe("legacy attachment configuration", () => {
     assert.notEqual(generic.project.business_id, appendix.project.business_id);
     assert.deepEqual(generic.standard_profile.standard_references, ["DO-326A", "DO-356A"]);
     assert.deepEqual(appendix.standard_profile.standard_references, ["DO-356A"]);
+    assert.ok(nonProjectLabels.includes("AnalysisMethodDefinition"));
+    assert.ok(nonProjectLabels.includes("ReleaseAcceptanceRun"));
   });
 
   it("produces deterministic issue and plan hashes", () => {

@@ -2,7 +2,7 @@
 
 本目录记录 ASTRA 从 F3532/ZG-ONE 专用实现演进为通用适航安保工程辅助平台的目标架构。
 
-**Phase 0：合并后基线与治理校准** 已于 2026-10-09 重新接受，**Phase 1：项目化与写入治理基础**、**Phase 2：标准无关系统模型与契约** 已于 2026-10-10 完成，**VG-1 首条可交付纵向链路** 已于 2026-10-11 通过，**Phase 3：DO-326A/DO-356A 工程闭环** 已于 2026-10-11 完成，**Phase 4：可插拔分析与结果晋级** 与 **Phase 5：追踪、变更影响与工作产品** 已于 2026-10-14 完成，**Phase 6：评审工作台、质量与运维** 已于 2026-10-15 完成并通过数据库与恢复验收。Phase 7 当前为 Ready。
+**Phase 0：合并后基线与治理校准** 已于 2026-10-09 重新接受，**Phase 1：项目化与写入治理基础**、**Phase 2：标准无关系统模型与契约** 已于 2026-10-10 完成，**VG-1 首条可交付纵向链路** 已于 2026-10-11 通过，**Phase 3：DO-326A/DO-356A 工程闭环** 已于 2026-10-11 完成，**Phase 4：可插拔分析与结果晋级** 与 **Phase 5：追踪、变更影响与工作产品** 已于 2026-10-14 完成，**Phase 6：评审工作台、质量与运维** 和 **Phase 7：遗留迁移与发布验收** 已于 2026-10-15 完成。系统达到路线图定义的正式发布候选状态，但不自动构成适航批准声明。
 
 ## 阅读顺序
 
@@ -16,19 +16,21 @@
 8. [Change Impact v1 与 Assurance Work Product v1 API 契约](./change-impact-v1-api.md)
 9. [Phase 6 执行基线](./phase-6-execution-baseline.md)
 10. [Phase 6 评审与运维手册](../phase-6-operations-runbook.md)
-11. [Analysis Run v1 API 契约](./analysis-run-v1-api.md)
-12. [Engineering Case v1 API 契约](./engineering-case-v1-api.md)
-13. [System Model v2 API 契约](./system-model-v2-api.md)
-14. [Revision 范围写入契约](./revision-write-contract.md)
-15. [作用域身份契约](./scoped-identity-contract.md)
-16. [兼容读取与遗留写隔离契约](./compatibility-read-contract.md)
-17. [Phase 0 架构基线](./phase-0-baseline.md)
-18. [目标领域模型](./target-domain-model.md)
-19. [适航安保领域术语表](./airworthiness-security-glossary.md)
-20. [DO-326A / DO-356A 能力差距矩阵](./do326a-do356a-capability-matrix.md)
-21. [实验性特征分析 Crosswalk](./experimental-analysis-crosswalk.md)
-22. [遗留数据迁移设计](./legacy-migration-plan.md)
-23. 架构决策记录：
+11. [Phase 7 执行基线](./phase-7-execution-baseline.md)
+12. [Phase 7 发布与回退手册](../phase-7-release-runbook.md)
+13. [Analysis Run v1 API 契约](./analysis-run-v1-api.md)
+14. [Engineering Case v1 API 契约](./engineering-case-v1-api.md)
+15. [System Model v2 API 契约](./system-model-v2-api.md)
+16. [Revision 范围写入契约](./revision-write-contract.md)
+17. [作用域身份契约](./scoped-identity-contract.md)
+18. [兼容读取与遗留写隔离契约](./compatibility-read-contract.md)
+19. [Phase 0 架构基线](./phase-0-baseline.md)
+20. [目标领域模型](./target-domain-model.md)
+21. [适航安保领域术语表](./airworthiness-security-glossary.md)
+22. [DO-326A / DO-356A 能力差距矩阵](./do326a-do356a-capability-matrix.md)
+23. [实验性特征分析 Crosswalk](./experimental-analysis-crosswalk.md)
+24. [遗留数据迁移设计](./legacy-migration-plan.md)
+25. 架构决策记录：
    - [ADR-0001：产品定位与标准版本策略](./adr/0001-product-positioning-and-standard-versioning.md)
    - [ADR-0002：标准无关核心与适配器边界](./adr/0002-standard-neutral-core-and-adapters.md)
    - [ADR-0003：项目、模型、修订与基线](./adr/0003-project-model-revision-baseline.md)
@@ -56,4 +58,4 @@
 - Neo4j 标签、关系、约束与迁移脚本
 - 导入模板、分析结果、标准映射与报告导出
 
-当前实现行为以仓库代码和阶段执行基线为准。Phase 0–6 与 VG-1 已接受；Phase 7 当前为 Ready，Phase 7 的目标结构在实现前不得误写为已有能力。
+当前实现行为以仓库代码和阶段执行基线为准。Phase 0–7 与 VG-1 均已通过技术验收；组织放行和适航批准仍必须由对应责任方在平台外或受控流程中作出。

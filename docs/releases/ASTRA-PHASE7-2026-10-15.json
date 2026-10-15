@@ -1,0 +1,35 @@
+{
+  "contract_version": "phase7-release-manifest.v1",
+  "release_id": "ASTRA-PHASE7-2026-10-15",
+  "technical_status": "passed",
+  "human_release_authorization": "not_asserted",
+  "evidence_hash": "3d3c69a7aafc84a230f990a7f7e938932d5f08edd6c9c56bbfcdf7e1d2724431",
+  "dataset": "do356a-appendix-d",
+  "migration_range": "0001-0015",
+  "checks": {
+    "M0_inventory_backup": "pass",
+    "M1_migration_ledger": "pass",
+    "M2_scoped_attachment": "pass",
+    "M3_provenance": "pass",
+    "M4_history_governance": "pass",
+    "M5_dual_read_golden": "pass",
+    "M6_cutover_rollback": "pass"
+  },
+  "golden_counts": {
+    "asset_nodes": 17,
+    "asset_edges": 14,
+    "threat_points": 4,
+    "do326a_links": 5,
+    "commit_audits": 1
+  },
+  "scope_invariants": {
+    "attached_legacy_nodes": 27,
+    "unscoped_legacy_nodes": 0,
+    "cross_project_relationships": 0,
+    "open_high_risk_migration_issues": 0
+  },
+  "notes": [
+    "No ignored ZG-ONE/F3532 collaboration artifact was used.",
+    "This manifest records technical evidence and is not an airworthiness approval."
+  ]
+}

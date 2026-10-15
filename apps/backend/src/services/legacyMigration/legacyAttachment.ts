@@ -50,6 +50,8 @@ export const nonProjectLabels = [
   "AuditEvent",
   "MigrationIssue",
   "LegacyAttachmentRun",
+  "AnalysisMethodDefinition",
+  "ReleaseAcceptanceRun",
   "GraphVersion",
   "StandardKnowledgeBase",
   "StandardClause",

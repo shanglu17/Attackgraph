@@ -103,14 +103,14 @@ export class LegacyAttachmentRepository {
                 ELSE false
               END AS attachable,
               CASE
-                WHEN node.project_id IS NOT NULL AND node.model_id IS NOT NULL AND node.revision_id IS NOT NULL
+                WHEN node.project_id IS NOT NULL AND node.revision_id IS NOT NULL
                 THEN true ELSE false
               END AS fully_scoped,
               CASE
                 WHEN $target_project_id IS NOT NULL
                  AND node.project_id = $target_project_id
-                 AND node.model_id = $target_model_id
                  AND node.revision_id = $target_revision_id
+                 AND (node.model_id IS NULL OR node.model_id = $target_model_id)
                 THEN true ELSE false
               END AS scoped_to_target
          RETURN definition.label AS label,
@@ -208,14 +208,14 @@ export class LegacyAttachmentRepository {
         `UNWIND $definitions AS definition
          MATCH (node)
          WHERE definition.label IN labels(node)
-           AND NOT (node.project_id IS NOT NULL AND node.model_id IS NOT NULL AND node.revision_id IS NOT NULL)
+           AND NOT (node.project_id IS NOT NULL AND node.revision_id IS NOT NULL)
            AND NOT (
              (node.project_id IS NULL AND node.model_id IS NULL AND node.revision_id IS NULL)
              OR (
                $target_project_id IS NOT NULL
                AND (node.project_id IS NULL OR node.project_id = $target_project_id)
-               AND (node.model_id IS NULL OR node.model_id = $target_model_id)
                AND (node.revision_id IS NULL OR node.revision_id = $target_revision_id)
+               AND (node.model_id IS NULL OR node.model_id = $target_model_id)
              )
            )
          RETURN definition.label AS label, count(node) AS count,
@@ -258,8 +258,8 @@ export class LegacyAttachmentRepository {
              OR (
                $target_project_id IS NOT NULL
                AND node.project_id = $target_project_id
-               AND node.model_id = $target_model_id
                AND node.revision_id = $target_revision_id
+               AND (node.model_id IS NULL OR node.model_id = $target_model_id)
              )
            )
            AND node[definition.key] IS NOT NULL AND trim(toString(node[definition.key])) <> ''

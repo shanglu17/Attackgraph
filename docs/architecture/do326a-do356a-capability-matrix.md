@@ -48,7 +48,7 @@
 | 变更影响分析 | Phase 5 已完成 | revision/baseline 差异、确定性传播、ChangeImpactAssessment、Accept/Reanalyze/Waive/Defer | 更复杂的组织级影响策略可在后续扩展 | 基线差异、依赖传播、stale 标记和人工作出决定 | Phase 4/5 |
 | 审计 | 部分 | `CommitAudit` | 摘要有限；不同仓储绕开审计；无防篡改策略 | 覆盖全部状态变化的 AuditEvent | Phase 1/6 |
 | 导入预览 | 已有 | 单表、CXF、F3532 preview/commit | 多套错误结构和模板逻辑 | adapter 导入契约、统一诊断和幂等提交 | Phase 2 |
-| 报告和导出 | Phase 5 核心完成 | profile 驱动 DO-326A/DO-356A 区段、追踪矩阵、缺口、覆盖率、影响处置和 JSON 导出 | 文档排版、协作审签和发布包仍待 Phase 6/7 | profile 驱动工作产品与追踪矩阵 | Phase 3/5 |
+| 报告和导出 | Phase 7 技术发布包完成 | profile 驱动 DO-326A/DO-356A 区段、追踪矩阵、缺口、覆盖率、影响处置、JSON 导出和技术发布 manifest | 正式文档排版与组织放行仍由部署流程负责 | profile 驱动工作产品、追踪矩阵与可审计发布证据 | Phase 3/5/7 |
 | 多项目隔离 | 缺失 | 全局唯一约束 | ID 冲突、查询和删除均可能跨项目 | 所有读写强制 project/revision scope | Phase 1 |
 | 用户与权限 | Phase 6 最小模型完成 | Bearer API key 映射固定 actor/role；审批人与会话发起人分离 | 企业 OIDC、外部密钥管理和项目级成员关系仍待部署增强 | 受控试运行身份 + 可扩展 RBAC | Phase 6 |
 | API 契约 | 部分 | Zod + TS 类型 | 后端、前端、schema 三份定义；无 API 版本 | 版本化 API 和生成客户端类型 | Phase 2 |
