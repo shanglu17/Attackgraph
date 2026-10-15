@@ -1,4 +1,5 @@
 import type { FailureCondition, FhaImportRequest, FhaSeverity } from "./types";
+import { assertSafeLocalFile } from "./fileSafety";
 
 export interface ParsedFhaDocument {
   payload: FhaImportRequest;
@@ -6,6 +7,7 @@ export interface ParsedFhaDocument {
 }
 
 export async function parseFhaDocument(file: File): Promise<ParsedFhaDocument> {
+  assertSafeLocalFile(file, [".docx"], 10);
   const mammoth = await import("mammoth");
   const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
   const document = new DOMParser().parseFromString(result.value, "text/html");

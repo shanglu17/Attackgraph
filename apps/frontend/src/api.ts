@@ -52,10 +52,19 @@ import type {
   AssuranceWorkProduct,
   PromotionResult,
   StoredAnalysisRun,
-  StoredPromotion
+  StoredPromotion,
+  AddReviewCommentCommand,
+  CreateReviewSessionCommand,
+  DecideReviewSessionCommand,
+  ReviewWorkspace,
+  ReviewWriteResult
 } from "./types";
 
 const baseUrl = "http://localhost:4000";
+
+function authenticatedHeaders(apiKey: string): HeadersInit {
+  return { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` };
+}
 
 async function ensureOk(response: Response, fallbackMessage: string): Promise<void> {
   if (!response.ok) {
@@ -126,6 +135,31 @@ export async function recordReviewDecision(command: ReviewDecisionCommand): Prom
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(command)
   });
+  await ensureOk(response, "Failed to record review decision");
+  return response.json();
+}
+
+export async function getReviewWorkspace(projectId: string, revisionId: string, apiKey: string): Promise<ReviewWorkspace> {
+  const query = new URLSearchParams({ project_id: projectId, revision_id: revisionId });
+  const response = await fetch(`${baseUrl}/api/v2/reviews?${query.toString()}`, { headers: authenticatedHeaders(apiKey) });
+  await ensureOk(response, "Failed to load review workspace");
+  return response.json();
+}
+
+export async function createReviewSession(command: CreateReviewSessionCommand, apiKey: string): Promise<ReviewWriteResult> {
+  const response = await fetch(`${baseUrl}/api/v2/reviews/sessions`, { method: "POST", headers: authenticatedHeaders(apiKey), body: JSON.stringify(command) });
+  await ensureOk(response, "Failed to create review session");
+  return response.json();
+}
+
+export async function addReviewComment(command: AddReviewCommentCommand, apiKey: string): Promise<ReviewWriteResult> {
+  const response = await fetch(`${baseUrl}/api/v2/reviews/comments`, { method: "POST", headers: authenticatedHeaders(apiKey), body: JSON.stringify(command) });
+  await ensureOk(response, "Failed to add review comment");
+  return response.json();
+}
+
+export async function decideReviewSession(command: DecideReviewSessionCommand, apiKey: string): Promise<ReviewWriteResult> {
+  const response = await fetch(`${baseUrl}/api/v2/reviews/decisions`, { method: "POST", headers: authenticatedHeaders(apiKey), body: JSON.stringify(command) });
   await ensureOk(response, "Failed to record review decision");
   return response.json();
 }

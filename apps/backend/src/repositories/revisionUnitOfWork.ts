@@ -42,6 +42,7 @@ export interface RevisionWriteResult<TResult extends CanonicalValue> {
 }
 
 export class RevisionWriteScopeError extends Error {
+  readonly statusCode = 404;
   constructor(projectId: string, revisionId: string) {
     super(`revision '${revisionId}' does not belong to project '${projectId}'`);
     this.name = "RevisionWriteScopeError";
@@ -49,6 +50,7 @@ export class RevisionWriteScopeError extends Error {
 }
 
 export class RevisionNotWritableError extends Error {
+  readonly statusCode = 409;
   constructor(revisionId: string, status: string) {
     super(`revision '${revisionId}' is not writable in status '${status}'`);
     this.name = "RevisionNotWritableError";
@@ -56,6 +58,7 @@ export class RevisionNotWritableError extends Error {
 }
 
 export class RevisionWriteConflictError extends Error {
+  readonly statusCode = 409;
   readonly expectedVersion: number;
   readonly currentVersion: number;
 

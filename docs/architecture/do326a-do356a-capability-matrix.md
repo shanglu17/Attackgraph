@@ -41,19 +41,19 @@
 | Security Requirement | Phase 3 已完成 | 一等要求、目标关联、分配和验证准则 | 完整职责分离待 Phase 6 | 要求与目标、设计元素、验证项关联 | Phase 3/6 |
 | 安保控制/措施 | Phase 3 已完成 | `Control`、实现状态、分配、要求关联 | 效能分析方法待 Phase 4 | 控制实现和有效性状态 | Phase 3/4 |
 | 验证策划 | Phase 3 已完成 | `VerificationCase` 方法、环境、步骤、准则和结果 | 工作流协作待 Phase 6 | 支持分析/测试/检查/评审 | Phase 3/6 |
-| 符合性证据 | Phase 3 核心完成 | `EvidenceRecord` + SourceRecord + TraceLink | 文件存储、权限和评审协作待 Phase 6 | 证据元数据 + 评审 | Phase 3/6 |
+| 符合性证据 | Phase 6 已完成评审视图 | `EvidenceRecord` + SourceRecord + TraceLink + ReviewSession 证据查看 | 外部文件存储与企业权限集成仍可增强 | 证据元数据 + 受控评审 | Phase 3/6 |
 | 标准条款知识 | 部分 | Clause/Artifact/Stage 知识图谱 | 导入接口写死 F3532；标准全文授权边界未治理 | 通用标准元数据与授权导入 profile | Phase 2 |
 | 标准追踪 | 部分/需重构 | `DO326ALink`、`StandardMapping` | 两套模型；关系类型有限；目标类型硬编码 | 统一有类型 `TraceLink` | Phase 2/3 |
-| 评审与批准 | Phase 3 核心完成 | 独立 `ReviewDecision`、对象版本、角色、理由、退回/替代 | ReviewSession、Comment 和职责分离策略待 Phase 6 | 完整评审协作与角色校验 | Phase 3/6 |
+| 评审与批准 | Phase 6 已完成 | 独立 `ReviewDecision`、ReviewSession、Comment、服务端角色与职责分离 | 企业 OIDC/目录和细粒度项目成员矩阵仍可增强 | 完整评审协作与角色校验 | Phase 3/6 |
 | 变更影响分析 | Phase 5 已完成 | revision/baseline 差异、确定性传播、ChangeImpactAssessment、Accept/Reanalyze/Waive/Defer | 更复杂的组织级影响策略可在后续扩展 | 基线差异、依赖传播、stale 标记和人工作出决定 | Phase 4/5 |
 | 审计 | 部分 | `CommitAudit` | 摘要有限；不同仓储绕开审计；无防篡改策略 | 覆盖全部状态变化的 AuditEvent | Phase 1/6 |
 | 导入预览 | 已有 | 单表、CXF、F3532 preview/commit | 多套错误结构和模板逻辑 | adapter 导入契约、统一诊断和幂等提交 | Phase 2 |
 | 报告和导出 | Phase 5 核心完成 | profile 驱动 DO-326A/DO-356A 区段、追踪矩阵、缺口、覆盖率、影响处置和 JSON 导出 | 文档排版、协作审签和发布包仍待 Phase 6/7 | profile 驱动工作产品与追踪矩阵 | Phase 3/5 |
 | 多项目隔离 | 缺失 | 全局唯一约束 | ID 冲突、查询和删除均可能跨项目 | 所有读写强制 project/revision scope | Phase 1 |
-| 用户与权限 | 缺失 | `x-user-id` 固定文本 | 无身份真实性和职责分离 | 单用户兼容 + 可扩展 RBAC | Phase 6 |
+| 用户与权限 | Phase 6 最小模型完成 | Bearer API key 映射固定 actor/role；审批人与会话发起人分离 | 企业 OIDC、外部密钥管理和项目级成员关系仍待部署增强 | 受控试运行身份 + 可扩展 RBAC | Phase 6 |
 | API 契约 | 部分 | Zod + TS 类型 | 后端、前端、schema 三份定义；无 API 版本 | 版本化 API 和生成客户端类型 | Phase 2 |
 | 自动化测试 | 部分 | F3532 Golden；feature evaluator/API/CLI/path trace；SDF integration；前端导入测试 | 缺通用核心、项目隔离、迁移、完整仓储和 E2E 测试；前端 workspace test glob 在 Windows 不可移植 | 测试金字塔、跨平台命令和标准样例 Golden 集 | Phase 0-6 持续 |
-| 运维和恢复 | 缺失/弱 | Docker + health | 无迁移账本、备份演练、指标和告警 | 明确部署、备份、恢复和可观测性 | Phase 6 |
+| 运维和恢复 | Phase 6 已完成核心 | 迁移账本、readiness、指标、结构化日志和项目级恢复演练 | 集群告警、异地备份和生产灾备仍属部署增强 | 明确部署、备份、恢复和可观测性 | Phase 6 |
 
 ## 3. MVP 必须闭环的追踪链
 

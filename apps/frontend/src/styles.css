@@ -103,6 +103,16 @@
     @apply mt-2 flex min-h-8 items-center gap-2 border-t border-slate-200 px-2 pt-2 text-xs text-slate-600;
   }
 
+  .project-context-bar {
+    @apply mt-2 grid gap-2 border-t border-slate-200 px-2 pt-2;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .project-context-bar .input-field {
+    @apply w-full flex-none;
+    flex-basis: auto;
+  }
+
   .status-dot {
     @apply h-2 w-2 shrink-0 rounded-full bg-emerald-500;
   }
@@ -539,6 +549,39 @@
     @apply min-h-0 gap-2 rounded-xl border border-slate-300/70 bg-white/85 p-2.5 shadow-sm;
   }
 
+  .review-workbench-grid,
+  .comparison-grid,
+  .evidence-grid,
+  .review-action-grid {
+    @apply grid gap-3;
+  }
+
+  .review-workbench-grid {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .comparison-grid,
+  .evidence-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .comparison-grid section {
+    @apply min-w-0 rounded-lg border border-slate-200 bg-slate-50/80 p-2;
+  }
+
+  .comparison-grid pre {
+    @apply m-0 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed;
+  }
+
+  .review-action-grid {
+    @apply mt-3 items-end rounded-lg border border-blue-200 bg-blue-50/50 p-3;
+    grid-template-columns: minmax(260px, 1fr) auto minmax(160px, 0.5fr);
+  }
+
+  .review-action-grid .field-stack:nth-of-type(3) {
+    grid-column: 1 / span 2;
+  }
+
   .preview-card pre {
     @apply m-0 max-h-[260px] overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-700;
   }
@@ -661,6 +704,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .project-context-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .project-context-bar .field-stack:last-child {
+    grid-column: 1 / -1;
+  }
+
   .layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
@@ -676,8 +727,14 @@
 
   .changeset-grid,
   .import-grid,
-  .import-toolbar {
+  .import-toolbar,
+  .review-workbench-grid,
+  .review-action-grid {
     grid-template-columns: 1fr;
+  }
+
+  .review-action-grid .field-stack:nth-of-type(3) {
+    grid-column: auto;
   }
 
   .import-panel-header,
@@ -709,6 +766,16 @@
   .header-actions,
   .workspace-tabs {
     @apply w-full;
+  }
+
+  .project-context-bar,
+  .comparison-grid,
+  .evidence-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-context-bar .field-stack:last-child {
+    grid-column: auto;
   }
 
   .header {

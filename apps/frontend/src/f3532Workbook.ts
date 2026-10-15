@@ -8,6 +8,7 @@ import type {
   F3532ThreatActorRow,
   F3532TrustBoundaryRow
 } from "./types";
+import { assertSafeLocalFile } from "./fileSafety";
 
 export type F3532SheetName =
   | "boundary_interfaces"
@@ -79,6 +80,8 @@ export async function parseF3532Workbooks(
   file02: File,
   aircraftModel: string
 ): Promise<ParsedF3532Workbook> {
+  assertSafeLocalFile(file01, [".xlsx"], 15);
+  assertSafeLocalFile(file02, [".xlsx"], 15);
   const [xlsx, buffer01, buffer02] = await Promise.all([import("xlsx"), file01.arrayBuffer(), file02.arrayBuffer()]);
   xlsxModule = xlsx;
   const workbook01 = xlsx.read(buffer01, { type: "array", dense: true });

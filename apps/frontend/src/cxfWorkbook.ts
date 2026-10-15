@@ -12,6 +12,7 @@ import type {
   CxfThreatActorRow,
   CxfTrustBoundaryRow
 } from "./types";
+import { assertSafeLocalFile } from "./fileSafety";
 
 const templateVersion = "cxf_asset_inventory_v1";
 const stopMarkers = ["以下是样例", "填写要求", "填表要求", "注"];
@@ -68,6 +69,7 @@ export interface ParsedCxfWorkbook {
 }
 
 export async function parseCxfWorkbook(file: File, aircraftModel: string): Promise<ParsedCxfWorkbook> {
+  assertSafeLocalFile(file, [".xlsx"], 15);
   xlsxModule ??= await import("xlsx");
   const workbook = xlsxModule.read(await file.arrayBuffer(), {
     type: "array",

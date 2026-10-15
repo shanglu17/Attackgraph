@@ -36,6 +36,11 @@ export type {
   ImpactDispositionResult,
   StoredImpactAssessment,
   AssuranceWorkProduct,
+  AddReviewCommentCommand,
+  CreateReviewSessionCommand,
+  DecideReviewSessionCommand,
+  ReviewWorkspace,
+  ReviewWriteResult,
 } from "@attackgraph/contracts";
 
 export type PriorityLabel = "High" | "Medium" | "Low";

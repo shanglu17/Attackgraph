@@ -11,6 +11,7 @@ import { migration0010 } from "./0010EngineeringCaseCore.js";
 import { migration0011 } from "./0011AnalysisFramework.js";
 import { migration0012 } from "./0012EngineeringLegacyIdentityCompatibility.js";
 import { migration0013 } from "./0013ChangeImpactAndWorkProducts.js";
+import { migration0014 } from "./0014ReviewWorkspace.js";
 import type { MigrationDefinition } from "./types.js";
 
 export const migrationRegistry: MigrationDefinition[] = [
@@ -27,4 +28,5 @@ export const migrationRegistry: MigrationDefinition[] = [
   migration0011,
   migration0012,
   migration0013,
+  migration0014,
 ];

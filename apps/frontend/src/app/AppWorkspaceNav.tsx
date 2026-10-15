@@ -1,3 +1,5 @@
+import { WorkspaceContextBar } from "./WorkspaceContextBar";
+
 export type AppWorkspace = "analysis" | "imports" | "reports" | "changes";
 
 interface AppWorkspaceNavProps {
@@ -35,6 +37,7 @@ export function AppWorkspaceNav({ activeWorkspace, status, onChange }: AppWorksp
         <span className="status-dot" aria-hidden="true" />
         <span>{status}</span>
       </div>
+      <WorkspaceContextBar />
     </nav>
   );
 }
