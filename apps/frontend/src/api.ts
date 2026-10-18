@@ -60,7 +60,7 @@ import type {
   ReviewWriteResult
 } from "./types";
 
-const baseUrl = "http://localhost:4000";
+const baseUrl = (import.meta as ImportMeta & { env: Record<string,string> }).env?.VITE_API_BASE_URL ?? "";
 
 function authenticatedHeaders(apiKey: string): HeadersInit {
   return { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` };
@@ -70,18 +70,18 @@ async function ensureOk(response: Response, fallbackMessage: string): Promise<vo
   if (!response.ok) {
     let detail = fallbackMessage;
     try {
-      const payload = (await response.json()) as { message?: string; errors?: Array<string | { field?: string; message?: string }> };
+      const payload = (await response.json()) as { message?: string; errors?: Array<string | { field?: string; message?: string;sheet?:string;row?:number;record_id?:string }> };
       if (payload?.message) {
         detail = payload.message;
       } else if (payload?.errors?.length) {
         detail = payload.errors.map((error) =>
-          typeof error === "string" ? error : `${error.field ? `${error.field}: ` : ""}${error.message ?? "invalid request"}`
+          typeof error === "string" ? error : [error.sheet,error.row?`Excel 第 ${error.row} 行`:"",error.record_id,error.field,error.message??"invalid request"].filter(Boolean).join(" · ")
         ).join("; ");
       }
     } catch {
       // ignore JSON parse failure
     }
-    throw new Error(detail);
+    throw Object.assign(new Error(detail), { status: response.status });
   }
 }
 
@@ -357,23 +357,7 @@ export async function commitCxfImport(payload: CxfImportRequest): Promise<CxfImp
   return (await response.json()) as CxfImportCommitResult;
 }
 
-export async function previewF3532InputImport(payload: F3532InputImportRequest): Promise<F3532InputImportPreviewResult> {
-  const response = await fetch(`${baseUrl}/imports/f3532-input/preview`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  return (await response.json()) as F3532InputImportPreviewResult;
-}
 
-export async function commitF3532InputImport(payload: F3532InputImportRequest): Promise<F3532InputImportCommitResult> {
-  const response = await fetch(`${baseUrl}/imports/f3532-input/commit`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
-    body: JSON.stringify(payload)
-  });
-  return (await response.json()) as F3532InputImportCommitResult;
-}
 
 export async function previewFhaImport(payload: FhaImportRequest): Promise<{
   ok: boolean;
@@ -411,47 +395,9 @@ export async function getFailureConditions(): Promise<{ count: number; rows: Fai
   return response.json();
 }
 
-export async function getF353204Defaults(): Promise<F353204Defaults> {
-  const response = await fetch(`${baseUrl}/analysis/f3532/04/defaults`);
-  await ensureOk(response, "Failed to load F3532 04 defaults");
-  return response.json();
-}
 
-export async function generateF353204(options: {
-  cia_mode: "single" | "all_non_empty";
-  include_unlinked_failure_conditions?: boolean;
-}): Promise<F353204GenerationResult> {
-  const response = await fetch(`${baseUrl}/analysis/f3532/generate-04`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(options)
-  });
-  await ensureOk(response, "Failed to generate F3532 04");
-  return response.json();
-}
 
-export async function commitF353204(
-  threat_conditions: ThreatCondition[],
-  threat_scenarios: ThreatScenario[]
-): Promise<{ committed: boolean; threat_condition_count?: number; threat_scenario_count?: number; errors?: string[] }> {
-  const response = await fetch(`${baseUrl}/analysis/f3532/commit-04`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-user-id": "frontend-user" },
-    body: JSON.stringify({ threat_conditions, threat_scenarios })
-  });
-  return response.json();
-}
 
-export async function getF353204Report(): Promise<{
-  threat_condition_count: number;
-  threat_scenario_count: number;
-  threat_conditions: ThreatCondition[];
-  threat_scenarios: ThreatScenario[];
-}> {
-  const response = await fetch(`${baseUrl}/reports/f3532/04`);
-  await ensureOk(response, "Failed to load F3532 04 report");
-  return response.json();
-}
 
 export async function runAnalysis(payload?: {
   analysis_batch_id?: string;
@@ -558,46 +504,8 @@ export async function runFunctionPropagationAnalysis(
   return response.json();
 }
 
-export async function runF3532Generate03(
-  options?: { groupBy?: FpGroupBy; maxHops?: number }
-): Promise<F3532Report03Data> {
-  const body: Record<string, unknown> = {};
-  if (options?.groupBy) {
-    body.group_by = options.groupBy;
-  }
-  if (options?.maxHops) {
-    body.max_hops = options.maxHops;
-  }
-  const response = await fetch(`${baseUrl}/analysis/f3532/generate-03/preview`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  await ensureOk(response, "Failed to generate F3532 03");
-  return response.json();
-}
 
-export async function commitF353203(options: {
-  expectedGraphVersion: string;
-  maxHops?: number;
-}): Promise<F3532Report03Data> {
-  const response = await fetch(`${baseUrl}/analysis/f3532/generate-03/commit`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      expected_graph_version: options.expectedGraphVersion,
-      max_hops: options.maxHops
-    })
-  });
-  await ensureOk(response, "Failed to commit F3532 03");
-  return response.json();
-}
 
-export async function getF3532Report03(): Promise<F3532Report03Data> {
-  const response = await fetch(`${baseUrl}/reports/f3532/03`);
-  await ensureOk(response, "Failed to load F3532 03 report");
-  return response.json();
-}
 
 export async function getDo326aLinks(): Promise<{ count: number; links: DO326ALink[] }> {
   const response = await fetch(`${baseUrl}/compliance/do326a-links`);
@@ -605,44 +513,10 @@ export async function getDo326aLinks(): Promise<{ count: number; links: DO326ALi
   return response.json();
 }
 
-export async function getF3532StandardSummary(): Promise<StandardKnowledgeSummary> {
-  const response = await fetch(`${baseUrl}/standard/f3532/summary`);
-  await ensureOk(response, "Failed to load F3532 standard summary");
-  return response.json();
-}
 
-export async function getF3532Clauses(section?: string): Promise<{ count: number; clauses: StandardClause[] }> {
-  const searchParams = new URLSearchParams();
-  if (section) {
-    searchParams.set("section", section);
-  }
-  const query = searchParams.toString();
-  const response = await fetch(`${baseUrl}/standard/f3532/clauses${query ? `?${query}` : ""}`);
-  await ensureOk(response, "Failed to load F3532 clauses");
-  return response.json();
-}
 
-export async function getF3532Artifacts(): Promise<{ count: number; artifacts: StandardArtifactType[] }> {
-  const response = await fetch(`${baseUrl}/standard/f3532/artifacts`);
-  await ensureOk(response, "Failed to load F3532 artifacts");
-  return response.json();
-}
 
-export async function getF3532Mappings(): Promise<{ count: number; mappings: StandardMapping[] }> {
-  const response = await fetch(`${baseUrl}/standard/f3532/mappings`);
-  await ensureOk(response, "Failed to load F3532 mappings");
-  return response.json();
-}
 
-export async function createOrUpdateF3532Mapping(mapping: StandardMapping): Promise<{ created: boolean; mapping: StandardMapping }> {
-  const response = await fetch(`${baseUrl}/standard/f3532/mappings`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(mapping)
-  });
-  await ensureOk(response, "Failed to save F3532 mapping");
-  return response.json();
-}
 
 export async function exportModelingResult(analysis_batch_id?: string): Promise<ModelingExportData> {
   const searchParams = new URLSearchParams();
@@ -697,3 +571,24 @@ export async function previewFeatureRules(payload: Record<string, unknown>): Pro
   }
   return response.json();
 }
+
+// Production workbench: versioned, revision-scoped commands only.
+import type { WorkbenchScope, WorkspaceChoice, WorkbenchSnapshot, InventoryPreview, InventoryCommit, InventoryPreviewResult, EditCommand, EditPreview, SavedAnalysisCommand, WorkbenchExportRequest } from "@attackgraph/contracts";
+async function workbenchRequest<T>(path: string, payload?: unknown): Promise<T> {
+  const response=await fetch(`${baseUrl}/api/v2/${path}`,payload===undefined?undefined:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  await ensureOk(response,"请求失败，请重试");return response.json();
+}
+const queryScope=(scope:WorkbenchScope)=>new URLSearchParams(scope).toString();
+export const workbenchApi={
+  listWorkspaces:()=>workbenchRequest<{workspaces:WorkspaceChoice[]}>("governance/workspaces"),
+  createWorkspace:(name:string,businessId:string,commandId:string)=>workbenchRequest<{project:{id:string};revision:{id:string}}>("governance/workspaces",{actor:"workbench-user",command_id:commandId,project:{business_id:businessId,name},model:{business_id:"MODEL-1",name,level:"system"},revision:{business_id:"REV-1"},standard_profile:{business_id:"DO326A-356A",name:"DO-326A / DO-356A",profile_version:"1",standard_references:["DO-326A","DO-356A"]}}),
+  read:(scope:WorkbenchScope)=>workbenchRequest<WorkbenchSnapshot>(`system-model/workbench?${queryScope(scope)}`),
+  runs:(scope:WorkbenchScope)=>workbenchRequest<{runs:StoredAnalysisRun[]}>(`analysis/runs?${queryScope(scope)}&view=workbench.v1`),
+  previewInventory:(input:InventoryPreview)=>workbenchRequest<InventoryPreviewResult>("system-model/import/preview",input),
+  commitInventory:(input:InventoryCommit)=>workbenchRequest<{new_revision_version:number}>("system-model/import/commit",input),
+  previewEdit:(input:EditCommand)=>workbenchRequest<EditPreview>("system-model/changes/preview",input),
+  commitEdit:(input:EditCommand)=>workbenchRequest<{new_revision_version:number}>("system-model/changes/commit",input),
+  run:(input:SavedAnalysisCommand)=>workbenchRequest<{new_revision_version:number;run_id:string;status:"Completed"|"Failed";error?:string}>("analysis/runs",input),
+  export:(input:WorkbenchExportRequest)=>workbenchRequest<{snapshot:WorkbenchSnapshot;run:StoredAnalysisRun}>("analysis/runs/export",input),
+};
+export async function downloadInventoryExample():Promise<ArrayBuffer>{const response=await fetch(`${baseUrl}/api/v2/system-model/import/example`);await ensureOk(response,"示例下载失败");return response.arrayBuffer();}

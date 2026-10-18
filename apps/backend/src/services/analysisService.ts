@@ -263,7 +263,7 @@ export class AnalysisService {
     return adjacency;
   }
 
-  private resolveAnalysisTargetIds(assetNodes: AssetNode[], scopeSet: Set<string> | null): Set<string> {
+  resolveAnalysisTargetIds(assetNodes: AssetNode[], scopeSet: Set<string> | null): Set<string> {
     const primaryTargets = new Set(
       assetNodes
         .filter((asset) => (!scopeSet || scopeSet.has(asset.asset_id)) && this.isAnalysisTarget(asset))

@@ -613,11 +613,12 @@ export class CxfImportService {
 
     const parsedChangeSet = graphChangeSetSchema.safeParse(changeSetCandidate);
     if (!parsedChangeSet.success) {
-      const changeSetErrors = parsedChangeSet.error.issues.map((issue) => ({
-        type: "field" as const,
-        field: issue.path.join("."),
-        message: issue.message
-      }));
+      const changeSetErrors = parsedChangeSet.error.issues.map((issue) => {
+        const collection=issue.path[0],index=issue.path[2];
+        const asset=collection==="asset_nodes"&&typeof index==="number"?changeSetCandidate.asset_nodes.add[index]:undefined;
+        const source=asset?.business_id?Object.entries(input.workbook).flatMap(([sheet,rows])=>rows.filter(row=>row.id===asset.business_id).map(row=>({sheet:sheet as CxfSheetName,row:row.excel_row})))[0]:undefined;
+        return {type:"field" as const,field:issue.path.join("."),message:issue.message,sheet:source?.sheet,row:source?.row};
+      });
       return this.buildResult(accepted, summary, changeSetErrors);
     }
 

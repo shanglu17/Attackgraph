@@ -1,5 +1,7 @@
 # Attackgraph 系统运行与建模说明
 
+> 当前正式操作流程见 [工作台操作指南](production/walkthrough.md)，启动与数据库配置见 [交付说明](production/README.md)。以下正文为历史架构说明，旧 App.tsx 行号可能已经失效。
+
 ## 1. 这套系统在做什么
 
 这个系统本质上是在做 4 件事：

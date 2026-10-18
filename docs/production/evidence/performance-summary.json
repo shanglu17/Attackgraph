@@ -1,0 +1,340 @@
+{
+  "baseline": "43df6f8c28a8aef2798147736baf3a78422c21d4",
+  "measured_at": "2026-10-18T12:17:11.430Z",
+  "units": "bytes",
+  "transport": "actual gzip responseBodySize; HTML/CSS/JS compressed; API proxy response measured separately",
+  "baseline_scenarios": {
+    "first_default": {
+      "raw": 440784,
+      "gzip": 133247,
+      "modules": [
+        "index-DAqSg2KJ.js",
+        "react-vendor-BYfZc3_7.js",
+        "reactflow-BwkJh47R.js"
+      ]
+    },
+    "first_advanced": {
+      "raw": 440784,
+      "gzip": 133247,
+      "modules": [
+        "index-DAqSg2KJ.js",
+        "react-vendor-BYfZc3_7.js",
+        "reactflow-BwkJh47R.js"
+      ]
+    },
+    "first_excel": {
+      "raw": 870318,
+      "gzip": 276325,
+      "modules": [
+        "index-DAqSg2KJ.js",
+        "react-vendor-BYfZc3_7.js",
+        "reactflow-BwkJh47R.js",
+        "xlsx-CkFp8p6R.js"
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "name": "empty_project",
+      "raw": 246198,
+      "gzip_actual": 73548,
+      "static_wire": 80078,
+      "api_wire": 13192,
+      "modules": [
+        "/assets/index-DHj9PSQz.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/InventoryWorkspace-DzxVMUhh.js",
+        "/assets/index-7WPEHIg0.js"
+      ]
+    },
+    {
+      "name": "saved_graph",
+      "raw": 318175,
+      "gzip_actual": 104322,
+      "static_wire": 112428,
+      "api_wire": 6754735,
+      "modules": [
+        "/assets/index-DHj9PSQz.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/GraphWorkspace-BDtAGZ_A.js",
+        "/assets/workbench-CVzfdk8F.js",
+        "/assets/reactflow-tAowGTmu.js"
+      ]
+    },
+    {
+      "name": "first_excel_read",
+      "raw": 684561,
+      "gzip_actual": 220019,
+      "static_wire": 226549,
+      "api_wire": 130217,
+      "modules": [
+        "/assets/index-DHj9PSQz.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/InventoryWorkspace-DzxVMUhh.js",
+        "/assets/index-7WPEHIg0.js",
+        "/assets/fileSafety-CgpeM1GG.js",
+        "/assets/cxfWorkbook-CkdBBu5m.js",
+        "/assets/xlsx-CkFp8p6R.js"
+      ]
+    },
+    {
+      "name": "first_advanced",
+      "raw": 180110,
+      "gzip_actual": 59986,
+      "static_wire": 66516,
+      "api_wire": 6754735,
+      "modules": [
+        "/assets/index-DHj9PSQz.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/ResultWorkspace-DcinPnIz.js",
+        "/assets/workbench-CVzfdk8F.js",
+        "/assets/AdvancedTools-Colo1rpw.js",
+        "/assets/AssuranceReviewWorkspace-DDpwQtWz.js",
+        "/assets/Vg1TraceabilityPanel-D3DZIK-_.js"
+      ]
+    },
+    {
+      "name": "first_document_parse",
+      "raw": 603222,
+      "gzip_actual": 171313,
+      "static_wire": 177843,
+      "api_wire": 6754735,
+      "modules": [
+        "/assets/index-DHj9PSQz.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/workbench-CVzfdk8F.js",
+        "/assets/ResultWorkspace-DcinPnIz.js",
+        "/assets/AdvancedTools-Colo1rpw.js",
+        "/assets/AssuranceReviewWorkspace-DDpwQtWz.js",
+        "/assets/Vg1TraceabilityPanel-D3DZIK-_.js",
+        "/assets/DocumentPreviewTool-Bfha2UJf.js",
+        "/assets/fileSafety-CgpeM1GG.js",
+        "/assets/fhaDocument-BkNN4vfd.js",
+        "/assets/utility-vendor-DOKVf8cg.js",
+        "/assets/document-import-BDfiFpRl.js",
+        "/assets/archive-vendor-lirTm3G4.js"
+      ]
+    }
+  ],
+  "build": {
+    "baseline": {
+      "total": {
+        "raw": 1333292,
+        "gzip": 393022
+      },
+      "javascript": {
+        "raw": 1289062,
+        "gzip": 385009
+      },
+      "files": [
+        {
+          "name": "assets/archive-vendor-lirTm3G4.js",
+          "raw": 97116,
+          "gzip": 30109
+        },
+        {
+          "name": "assets/document-import-BDfiFpRl.js",
+          "raw": 300579,
+          "gzip": 70941
+        },
+        {
+          "name": "assets/index-DAqSg2KJ.js",
+          "raw": 148895,
+          "gzip": 38638
+        },
+        {
+          "name": "assets/index-z0dqsRBa.css",
+          "raw": 36503,
+          "gzip": 6040
+        },
+        {
+          "name": "assets/react-vendor-BYfZc3_7.js",
+          "raw": 143565,
+          "gzip": 45975
+        },
+        {
+          "name": "assets/reactflow-BwkJh47R.js",
+          "raw": 148324,
+          "gzip": 48634
+        },
+        {
+          "name": "assets/reactflow-Fd0xVSp_.css",
+          "raw": 7044,
+          "gzip": 1576
+        },
+        {
+          "name": "assets/utility-vendor-DOKVf8cg.js",
+          "raw": 21049,
+          "gzip": 7634
+        },
+        {
+          "name": "assets/xlsx-CkFp8p6R.js",
+          "raw": 429534,
+          "gzip": 143078
+        },
+        {
+          "name": "index.html",
+          "raw": 683,
+          "gzip": 397
+        }
+      ]
+    },
+    "production": {
+      "total": {
+        "raw": 1379956,
+        "gzip": 418808
+      },
+      "javascript": {
+        "raw": 1336689,
+        "gzip": 410702
+      },
+      "files": [
+        {
+          "name": "assets/AdvancedTools-Colo1rpw.js",
+          "raw": 2210,
+          "gzip": 1116
+        },
+        {
+          "name": "assets/AnalysisRunWorkbench-CkoOoGw9.js",
+          "raw": 9665,
+          "gzip": 3200
+        },
+        {
+          "name": "assets/archive-vendor-lirTm3G4.js",
+          "raw": 97116,
+          "gzip": 30109
+        },
+        {
+          "name": "assets/AssuranceReviewWorkspace-DDpwQtWz.js",
+          "raw": 2521,
+          "gzip": 902
+        },
+        {
+          "name": "assets/cxfWorkbook-CkdBBu5m.js",
+          "raw": 8519,
+          "gzip": 3150
+        },
+        {
+          "name": "assets/document-import-BDfiFpRl.js",
+          "raw": 300579,
+          "gzip": 70941
+        },
+        {
+          "name": "assets/DocumentPreviewTool-Bfha2UJf.js",
+          "raw": 1945,
+          "gzip": 1158
+        },
+        {
+          "name": "assets/draftPersistence-6yx22Rwf.js",
+          "raw": 641,
+          "gzip": 395
+        },
+        {
+          "name": "assets/EngineeringCasePanel-BdU4T5nX.js",
+          "raw": 7833,
+          "gzip": 2396
+        },
+        {
+          "name": "assets/FeatureRulesPanel-UgTOeQbj.js",
+          "raw": 10459,
+          "gzip": 4688
+        },
+        {
+          "name": "assets/fhaDocument-BkNN4vfd.js",
+          "raw": 2113,
+          "gzip": 1242
+        },
+        {
+          "name": "assets/fileSafety-CgpeM1GG.js",
+          "raw": 310,
+          "gzip": 243
+        },
+        {
+          "name": "assets/GraphWorkspace-BDtAGZ_A.js",
+          "raw": 9578,
+          "gzip": 3962
+        },
+        {
+          "name": "assets/ImpactWorkProductPanel-Czkbr677.js",
+          "raw": 8402,
+          "gzip": 2765
+        },
+        {
+          "name": "assets/index-7WPEHIg0.js",
+          "raw": 75118,
+          "gzip": 17738
+        },
+        {
+          "name": "assets/index-CNBqdSBI.css",
+          "raw": 35660,
+          "gzip": 6141
+        },
+        {
+          "name": "assets/index-DHj9PSQz.js",
+          "raw": 19750,
+          "gzip": 6642
+        },
+        {
+          "name": "assets/InventoryWorkspace-DzxVMUhh.js",
+          "raw": 7765,
+          "gzip": 3193
+        },
+        {
+          "name": "assets/ModelChangesWorkspace-D00guMvD.js",
+          "raw": 12489,
+          "gzip": 4592
+        },
+        {
+          "name": "assets/react-vendor-BYfZc3_7.js",
+          "raw": 143565,
+          "gzip": 45975
+        },
+        {
+          "name": "assets/reactflow-Fd0xVSp_.css",
+          "raw": 7044,
+          "gzip": 1576
+        },
+        {
+          "name": "assets/reactflow-tAowGTmu.js",
+          "raw": 144475,
+          "gzip": 47198
+        },
+        {
+          "name": "assets/ResultWorkspace-DcinPnIz.js",
+          "raw": 5252,
+          "gzip": 2657
+        },
+        {
+          "name": "assets/ReviewWorkbenchPanel-sY2p2-iy.js",
+          "raw": 8989,
+          "gzip": 3034
+        },
+        {
+          "name": "assets/utility-vendor-DOKVf8cg.js",
+          "raw": 21049,
+          "gzip": 7634
+        },
+        {
+          "name": "assets/Vg1TraceabilityPanel-D3DZIK-_.js",
+          "raw": 6005,
+          "gzip": 2149
+        },
+        {
+          "name": "assets/workbench-CVzfdk8F.js",
+          "raw": 807,
+          "gzip": 545
+        },
+        {
+          "name": "assets/xlsx-CkFp8p6R.js",
+          "raw": 429534,
+          "gzip": 143078
+        },
+        {
+          "name": "index.html",
+          "raw": 563,
+          "gzip": 389
+        }
+      ]
+    }
+  }
+}

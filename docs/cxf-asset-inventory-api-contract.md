@@ -1,5 +1,7 @@
 # CXF Excel 导入对接契约
 
+> 历史 JSON 契约说明。当前九类 Sheet、兼容规则及模板以 [正式填写指南](production/inventory-template.md) 为准，保留 `cxf_asset_inventory_v1` 接口标识。
+
 ## 1. 目标
 
 本文档定义“CXF 飞机信息系统资产清单”与 Attackgraph 后端之间的对接 JSON 契约。

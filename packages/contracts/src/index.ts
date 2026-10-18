@@ -3,6 +3,8 @@ import type { StoredAnalysisRun, StoredPromotion } from "./analysis.js";
 export * from "./analysis.js";
 export * from "./impact.js";
 export * from "./review.js";
+export * from "./inventory.js";
+export * from "./workbench.js";
 
 export const systemModelContractVersion = "system-model.v2" as const;
 
@@ -30,6 +32,7 @@ const baseEntitySchema = z.object({
   description: optionalText,
   tags: tagList,
   source_locator: sourceLocatorSchema.optional(),
+  analysis: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])).optional(),
 });
 
 export const assetSchema = baseEntitySchema.extend({
@@ -503,3 +506,7 @@ export interface TraceabilityReport {
   chains: TraceabilityReportChain[];
   audit: Array<{ event_type: string; actor: string; occurred_at: string; command_id: string }>;
 }
+
+
+export * from "./inventoryFields.js";
+export * from "./inventoryValidation.js";

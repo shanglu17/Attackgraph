@@ -36,6 +36,9 @@ export class AnalysisScopeError extends Error {
 }
 
 export interface CreateAnalysisRunInput {
+  status?: "Completed" | "Failed";
+  started_at?: string;
+  completed_at?: string;
   project_id: string;
   revision_id: string;
   actor: string;
@@ -89,7 +92,8 @@ export class AnalysisRepository {
   async createRun(transaction: ManagedTransaction, input: CreateAnalysisRunInput) {
     const runId = randomUUID();
     const runBusinessId = "ANRUN-" + runId;
-    const startedAt = new Date().toISOString();
+    const startedAt = input.started_at ?? new Date().toISOString();
+    const completedAt = input.completed_at ?? startedAt;
     const scope = await transaction.run(
       "MATCH (:Project {id: $project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(revision:Revision {id: $revision_id}) " +
       "MATCH (revision)-[:USES_STANDARD_PROFILE_VERSION]->(profile:StandardProfileVersion) " +
@@ -109,8 +113,8 @@ export class AnalysisRepository {
       "revision_id: $revision_id, input_revision_version: $input_revision_version, revision_version: $revision_version, contract_version: $contract_version, " +
       "method_id: $method_id, method_version: $method_version, method_config_version: $method_config_version, rule_pack_version: $rule_pack_version, " +
       "implementation_artifact_digest: $implementation_artifact_digest, canonicalizer_id: $canonicalizer_id, canonicalizer_version: $canonicalizer_version, " +
-      "execution_limits_json: $execution_limits_json, command_id: $command_id, actor: $actor, status: 'Completed', replayability: 'reproducible', " +
-      "result_summary_hash: $result_summary_hash, started_at: datetime($started_at), completed_at: datetime($started_at), created_at: datetime($started_at)}) " +
+      "execution_limits_json: $execution_limits_json, command_id: $command_id, actor: $actor, status: $status, replayability: $replayability, " +
+      "result_summary_hash: $result_summary_hash, started_at: datetime($started_at), completed_at: datetime($completed_at), created_at: datetime($completed_at)}) " +
       "CREATE (revision)-[:CONTAINS]->(run) CREATE (run)-[:USES_METHOD]->(method) CREATE (run)-[:USES_PROFILE]->(profile) CREATE (run)-[:DERIVED_FROM_SOURCE]->(source)",
       {
         project_id: input.project_id, revision_id: input.revision_id, profile_id: String(profile.id),
@@ -122,7 +126,8 @@ export class AnalysisRepository {
         implementation_artifact_digest: input.method.implementation_artifact_digest,
         canonicalizer_id: input.method.canonicalizer_id, canonicalizer_version: input.method.canonicalizer_version,
         execution_limits_json: JSON.stringify(input.execution_limits), command_id: input.command_id,
-        actor: input.actor, result_summary_hash: input.result_summary_hash, started_at: startedAt,
+        actor: input.actor, result_summary_hash: input.result_summary_hash, started_at: startedAt, completed_at: completedAt,
+        status:input.status ?? "Completed",replayability:input.status === "Failed"?"verifiable_only":"reproducible",
       },
     );
 
@@ -259,7 +264,7 @@ export class AnalysisRepository {
     return { promotion_id: promotionId, core_entity_id: coreId, target_type: input.promotion.target_type, target_business_id: input.promotion.target_business_id, status: "Draft" as const };
   }
 
-  async readRuns(projectId: string, revisionId: string, runId?: string): Promise<StoredAnalysisRun[]> {
+  async readRuns(projectId: string, revisionId: string, runId?: string, withInputOrigin=false): Promise<StoredAnalysisRun[]> {
     const session = getDriver().session();
     try {
       return await session.executeRead(async (tx) => {
@@ -283,7 +288,7 @@ export class AnalysisRepository {
           const resultsResult = await tx.run("MATCH (:AnalysisRun {id: $id})-[:PRODUCED]->(result:DerivedResult) RETURN result ORDER BY result.business_id", { id: run.id });
           const staleResult = await tx.run(
             "MATCH (event:AuditEvent {project_id: $project_id, subject_id: $revision_id}) " +
-            "WHERE event.subject_version_after > $run_revision_version AND event.event_type IN ['SYSTEM_MODEL_IMPORTED', 'ENGINEERING_CASE_COMMITTED'] RETURN count(event) AS count",
+            "WHERE event.subject_version_after > $run_revision_version AND event.event_type IN ['SYSTEM_MODEL_IMPORTED', 'SYSTEM_MODEL_EDITED', 'ANALYSIS_CONFIGURATION_UPDATED', 'ENGINEERING_CASE_COMMITTED'] RETURN count(event) AS count",
             { project_id: projectId, revision_id: revisionId, run_revision_version: numeric(run.revision_version) },
           );
           const snapshots: StoredInputSnapshot[] = snapshotsResult.records.map((row) => {
@@ -303,6 +308,7 @@ export class AnalysisRepository {
             };
           });
           output.push({
+            ...(withInputOrigin ? {input_origin: (audit.request_canonicalizer === "workbench.saved-analysis/v1" ? "saved-model" : "caller-provided") as StoredAnalysisRun["input_origin"]} : {}),
             id: String(run.id), business_id: String(run.business_id), project_id: projectId, revision_id: revisionId,
             input_revision_version: numeric(run.input_revision_version), standard_profile_version_id: String(profile.id),
             standard_profile_version_business_id: String(profile.business_id), source_record_business_id: String(source.business_id),

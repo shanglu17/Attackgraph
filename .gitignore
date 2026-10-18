@@ -9,7 +9,6 @@ coverage/
 __pycache__/
 .tmp/
 pnpm-lock.yaml
-package-lock.json
 yarn.lock
 .claude/
 
@@ -20,3 +19,8 @@ yarn.lock
 /docs/内部数据流分析表_真实数据.xlsx
 /docs/运行结果.xlsx
 /docs/资产清单*.xlsx
+
+.npm-cache/
+
+# Generated acceptance logs stay local.
+/docs/production/evidence/*.log

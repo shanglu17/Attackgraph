@@ -4,7 +4,9 @@ import {
   analysisRunCommandSchema,
   derivedResultReviewCommandSchema,
   promotionCommandSchema,
+  savedAnalysisSchema, workbenchExportSchema,
 } from "@attackgraph/contracts";
+import { WorkbenchService } from "../services/workbenchService.js";
 import { ZodError } from "zod";
 import { AnalysisRepository, AnalysisScopeError } from "../repositories/analysisRepository.js";
 import {
@@ -42,9 +44,11 @@ function forward(error: unknown, res: Response, next: NextFunction) {
 }
 
 router.get("/methods", (_req, res) => res.json({ methods: analysisMethods }));
+router.post("/runs/export",async(req,res,next)=>{try{return res.json(await new WorkbenchService().export(workbenchExportSchema.parse(req.body)));}catch(error){return forward(error,res,next);}});
 
 router.post("/runs", async (req, res, next) => {
   try {
+    if (req.body.contract_version === "saved-model-analysis.v1") return res.status(201).json(await new WorkbenchService().run(savedAnalysisSchema.parse(req.body)));
     const parsed = analysisRunCommandSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(invalid(parsed.error.issues));
     return res.status(201).json(await service.run(parsed.data));
@@ -57,7 +61,7 @@ router.get("/runs", async (req, res, next) => {
   try {
     const parsed = analysisQuerySchema.safeParse(req.query);
     if (!parsed.success) return res.status(400).json(invalid(parsed.error.issues));
-    return res.json({ runs: await repository.readRuns(parsed.data.project_id, parsed.data.revision_id, parsed.data.run_id) });
+    return res.json({ runs: await repository.readRuns(parsed.data.project_id, parsed.data.revision_id, parsed.data.run_id,parsed.data.view === "workbench.v1") });
   } catch (error) {
     return forward(error, res, next);
   }

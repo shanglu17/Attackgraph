@@ -1,3 +1,4 @@
+import { useWorkspaceContext } from "../../app/WorkspaceContext";
 import { useState } from "react";
 import { exportTraceabilityReport, freezeRevision, getTraceabilityReport } from "../../api";
 import type { TraceabilityReport, TraceabilityReportQuery } from "../../types";
@@ -8,8 +9,9 @@ interface Vg1TraceabilityPanelProps {
 }
 
 export function Vg1TraceabilityPanel({ disabled = false, onStatusChange }: Vg1TraceabilityPanelProps) {
-  const [projectId, setProjectId] = useState("");
-  const [revisionId, setRevisionId] = useState("");
+  const scope = useWorkspaceContext();
+  const [projectId, setProjectId] = useState(scope.projectId);
+  const [revisionId, setRevisionId] = useState(scope.revisionId);
   const [baselineId, setBaselineId] = useState("");
   const [actor, setActor] = useState("frontend-reviewer");
   const [baselineBusinessId, setBaselineBusinessId] = useState("VG1-BASELINE-001");

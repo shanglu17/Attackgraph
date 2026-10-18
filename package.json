@@ -24,7 +24,8 @@
     "phase5:demo": "npm run phase5:demo -w @attackgraph/backend",
     "phase6:recovery-drill": "npm run phase6:recovery-drill -w @attackgraph/backend",
     "phase7:acceptance": "npm run phase7:acceptance -w @attackgraph/backend --",
-    "verify:responsive": "npm run verify:responsive -w @attackgraph/frontend"
+    "verify:responsive": "npm run verify:responsive -w @attackgraph/frontend",
+    "verify:workbench": "npm run verify:workbench -w @attackgraph/frontend"
   },
   "dependencies": {
     "mammoth": "^1.12.0"

@@ -1,3 +1,4 @@
+import { useWorkspaceContext } from "../../app/WorkspaceContext";
 import { useMemo, useState } from "react";
 import {
   createChangeImpactAssessment,
@@ -15,10 +16,11 @@ interface Props {
 }
 
 export function ImpactWorkProductPanel({ disabled = false, onStatusChange }: Props) {
-  const [projectId, setProjectId] = useState("");
+  const scope = useWorkspaceContext();
+  const [projectId, setProjectId] = useState(scope.projectId);
   const [sourceKind, setSourceKind] = useState<"baseline" | "revision">("baseline");
-  const [sourceId, setSourceId] = useState("");
-  const [revisionId, setRevisionId] = useState("");
+  const [sourceId, setSourceId] = useState(scope.projectId);
+  const [revisionId, setRevisionId] = useState(scope.revisionId);
   const [actor, setActor] = useState("impact-reviewer");
   const [expectedVersion, setExpectedVersion] = useState("1");
   const [businessId, setBusinessId] = useState("IMPACT-001");

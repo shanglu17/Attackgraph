@@ -1,191 +1,50 @@
 # ASTRA — 航空语义威胁推理与分析系统
 
-**A**viation **S**emantic **T**hreat **R**easoning & **A**nalysis System
+正式工作台围绕 DO-326A / DO-356A 提供“选择项目与修订 → 导入系统资产清单 → 检查模型 → 编辑保存 → 运行攻击路径 → 查看评分解释 → 导出结果”的操作闭环。模型、修订、审计与分析快照以 Neo4j 为准。
 
-基于 **DO-356A / DO-326A / ASTM F3532** 的航空网络安保威胁建模平台。以 Neo4j 图谱维护资产、数据流、信任边界与威胁点，运行攻击路径推演与功能传播分析，并提供 React 审查工作台与 vol3 第四章报表导出。
+四个工作区为数据导入、图谱分析、变更管理、报告中心。工程审查和研究工具在高级入口。评分用于相对排序，不代表实际攻击成功概率。
 
-> 当前以 **ZG-ONE 无人机系统** 为真实建模对象。
+## 启动
 
----
-
-## 核心能力
-
-- **多层语义模型**：功能资产(F) → 支持资产(子系统) → 边界接口(BI) → 边界数据流(BDF) → 系统内部数据流(SDF) → 功能传播路径(FP)，并叠加信任边界(SB)、威胁主体(TA)、DO-326A 合规链接。
-- **Excel 导入**：单表导入与 **CXF 多 sheet 工作簿导入**（资产/接口/数据流/边界/威胁主体一次性导入，自动生成边、自动威胁点）。
-- **真实数据转换器**：`scripts/convert_source_to_v4.py` 把 ZG-ONE 原始清单转换成可导入的 v4 模板。
-- **攻击路径推演（DPS）**：从威胁点出发的 DFS 路径搜索 + 启发式/结构化评分。
-- **功能传播分析（FP）**：从边界数据流出发，沿**同类型**系统数据流做类型通道传播，按边界/类型/功能归并成传播路径。
-- **内部数据流分析**：识别"不从任何边界进入的纯内部流"，以 IMS 为核心归类。
-- **vol3 第四章报表**：4.2 信任边界汇总 / 4.3 边界数据流分析 / 4.4 内部数据流分析 / 4.5 功能传播路径，可一键导出 Excel。
-- **审查工作台**：ReactFlow 拓扑、路径排名、ChangeSet 编辑器（表单/JSON）、原子提交与版本冲突检测。
-- **VG-1 通用追踪链**：基于 Project / Revision / StandardProfileVersion 建立 Draft Threat 与 TraceLink，冻结 Baseline，并在报告中心查看或导出含来源、actor、状态和生成器版本的 JSON 报告。
-
----
-
-## 架构
-
-npm workspaces 单仓（`apps/*`）+ Neo4j：
-
-### 后端 `apps/backend/` — Express + TypeScript (ESM)
-- `src/config/env.ts` — 环境变量（端口、Neo4j 凭据）
-- `src/db/neo4j.ts` — Neo4j 驱动单例
-- `src/types/domain.ts` — 领域类型（AssetNode / AssetEdge / BoundaryInterface / SystemDataFlow / TrustBoundary / FunctionPropagationPath / 各报表行类型 …）
-- `src/types/api.ts` — Zod 请求校验
-- `src/repositories/graphRepository.ts` — 所有 Neo4j 操作：CRUD、约束、ChangeSet 原子提交、四张第四章报表、审计
-- `src/services/analysisService.ts` — DPS 攻击路径引擎
-- `src/services/fpAnalysisService.ts` — 功能传播（FP）引擎 + 边界可达性计算
-- `src/services/importService.ts` — 单表 Excel 导入
-- `src/services/cxfImportService.ts` — CXF 多 sheet 工作簿导入
-- `src/routes/index.ts` — 所有 API 路由
-
-### 前端 `apps/frontend/` — React 18 + Vite + ReactFlow
-- `src/App.tsx` — 主应用：拓扑画布、审查面板、ChangeSet Studio、第四章报表加载/导出
-- `src/CxfImportPanel.tsx` — 多 sheet 上传：解析 → 预览 → 提交
-- `src/cxfWorkbook.ts` — 客户端 xlsx 解析
-- `src/api.ts` / `src/types.ts` — 类型化 fetch 封装与前端类型
-
-### 数据转换 `scripts/`
-- `convert_source_to_v4.py` — ZG-ONE 真实源表 → `docs/资产清单_v4_真实数据.xlsx`
-
----
-
-## 关键概念
-
-| 概念 | 说明 |
-|---|---|
-| **BI（边界接口）** | 飞机↔外部的安保边界穿越点，携带 外部实体 / 接入对象 / 所属信任边界(SB) |
-| **BDF（边界数据流）** | 跨边界的数据流，挂在 BI 上，是 FP 传播的**起点** |
-| **SDF（系统数据流）** | 机载子系统之间的有向内部流，是 FP 传播的**内部图** |
-| **FP（功能传播路径）** | 从 BDF 沿同类型 SDF 传播归并出的路径（vol3 §4.5）|
-| **类型通道传播** | 传播只沿**同一数据流类型**的边（CMD 沿 CMD、STATE 沿 STATE…），避免 IMS 枢纽让一切互达 |
-| **是否进入内部传播** | 每条 BDF 的标志：入站注入=是，出站读出=否。**否**的流不作为 FP 传播种子 |
-| **DPS 评分** | 入口可能性 × 攻击复杂度 × 来源权重 × 专家修正（启发式）× 边因子 × 跳数衰减（结构）|
-| **ChangeSet** | 资产/边/威胁/边界等的原子变更单元，提交时做版本冲突检测 |
-
----
-
-## 快速启动
-
-```bash
-# 1. 配置 Neo4j 凭据（自行设置一个密码）
-cp apps/backend/.env.example apps/backend/.env
-#   编辑 apps/backend/.env，把 NEO4J_PASSWORD 改成你自己的密码
-#   docker compose 会读取根目录 .env 里的 NEO4J_PASSWORD，二者保持一致：
-echo "NEO4J_PASSWORD=你的密码" > .env
-
-# 2. 启动 Neo4j（用上面设置的密码初始化）
-docker compose up -d
-
-# 3. 安装依赖
-npm install
-
-# 4. 启动后端（tsx watch）
-npm run dev
-
-# 5. 启动前端（另开终端）
-npm run dev:frontend
-
-# 6. 写入示例数据（另开终端，可选）
-npm run seed:sample      # DO-356A 示例
-npm run seed:generic     # 通用示例
-```
-
-打开前端 `http://localhost:5173`，点"刷新图数据"即可。
-
----
-
-## 真实数据建模流程（ZG-ONE）
-
-Python 仅用于 Excel 转换与模板生成；前后端使用 Node.js。Windows 下先创建独立环境并安装脚本依赖：
+需要 Node.js 20、npm 和 Neo4j 5.26。
 
 ```powershell
-python -m venv .venv-dev
-.\.venv-dev\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv-dev\Scripts\python.exe scripts/convert_source_to_v4.py "源工作簿路径"
+npm ci
+Copy-Item .env.example .env
+# 编辑 .env，填写本地数据库配置。不要提交凭据。
+docker compose up -d
+npm run db:migrate -- plan
+npm run db:migrate -- apply --actor local-engineer
+npm run build
+npm run dev
+# 另开终端
+npm run dev:frontend
 ```
 
-若安装了多个 Python，创建环境时请使用所需解释器的完整路径。转换器必须显式传入源工作簿路径，可用第二个参数指定输出路径；默认输出到当前项目的 `docs` 目录。
-
-```
-原始清单(网络安保资产_边界及系统_接口和数据流清单_xxxx.xlsx)
-   │  python scripts/convert_source_to_v4.py "<源表路径>"
-   ▼
-docs/资产清单_v4_真实数据.xlsx        ← 可导入的 v4 模板
-   │  前端 CXF 多 sheet 导入（解析→预览→提交）
-   ▼
-Neo4j 图谱
-   │  POST /analysis/function-propagation/run
-   ▼
-功能传播路径 (FP)
-   │  前端"加载第四章报告" → 导出
-   ▼
-vol3-chapter4-report-*.xlsx  (4.2 / 4.3 / 4.4 / 4.5 四张 sheet)
-```
-
-转换器输出沿用标准 sheet 名/表头；跑完看打印的 **未匹配 BI 数** 与各表条数即可自检。源表格式不变时，换版本通常只需改源路径（详见脚本头部说明）。
-
----
-
-## 常用命令
-
-```bash
-npm run build              # 构建前后端（tsc + vite）
-npm run clear              # 清空 Neo4j 图谱
-npm run seed:sample        # 写入 DO-356A 示例数据
-npm run seed:generic       # 写入通用示例数据
-npm run exp:do356a:baseline# 运行 DO-356A 基线实验
-npm run db:migrate -- plan # 查看显式迁移计划
-npm run vg1:demo           # 幂等建立并验证 VG-1 受控演示链路
-```
-
----
-
-## 主要 API
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/health` | 健康检查 |
-| GET | `/graph` | 全量图快照 |
-| POST | `/graph/changeset/validate` | 校验 ChangeSet |
-| POST | `/graph/changeset/commit` | 原子提交（版本冲突检测）|
-| POST | `/imports/excel/single-sheet/{preview,commit}` | 单表 Excel 导入 |
-| POST | `/imports/cxf-asset-inventory/{preview,commit}` | CXF 多 sheet 导入 |
-| POST | `/analysis/attack-paths/run` | 运行 DPS 攻击路径分析 |
-| GET/POST | `/analysis/attack-paths`、`/persist` | 查询 / 持久化攻击路径 |
-| POST | `/analysis/function-propagation/run` | 运行 FP 分析（`group_by`、`max_hops`）|
-| GET | `/reports/chapter4/trust-boundaries` | 4.2 信任边界汇总 |
-| GET | `/reports/chapter4/boundary-data-flows` | 4.3 边界数据流分析 |
-| GET | `/reports/chapter4/internal-data-flows` | 4.4 内部数据流分析 |
-| GET | `/reports/chapter4/function-propagation` | 4.5 功能传播路径 |
-| GET | `/exports/modeling-result` | 导出完整建模结果(JSON) |
-| POST | `/api/v2/governance/workspaces` | 创建 Project/Model/Revision/Profile 工作空间 |
-| POST | `/api/v2/system-model/import/{preview,commit}` | 通用系统模型预览与 revision-scoped 提交 |
-| GET | `/api/v2/system-model` | 读取指定 project/revision 的通用系统模型 |
-| POST | `/api/v2/governance/revisions/freeze` | 按报告内容摘要冻结 Revision 为 Baseline |
-| GET | `/api/v2/traceability/report` | 查看 Revision 或 Baseline 追踪报告 |
-| GET | `/api/v2/traceability/report/export` | 导出追踪报告 JSON |
-| GET/POST | `/compliance/do326a-links` | DO-326A 合规链接 |
-| POST | `/admin/seed/{sample,generic}` | 写入示例数据 |
-| GET | `/audit/commits` | 审计记录 |
-
----
-
-## 默认配置
-
-| 项 | 值 |
-|---|---|
-| Neo4j URI | `bolt://localhost:7687` |
-| Neo4j User | `neo4j` |
-| Neo4j Password | 自行设置（在 `apps/backend/.env` 与根目录 `.env` 里配置 `NEO4J_PASSWORD`，二者一致） |
-| Backend | `http://localhost:4000`（可用 `PORT` 覆盖）|
-| Frontend | `http://localhost:5173` |
-
----
+打开 http://localhost:5173。迁移器遇到破坏性迁移会停止；请先核对目标库和实际备份，详见启动说明。默认 Vite 代理访问本机 4000 端口，部署时使用同源 `/api` 反向代理或 `VITE_API_BASE_URL`。
 
 ## 文档
 
-- `docs/requirements-spec.md` — 需求规格
-- `docs/system-operation-flow.md` — 系统运行流程
-- `docs/cxf-asset-inventory-api-contract.md` — CXF 导入 API 契约
-- `docs/asset-inventory-v2-design.md` — 资产清单设计
-- `docs/do356a-baseline-experiment.md` — DO-356A 基线实验
+- [正式版本交付、启动和数据库配置](docs/production/README.md)
+- [导入 → 检查 → 修改 → 分析 → 导出演示](docs/production/walkthrough.md)
+- [九类 Sheet 模板填写指南](docs/production/inventory-template.md)
+- [正式接口及模型映射契约](docs/architecture/production-workbench.md)
+- [验收、干净交付与性能记录](docs/production/acceptance.md)
+- [保留的后端专用及历史逻辑](docs/production/retained-backend-logic.md)
+- [前端开发规范](docs/frontend-development-standard.md)
+
+## 检查
+
+```powershell
+npm run build
+npm test -w @attackgraph/backend
+npm test -w @attackgraph/frontend
+# 数据库及浏览器验收必须使用独立测试库，按交付说明设置环境后执行
+npm run test:integration -w @attackgraph/backend
+npm run test:workbench:integration -w @attackgraph/backend
+npm run verify:workbench
+```
+
+保留 `cxf_asset_inventory_v1` 和九类工作表，兼容旧“接口资产”及五列数据资产格式。AMS 转换是有明确适用范围的 `do356a-ams/v1`，未宣称适用于任意机型。空模板与填写示例都通过正常解析、预览和提交进入当前修订。
+
+原有 F3532 后端、历史数据、标准资料、CLI 脚本及迁移继续保留。正式前端不提供相应入口；旧全局写入接口继续处于隔离状态。没有浏览器模拟数据库、Demo 服务或运行模式切换。

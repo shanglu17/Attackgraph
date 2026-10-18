@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "pretest": "npm run build -w @attackgraph/contracts",
     "test": "node scripts/run-tests.mjs",
-    "verify:responsive": "node scripts/verify-responsive.mjs"
+    "verify:responsive": "node scripts/verify-responsive.mjs",
+    "verify:workbench": "node scripts/verify-workbench.mjs"
   },
   "dependencies": {
     "@attackgraph/contracts": "0.1.0",

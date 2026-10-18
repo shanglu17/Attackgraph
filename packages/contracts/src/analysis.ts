@@ -41,6 +41,7 @@ export const analysisRunCommandSchema = z.object({
 });
 
 export const analysisQuerySchema = z.object({
+  view:z.literal("workbench.v1").optional(),
   project_id: uuid,
   revision_id: uuid,
   run_id: uuid.optional(),
@@ -136,6 +137,8 @@ export interface StoredDerivedResult {
 }
 
 export interface StoredAnalysisRun {
+  /** Server audit provenance; caller method_config cannot assert this. */
+  input_origin?: "saved-model" | "caller-provided";
   id: string;
   business_id: string;
   project_id: string;

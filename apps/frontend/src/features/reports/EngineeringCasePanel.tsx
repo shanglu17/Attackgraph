@@ -1,3 +1,4 @@
+import { useWorkspaceContext } from "../../app/WorkspaceContext";
 import { useMemo, useState } from "react";
 import { getEngineeringCase, recordReviewDecision } from "../../api";
 import type { StoredEngineeringCase } from "../../types";
@@ -16,8 +17,9 @@ type Reviewable = {
 };
 
 export function EngineeringCasePanel({ disabled = false, onStatusChange }: Props) {
-  const [projectId, setProjectId] = useState("");
-  const [revisionId, setRevisionId] = useState("");
+  const scope = useWorkspaceContext();
+  const [projectId, setProjectId] = useState(scope.projectId);
+  const [revisionId, setRevisionId] = useState(scope.revisionId);
   const [actor, setActor] = useState("engineering-reviewer");
   const [reviewerRole, setReviewerRole] = useState("Security Engineer");
   const [decision, setDecision] = useState<"Accept" | "Approve" | "Reject" | "Return">("Accept");
@@ -123,9 +125,7 @@ export function EngineeringCasePanel({ disabled = false, onStatusChange }: Props
           <article><strong>{engineeringCase.security_requirements.length}</strong><span>安全需求</span></article>
           <article><strong>{engineeringCase.verification_cases.length}</strong><span>验证用例</span></article>
         </div>
-        <p><strong>Profile：</strong>{engineeringCase.profile_configuration.name}；F3532 适配器：
-          {engineeringCase.profile_configuration.adapters.find((item) => item.adapter_id === "f3532")?.enabled ? "已启用" : "未启用"}
-        </p>
+        <p><strong>Profile：</strong>{engineeringCase.profile_configuration.name}</p>
         <div className="scroll-panel">
           <table className="report-table"><thead><tr><th>阶段</th><th>对象</th><th>状态</th><th>关键结论</th></tr></thead><tbody>
             {engineeringCase.threat_conditions.map((item) => <tr key={item.business_id}><td>威胁条件</td><td>{item.name}</td><td>{item.status}</td><td>{item.effect}</td></tr>)}

@@ -9,9 +9,11 @@ import {
 } from "../repositories/governanceRepository.js";
 import { createProjectWorkspaceSchema } from "../services/governance/contracts.js";
 import { GovernanceService } from "../services/governance/governanceService.js";
+import { WorkbenchRepository } from "../repositories/workbenchRepository.js";
 
 const router = Router();
 const service = new GovernanceService();
+router.get("/workspaces", async (_req,res,next)=>{try {res.json({workspaces:await new WorkbenchRepository().list()});} catch(error){next(error);} });
 
 function invalid(issues: Array<{ path: Array<string | number>; message: string }>) {
   return {

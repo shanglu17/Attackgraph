@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,7 @@ import { fixture } from "./testFixture.js";
 
 test("offline path trace CLI combines the actual evaluator with an explicit topology", () => {
   const root = fileURLToPath(new URL("../../../../../", import.meta.url));
+  mkdirSync(join(root, ".tmp"), { recursive: true });
   const dir = mkdtempSync(join(root, ".tmp", "path-trace-test-"));
   const base = fixture();
   const input = { ...base, assets: base.assets.map(asset => ({ ...asset, prototype_asset_id: "P-A" })) };

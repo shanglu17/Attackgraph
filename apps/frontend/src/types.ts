@@ -429,127 +429,16 @@ export interface ModelingExportData {
   };
 }
 
-export interface CxfFunctionalAssetRow {
-  id: string;
-  name: string;
-  description?: string;
-  excel_row?: number;
-}
-
-export interface CxfInterfaceAssetRow {
-  id: string;
-  producer: string;
-  producer_ref?: string;
-  consumer: string;
-  consumer_ref?: string;
-  data_flow_description?: string;
-  data_flow_type?: string;
-  physical_interface?: string;
-  logical_interface?: string;
-  network_domain?: string;
-  zone?: string;
-  purpose?: string;
-  target_function?: string;
-  boundary_id?: string;
-  bdf_ids?: string[];
-  enters_internal_propagation?: boolean;
-  boundary_interface_id?: string;
-  excel_row?: number;
-}
-
-export interface CxfBoundaryInterfaceRow {
-  id: string;
-  name?: string;
-  interface_class?: string;
-  external_entity?: string;
-  access_object?: string;
-  physical_interconnect?: string;
-  logical_protocol?: string;
-  direction?: string;
-  boundary_id?: string;
-  description?: string;
-  excel_row?: number;
-}
-
-export interface CxfTrustBoundaryRow {
-  id: string;
-  name: string;
-  description?: string;
-  covered_domain_ids?: string[];
-  threat_actor_ids?: string[];
-  enters_internal_propagation?: boolean;
-  excel_row?: number;
-}
-
-export interface CxfThreatActorRow {
-  id: string;
-  name: string;
-  actor_type?: string;
-  description?: string;
-  excel_row?: number;
-}
-
-export interface CxfSystemDataFlowRow {
-  id: string;
-  producer?: string;
-  consumer?: string;
-  content?: string;
-  data_flow_type?: string;
-  target_function?: string;
-  excel_row?: number;
-}
-
-export interface CxfSupportAssetRow {
-  id: string;
-  name: string;
-  linked_interfaces?: string[];
-  security_domain?: string;
-  criticality?: string;
-  excel_row?: number;
-}
-
-export interface CxfDataAssetRow {
-  id: string;
-  name: string;
-  data_type?: string;
-  data_flow_type?: string;
-  linked_interfaces?: string;
-  domain_id?: string;
-  load_description?: string;
-  description?: string;
-  target_function?: string;
-  excel_row?: number;
-}
-
-export interface CxfDomainPropertyRow {
-  id: string;
-  name: string;
-  trust_level: string;
-  security_domain: string;
-  description?: string;
-  excel_row?: number;
-}
-
-export interface CxfImportRequest {
-  template_version: "cxf_asset_inventory_v1";
-  source: {
-    aircraft_model: string;
-    file_name?: string;
-    submitted_by: string;
-    submitted_at: string;
-  };
-  workbook: {
-    functional_assets: CxfFunctionalAssetRow[];
-    interface_assets: CxfInterfaceAssetRow[];
-    support_assets: CxfSupportAssetRow[];
-    data_assets: CxfDataAssetRow[];
-    domain_properties: CxfDomainPropertyRow[];
-    trust_boundaries: CxfTrustBoundaryRow[];
-    threat_actors: CxfThreatActorRow[];
-    boundary_interfaces: CxfBoundaryInterfaceRow[];
-    system_data_flows: CxfSystemDataFlowRow[];
-  };
-}
+export type CxfImportRequest = import("@attackgraph/contracts").Inventory;
+export type CxfFunctionalAssetRow = CxfImportRequest["workbook"]["functional_assets"][number];
+export type CxfInterfaceAssetRow = CxfImportRequest["workbook"]["interface_assets"][number];
+export type CxfBoundaryInterfaceRow = CxfImportRequest["workbook"]["boundary_interfaces"][number];
+export type CxfTrustBoundaryRow = CxfImportRequest["workbook"]["trust_boundaries"][number];
+export type CxfThreatActorRow = CxfImportRequest["workbook"]["threat_actors"][number];
+export type CxfSystemDataFlowRow = CxfImportRequest["workbook"]["system_data_flows"][number];
+export type CxfSupportAssetRow = CxfImportRequest["workbook"]["support_assets"][number];
+export type CxfDataAssetRow = CxfImportRequest["workbook"]["data_assets"][number];
+export type CxfDomainPropertyRow = CxfImportRequest["workbook"]["domain_properties"][number];
 
 export interface CxfImportErrorDetail {
   type: "field" | "binding";

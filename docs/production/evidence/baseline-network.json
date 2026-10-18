@@ -1,0 +1,124 @@
+{
+  "baseline": "43df6f8",
+  "scenario": "original default unloaded graph; read-only report tabs and Excel parsing only",
+  "phases": {
+    "first_default": [
+      "http://127.0.0.1:15176/assets/index-DAqSg2KJ.js",
+      "http://127.0.0.1:15176/assets/react-vendor-BYfZc3_7.js",
+      "http://127.0.0.1:15176/assets/reactflow-BwkJh47R.js"
+    ],
+    "first_advanced": [
+      "http://127.0.0.1:15176/assets/index-DAqSg2KJ.js",
+      "http://127.0.0.1:15176/assets/react-vendor-BYfZc3_7.js",
+      "http://127.0.0.1:15176/assets/reactflow-BwkJh47R.js"
+    ],
+    "first_excel": [
+      "http://127.0.0.1:15176/assets/index-DAqSg2KJ.js",
+      "http://127.0.0.1:15176/assets/react-vendor-BYfZc3_7.js",
+      "http://127.0.0.1:15176/assets/reactflow-BwkJh47R.js",
+      "http://127.0.0.1:15176/assets/xlsx-CkFp8p6R.js"
+    ]
+  },
+  "phase_bytes": {
+    "first_default": {
+      "raw": 440784,
+      "gzip": 133247,
+      "modules": [
+        "index-DAqSg2KJ.js",
+        "react-vendor-BYfZc3_7.js",
+        "reactflow-BwkJh47R.js"
+      ]
+    },
+    "first_advanced": {
+      "raw": 440784,
+      "gzip": 133247,
+      "modules": [
+        "index-DAqSg2KJ.js",
+        "react-vendor-BYfZc3_7.js",
+        "reactflow-BwkJh47R.js"
+      ]
+    },
+    "first_excel": {
+      "raw": 870318,
+      "gzip": 276325,
+      "modules": [
+        "index-DAqSg2KJ.js",
+        "react-vendor-BYfZc3_7.js",
+        "reactflow-BwkJh47R.js",
+        "xlsx-CkFp8p6R.js"
+      ]
+    }
+  },
+  "network": [
+    {
+      "url": "http://127.0.0.1:15176/assets/index-DAqSg2KJ.js",
+      "requestBodySize": 0,
+      "requestHeadersSize": 580,
+      "responseBodySize": 38638,
+      "responseHeadersSize": 244
+    },
+    {
+      "url": "http://127.0.0.1:15176/assets/react-vendor-BYfZc3_7.js",
+      "requestBodySize": 0,
+      "requestHeadersSize": 587,
+      "responseBodySize": 45975,
+      "responseHeadersSize": 244
+    },
+    {
+      "url": "http://127.0.0.1:15176/assets/reactflow-BwkJh47R.js",
+      "requestBodySize": 0,
+      "requestHeadersSize": 584,
+      "responseBodySize": 48634,
+      "responseHeadersSize": 244
+    }
+  ],
+  "errors": [],
+  "writes": [],
+  "build": [
+    {
+      "name": "archive-vendor-lirTm3G4.js",
+      "raw": 97116,
+      "gzip": 30109
+    },
+    {
+      "name": "document-import-BDfiFpRl.js",
+      "raw": 300579,
+      "gzip": 70941
+    },
+    {
+      "name": "index-DAqSg2KJ.js",
+      "raw": 148895,
+      "gzip": 38638
+    },
+    {
+      "name": "index-z0dqsRBa.css",
+      "raw": 36503,
+      "gzip": 6040
+    },
+    {
+      "name": "react-vendor-BYfZc3_7.js",
+      "raw": 143565,
+      "gzip": 45975
+    },
+    {
+      "name": "reactflow-BwkJh47R.js",
+      "raw": 148324,
+      "gzip": 48634
+    },
+    {
+      "name": "reactflow-Fd0xVSp_.css",
+      "raw": 7044,
+      "gzip": 1576
+    },
+    {
+      "name": "utility-vendor-DOKVf8cg.js",
+      "raw": 21049,
+      "gzip": 7634
+    },
+    {
+      "name": "xlsx-CkFp8p6R.js",
+      "raw": 429534,
+      "gzip": 143078
+    }
+  ]
+}

@@ -54,7 +54,9 @@ function numeric(value: unknown): number {
 function jsonProperties(input: Record<string, unknown>): Record<string, unknown> {
   const properties: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
-    if (key === "source_locator") {
+    if (key === "analysis") {
+      properties.analysis_json = JSON.stringify(value ?? {});
+    } else if (key === "source_locator") {
       properties.source_locator_json = JSON.stringify(value ?? {});
     } else if (value !== undefined) {
       properties[key] = value;
@@ -80,6 +82,8 @@ function restore<T>(properties: Record<string, unknown>): T & { id: string } {
   if (typeof output.source_locator_json === "string") {
     output.source_locator = JSON.parse(output.source_locator_json);
   }
+  if (typeof output.analysis_json === "string") output.analysis = JSON.parse(output.analysis_json);
+  delete output.analysis_json;
   delete output.source_locator_json;
   delete output.project_id;
   delete output.revision_id;
@@ -320,7 +324,7 @@ export class SystemModelRepository {
     return created;
   }
 
-  private async createSemanticRelationships(transaction: ManagedTransaction, projectId: string, revisionId: string) {
+  async createSemanticRelationships(transaction: ManagedTransaction, projectId: string, revisionId: string) {
     const scope = { project_id: projectId, revision_id: revisionId };
     await transaction.run(
       `MATCH (child:Function {project_id: $project_id, revision_id: $revision_id})
@@ -386,10 +390,16 @@ export class SystemModelRepository {
     );
   }
 
-  async read(projectId: string, revisionId: string): Promise<StoredSystemModel> {
+  async read(projectId: string, revisionId: string, tx?: ManagedTransaction): Promise<StoredSystemModel> {
+    if (tx) return this.readInTransaction(tx, projectId, revisionId);
     const session = getDriver().session();
     try {
-      return await session.executeRead(async (transaction) => {
+      return await session.executeRead(transaction => this.readInTransaction(transaction, projectId, revisionId));
+    } finally {
+      await session.close();
+    }
+  }
+  private async readInTransaction(transaction: ManagedTransaction, projectId: string, revisionId: string): Promise<StoredSystemModel> {
         const revisionResult = await transaction.run(
           `MATCH (:Project {id: $project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(revision:Revision {id: $revision_id})
            RETURN revision.version AS version`,
@@ -430,9 +440,7 @@ export class SystemModelRepository {
           } as StoredSystemModel["entities"]["trace_links"][number];
         });
         return output;
-      });
-    } finally {
-      await session.close();
-    }
+
   }
+
 }

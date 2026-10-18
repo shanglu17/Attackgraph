@@ -1,3 +1,4 @@
+import { useWorkspaceContext } from "../../app/WorkspaceContext";
 import { useMemo, useState, type FormEvent } from "react";
 import { createAnalysisRun, getAnalysisMethods, getAnalysisPromotions, getAnalysisRuns, promoteDerivedResult, reviewDerivedResult } from "../../api";
 import type { AnalysisMethodDefinition, StoredAnalysisRun, StoredPromotion } from "../../types";
@@ -6,8 +7,9 @@ interface Props { onStatusChange: (message: string) => void }
 const nextCommand = (prefix: string) => `${prefix}:${crypto.randomUUID()}`;
 
 export function AnalysisRunWorkbench({ onStatusChange }: Props) {
-  const [projectId, setProjectId] = useState("");
-  const [revisionId, setRevisionId] = useState("");
+  const scope = useWorkspaceContext();
+  const [projectId, setProjectId] = useState(scope.projectId);
+  const [revisionId, setRevisionId] = useState(scope.revisionId);
   const [actor, setActor] = useState("analysis-engineer");
   const [expectedVersion, setExpectedVersion] = useState("1");
   const [sourceRecord, setSourceRecord] = useState("");
@@ -40,8 +42,9 @@ export function AnalysisRunWorkbench({ onStatusChange }: Props) {
       getAnalysisRuns(projectId, revisionId),
       getAnalysisPromotions(projectId, revisionId),
     ]);
-    setMethods(available); setRuns(storedRuns); setPromotions(storedPromotions);
-    if (!methodKey && available[0]) setMethodKey(`${available[0].method_id}@${available[0].method_version}`);
+    const visible=available.filter(m=>!m.method_id.toLowerCase().includes("f3532"));
+      setMethods(visible); setRuns(storedRuns.filter(r=>!r.method.method_id.toLowerCase().includes("f3532"))); setPromotions(storedPromotions.filter(p=>storedRuns.some(r=>r.id===p.run_id&&!r.method.method_id.toLowerCase().includes("f3532"))));
+    if (!methodKey && visible[0]) setMethodKey(`${visible[0].method_id}@${visible[0].method_version}`);
     if (!selectedResultId && storedRuns[0]?.results[0]) setSelectedResultId(storedRuns[0].results[0].id);
   }
 

@@ -44,7 +44,7 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
   const [parsedWorkbook, setParsedWorkbook] = useState<ParsedCxfWorkbook | null>(null);
   const [preview, setPreview] = useState<CxfImportPreviewResult | CxfImportCommitResult | null>(null);
   const [fileError, setFileError] = useState<CxfWorkbookParseError | null>(null);
-  const [localMessage, setLocalMessage] = useState("Select a DO-356A multi-sheet workbook to start.");
+  const [localMessage, setLocalMessage] = useState("请选择系统资产清单工作簿。");
 
   function updateMessage(message: string): void {
     setLocalMessage(message);
@@ -60,7 +60,7 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
     if (file) {
       updateMessage(`Selected workbook: ${file.name}`);
     } else {
-      updateMessage("Select a DO-356A multi-sheet workbook to start.");
+      updateMessage("请选择系统资产清单工作簿。");
     }
   }
 
@@ -163,15 +163,15 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
     <section className="panel import-panel">
       <div className="import-panel-header">
         <div>
-          <h3>Multi-Sheet Excel Import</h3>
-          <p>Upload the DO-356A workbook, parse it locally, preview generated graph changes, then commit atomically.</p>
+          <h3>系统资产清单（多 Sheet）</h3>
+          <p>上传系统资产清单，解析并预览模型后提交至正式数据库。</p>
         </div>
         <p className="status import-status">{localMessage}</p>
       </div>
 
       <div className="import-toolbar">
         <label className="field-stack import-field">
-          <span className="field-label">Aircraft Model</span>
+          <span className="field-label">机型 / 模型标识</span>
           <input
             className="input-field"
             value={aircraftModel}
@@ -181,11 +181,11 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
         </label>
 
         <label className="field-stack import-field">
-          <span className="field-label">Workbook</span>
+          <span className="field-label">工作簿</span>
           <input
             className="input-field file-input"
             type="file"
-            accept=".xlsx,.xls"
+            accept=".xlsx"
             onChange={handleFileChange}
             disabled={importDisabled}
           />
@@ -193,10 +193,10 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
 
         <div className="import-actions">
           <button className="button" type="button" onClick={() => void handleParseWorkbook()} disabled={importDisabled}>
-            Parse Workbook
+            解析工作簿
           </button>
           <button className="button" type="button" onClick={() => void handlePreviewImport()} disabled={importDisabled || !selectedFile}>
-            Preview Import
+            预览模型
           </button>
           <button
             className="button primary"
@@ -204,7 +204,7 @@ export function CxfImportPanel({ disabled = false, onCommitSuccess, onStatusChan
             onClick={() => void handleCommitImport()}
             disabled={importDisabled || !parsedWorkbook || !preview?.ok}
           >
-            Commit Import
+            提交导入
           </button>
         </div>
       </div>
