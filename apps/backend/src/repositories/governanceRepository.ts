@@ -1,3 +1,4 @@
+import { lockWritableProject } from "./revisionUnitOfWork.js";
 import { randomUUID } from "node:crypto";
 import type { ManagedTransaction } from "neo4j-driver";
 import { getDriver } from "../db/neo4j.js";
@@ -346,6 +347,7 @@ export class GovernanceRepository {
           };
         }
 
+        await lockWritableProject(transaction, input.project_id);
         const baselineId = randomUUID();
         const auditEventId = randomUUID();
         const now = new Date().toISOString();

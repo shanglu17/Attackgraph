@@ -1,0 +1,1307 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "project_id": "a824dfbf-93fe-4a19-af3e-872a040ed200",
+      "revision_id": "b760d54a-736b-41b6-a9de-7d73bd54edf6",
+      "metrics": {
+        "horizontal_scroll": false,
+        "unnamed_buttons": 0,
+        "selected_workspaces": 1
+      },
+      "errors": [],
+      "phases": {
+        "empty_project": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js"
+        ],
+        "first_excel": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js"
+        ],
+        "first_saved_graph": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js"
+        ],
+        "first_saved_graph_cold": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js"
+        ],
+        "first_advanced": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js"
+        ],
+        "first_advanced_cold": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js"
+        ],
+        "first_document_parse": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js",
+          "http://127.0.0.1:15177/assets/DocumentPreviewTool-CsQWUhuU.js",
+          "http://127.0.0.1:15177/assets/fhaDocument-6W95T4-I.js",
+          "http://127.0.0.1:15177/assets/document-import-BDfiFpRl.js",
+          "http://127.0.0.1:15177/assets/utility-vendor-DOKVf8cg.js",
+          "http://127.0.0.1:15177/assets/archive-vendor-lirTm3G4.js"
+        ]
+      },
+      "network": [
+        {
+          "url": "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9095,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 593,
+          "responseBodySize": 3189,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 616,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 585,
+          "responseBodySize": 243,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 586,
+          "responseBodySize": 3147,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3967,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 596,
+          "responseBodySize": 4603,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9095,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 596,
+          "responseBodySize": 4603,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 591,
+          "responseBodySize": 393,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 2931,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3967,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 613,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 588,
+          "responseBodySize": 1117,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 599,
+          "responseBodySize": 899,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 2147,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/DocumentPreviewTool-CsQWUhuU.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 594,
+          "responseBodySize": 1160,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fhaDocument-6W95T4-I.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 586,
+          "responseBodySize": 1240,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 585,
+          "responseBodySize": 243,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/utility-vendor-DOKVf8cg.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 7634,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/archive-vendor-lirTm3G4.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 30109,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/document-import-BDfiFpRl.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 70941,
+          "responseHeadersSize": 244
+        }
+      ],
+      "layouts": [
+        {
+          "state": "import_preview",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "analysis",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "changes",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "reports",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        }
+      ],
+      "phase_bytes": {
+        "empty_project": {
+          "raw": 255013,
+          "gzip": 76178,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js"
+          ]
+        },
+        "first_excel": {
+          "raw": 693376,
+          "gzip": 222646,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js"
+          ]
+        },
+        "first_saved_graph": {
+          "raw": 848694,
+          "gzip": 274632,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js"
+          ]
+        },
+        "first_saved_graph_cold": {
+          "raw": 326727,
+          "gzip": 107056,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js"
+          ]
+        },
+        "first_advanced": {
+          "raw": 878521,
+          "gzip": 286722,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js",
+            "ModelChangesWorkspace-C9ipvnvq.js",
+            "draftPersistence-DW_Y31vC.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js"
+          ]
+        },
+        "first_advanced_cold": {
+          "raw": 189339,
+          "gzip": 62985,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "workbench-DnAz3xir.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js"
+          ]
+        },
+        "first_document_parse": {
+          "raw": 1301323,
+          "gzip": 397806,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js",
+            "ModelChangesWorkspace-C9ipvnvq.js",
+            "draftPersistence-DW_Y31vC.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js",
+            "DocumentPreviewTool-CsQWUhuU.js",
+            "fhaDocument-6W95T4-I.js",
+            "document-import-BDfiFpRl.js",
+            "utility-vendor-DOKVf8cg.js",
+            "archive-vendor-lirTm3G4.js"
+          ]
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "project_id": "a800bfa7-1ba3-4b57-9aac-07a6f8c434fc",
+      "revision_id": "c275f474-8281-426c-aea1-479f6e014ba6",
+      "metrics": {
+        "horizontal_scroll": false,
+        "unnamed_buttons": 0,
+        "selected_workspaces": 1
+      },
+      "errors": [],
+      "phases": {
+        "empty_project": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js"
+        ],
+        "first_excel": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js"
+        ],
+        "first_saved_graph": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js"
+        ],
+        "first_saved_graph_cold": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js"
+        ],
+        "first_advanced": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js"
+        ],
+        "first_advanced_cold": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js"
+        ]
+      },
+      "network": [
+        {
+          "url": "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9095,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 593,
+          "responseBodySize": 3189,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 616,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 585,
+          "responseBodySize": 243,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 586,
+          "responseBodySize": 3147,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3967,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 596,
+          "responseBodySize": 4603,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9095,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 596,
+          "responseBodySize": 4603,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 591,
+          "responseBodySize": 393,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 2931,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3967,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 613,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 588,
+          "responseBodySize": 1117,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 599,
+          "responseBodySize": 899,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 2147,
+          "responseHeadersSize": 243
+        }
+      ],
+      "layouts": [
+        {
+          "state": "import_preview",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "analysis",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "changes",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "reports",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        }
+      ],
+      "phase_bytes": {
+        "empty_project": {
+          "raw": 255013,
+          "gzip": 76178,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js"
+          ]
+        },
+        "first_excel": {
+          "raw": 693376,
+          "gzip": 222646,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js"
+          ]
+        },
+        "first_saved_graph": {
+          "raw": 848694,
+          "gzip": 274632,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js"
+          ]
+        },
+        "first_saved_graph_cold": {
+          "raw": 326727,
+          "gzip": 107056,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js"
+          ]
+        },
+        "first_advanced": {
+          "raw": 878521,
+          "gzip": 286722,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js",
+            "ModelChangesWorkspace-C9ipvnvq.js",
+            "draftPersistence-DW_Y31vC.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js"
+          ]
+        },
+        "first_advanced_cold": {
+          "raw": 189339,
+          "gzip": 62985,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "workbench-DnAz3xir.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js"
+          ]
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "project_id": "2efa582a-de4e-4dc9-959b-38278da75765",
+      "revision_id": "39defdba-5cf8-4956-b2f7-5600b950fcdb",
+      "metrics": {
+        "horizontal_scroll": false,
+        "unnamed_buttons": 0,
+        "selected_workspaces": 1
+      },
+      "errors": [],
+      "phases": {
+        "empty_project": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js"
+        ],
+        "first_excel": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js"
+        ],
+        "first_saved_graph": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js"
+        ],
+        "first_saved_graph_cold": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js"
+        ],
+        "first_advanced": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js"
+        ],
+        "first_advanced_cold": [
+          "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js"
+        ]
+      },
+      "network": [
+        {
+          "url": "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9095,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/InventoryWorkspace-DcDP2c-z.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 593,
+          "responseBodySize": 3189,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 616,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 585,
+          "responseBodySize": 243,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/cxfWorkbook-B_nSNZBL.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 586,
+          "responseBodySize": 3147,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3967,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 596,
+          "responseBodySize": 4603,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-DhnfLiCW.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9095,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ModelChangesWorkspace-C9ipvnvq.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 596,
+          "responseBodySize": 4603,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/draftPersistence-DW_Y31vC.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 591,
+          "responseBodySize": 393,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ResultWorkspace-6o67qzCc.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 2931,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-DnAz3xir.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-BFpKX-lS.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3967,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 613,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AdvancedTools-TMxnMAoi.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 588,
+          "responseBodySize": 1117,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-Bkp5L8U4.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 599,
+          "responseBodySize": 899,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-CL2rIJ_P.js",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 2147,
+          "responseHeadersSize": 243
+        }
+      ],
+      "layouts": [
+        {
+          "state": "import_preview",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "analysis",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "changes",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        },
+        {
+          "state": "reports",
+          "horizontal_scroll": false,
+          "unnamed_buttons": 0
+        }
+      ],
+      "phase_bytes": {
+        "empty_project": {
+          "raw": 255013,
+          "gzip": 76178,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js"
+          ]
+        },
+        "first_excel": {
+          "raw": 693376,
+          "gzip": 222646,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js"
+          ]
+        },
+        "first_saved_graph": {
+          "raw": 848694,
+          "gzip": 274632,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js"
+          ]
+        },
+        "first_saved_graph_cold": {
+          "raw": 326727,
+          "gzip": 107056,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js"
+          ]
+        },
+        "first_advanced": {
+          "raw": 878521,
+          "gzip": 286722,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "InventoryWorkspace-DcDP2c-z.js",
+            "index-D4t6L2dp.js",
+            "xlsx-CkFp8p6R.js",
+            "cxfWorkbook-B_nSNZBL.js",
+            "fileSafety-CgpeM1GG.js",
+            "GraphWorkspace-BFpKX-lS.js",
+            "workbench-DnAz3xir.js",
+            "reactflow-tAowGTmu.js",
+            "ModelChangesWorkspace-C9ipvnvq.js",
+            "draftPersistence-DW_Y31vC.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js"
+          ]
+        },
+        "first_advanced_cold": {
+          "raw": 189339,
+          "gzip": 62985,
+          "modules": [
+            "index-DhnfLiCW.js",
+            "react-vendor-BYfZc3_7.js",
+            "ResultWorkspace-6o67qzCc.js",
+            "workbench-DnAz3xir.js",
+            "AdvancedTools-TMxnMAoi.js",
+            "AssuranceReviewWorkspace-Bkp5L8U4.js",
+            "Vg1TraceabilityPanel-CL2rIJ_P.js"
+          ]
+        }
+      }
+    }
+  ],
+  "build": [
+    {
+      "name": "AdvancedTools-TMxnMAoi.js",
+      "raw": 2210,
+      "gzip": 1117
+    },
+    {
+      "name": "AnalysisRunWorkbench-A_bBxmq-.js",
+      "raw": 9665,
+      "gzip": 3198
+    },
+    {
+      "name": "archive-vendor-lirTm3G4.js",
+      "raw": 97116,
+      "gzip": 30109
+    },
+    {
+      "name": "AssuranceReviewWorkspace-Bkp5L8U4.js",
+      "raw": 2521,
+      "gzip": 899
+    },
+    {
+      "name": "cxfWorkbook-B_nSNZBL.js",
+      "raw": 8519,
+      "gzip": 3147
+    },
+    {
+      "name": "document-import-BDfiFpRl.js",
+      "raw": 300579,
+      "gzip": 70941
+    },
+    {
+      "name": "DocumentPreviewTool-CsQWUhuU.js",
+      "raw": 1945,
+      "gzip": 1160
+    },
+    {
+      "name": "draftPersistence-DW_Y31vC.js",
+      "raw": 641,
+      "gzip": 393
+    },
+    {
+      "name": "EngineeringCasePanel-BSt9vV7B.js",
+      "raw": 7833,
+      "gzip": 2393
+    },
+    {
+      "name": "FeatureRulesPanel-DTL7fWWy.js",
+      "raw": 10459,
+      "gzip": 4686
+    },
+    {
+      "name": "fhaDocument-6W95T4-I.js",
+      "raw": 2113,
+      "gzip": 1240
+    },
+    {
+      "name": "fileSafety-CgpeM1GG.js",
+      "raw": 310,
+      "gzip": 243
+    },
+    {
+      "name": "GraphWorkspace-BFpKX-lS.js",
+      "raw": 9592,
+      "gzip": 3967
+    },
+    {
+      "name": "ImpactWorkProductPanel-4293u2AP.js",
+      "raw": 8402,
+      "gzip": 2764
+    },
+    {
+      "name": "index-ChNlQkwx.css",
+      "raw": 35703,
+      "gzip": 6151
+    },
+    {
+      "name": "index-D4t6L2dp.js",
+      "raw": 75839,
+      "gzip": 17919
+    },
+    {
+      "name": "index-DhnfLiCW.js",
+      "raw": 27844,
+      "gzip": 9095
+    },
+    {
+      "name": "InventoryWorkspace-DcDP2c-z.js",
+      "raw": 7765,
+      "gzip": 3189
+    },
+    {
+      "name": "ModelChangesWorkspace-C9ipvnvq.js",
+      "raw": 12507,
+      "gzip": 4603
+    },
+    {
+      "name": "react-vendor-BYfZc3_7.js",
+      "raw": 143565,
+      "gzip": 45975
+    },
+    {
+      "name": "reactflow-Fd0xVSp_.css",
+      "raw": 7044,
+      "gzip": 1576
+    },
+    {
+      "name": "reactflow-tAowGTmu.js",
+      "raw": 144475,
+      "gzip": 47198
+    },
+    {
+      "name": "ResultWorkspace-6o67qzCc.js",
+      "raw": 5943,
+      "gzip": 2931
+    },
+    {
+      "name": "ReviewWorkbenchPanel-CFmerb3u.js",
+      "raw": 8989,
+      "gzip": 3030
+    },
+    {
+      "name": "utility-vendor-DOKVf8cg.js",
+      "raw": 21049,
+      "gzip": 7634
+    },
+    {
+      "name": "Vg1TraceabilityPanel-CL2rIJ_P.js",
+      "raw": 6005,
+      "gzip": 2147
+    },
+    {
+      "name": "workbench-DnAz3xir.js",
+      "raw": 1251,
+      "gzip": 821
+    },
+    {
+      "name": "xlsx-CkFp8p6R.js",
+      "raw": 429534,
+      "gzip": 143078
+    }
+  ]
+}

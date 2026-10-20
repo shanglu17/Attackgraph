@@ -1,3 +1,4 @@
+import { RunLoadStatus } from "../../shared/components/RunLoadStatus";
 import { useMemo } from "react";
 import { useWorkbench } from "../../app/WorkspaceProvider";
 import { workbenchApi } from "../../api";
@@ -39,6 +40,7 @@ export default function GraphWorkspace() {
   );
   return (
     <section>
+      <RunLoadStatus/>
       <div className="panel">
         <span className="tag">02 / 检查模型与分析</span>
         <h2>从入口追踪到关键资产</h2>

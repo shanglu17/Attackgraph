@@ -7,12 +7,16 @@ import { systemModelImportPayloadSchema } from "@attackgraph/contracts";
 import { env } from "../config/env.js";
 import { WorkbenchService } from "../services/workbenchService.js";
 import { savedAnalysisSchema } from "@attackgraph/contracts";
+import { amsPropagationVersion } from "../services/analysis/propagationPolicy.js";
+import { analysisDigest } from "../services/analysis/canonicalization.js";
 
 if (process.env.ASTRA_TEST_DATABASE !== "1" || !env.neo4jUri.includes(":17687"))
   throw new Error(
     "Workbench integration requires ASTRA_TEST_DATABASE=1 and independent Neo4j port 17687",
   );
 const projects: string[] = [];
+
+
 const server = createApp({ log: () => {} }).listen(0, "127.0.0.1");
 await new Promise<void>((resolve) => server.once("listening", resolve));
 const address = server.address();
@@ -290,6 +294,25 @@ test("real database: scope → import → edit → saved DPS → replay → stal
   const callerRun=(await request(`/api/v2/analysis/runs?${runQuery}`)).runs.find((r:{id:string})=>r.id===forged.run_id);
   assert.equal(callerRun.input_origin,"caller-provided");
   await request("/api/v2/analysis/runs/export",{...scope,run_id:forged.run_id,parameters:analysis.parameters},409);
+  const page=await request(`/api/v2/analysis/runs/summaries?${query}&limit=2`);
+  assert.equal(page.runs.length,2);assert.ok(page.next_cursor);
+  assert.ok(page.runs.every((r:Record<string,unknown>)=>!('snapshots' in r)&&!('results' in r)));
+  assert.ok(JSON.stringify(page).length<1500);
+  const page2=await request(`/api/v2/analysis/runs/summaries?${query}&limit=2&cursor=${page.next_cursor}`);
+  assert.equal(page2.runs.length,2);assert.equal(page2.next_cursor,null);
+  assert.ok(page2.runs.every((r:{id:string})=>!page.runs.some((p:{id:string})=>p.id===r.id)));
+  await request(`/api/v2/analysis/runs/summaries?${query}&limit=1001`,undefined,400);
+  await request(`/api/v2/analysis/runs/summaries?${query}&cursor=${randomUUID()}`,undefined,409);
+  const selectedSummary=await request(`/api/v2/analysis/runs/summaries?${query}&run_id=${second.run_id}`);
+  assert.equal(selectedSummary.runs.length,1);assert.equal(selectedSummary.runs[0].id,second.run_id);
+  assert.equal((await request(`/api/v2/analysis/runs/summaries?${query}&run_id=${randomUUID()}`)).runs.length,0);
+  const detail=(await request(`/api/v2/analysis/runs/detail?${query}&run_id=${second.run_id}`)).run;
+  assert.equal(detail.id,second.run_id);assert.equal(detail.input_origin,'saved-model');
+  assert.ok(!detail.snapshots.some((s:{snapshot_type:string})=>s.snapshot_type==='method_input'));
+  assert.ok(detail.results.length>0);
+  const withInputs=(await request(`/api/v2/analysis/runs/detail?${query}&run_id=${second.run_id}&include_inputs=true`)).run;
+  assert.ok(withInputs.snapshots.some((s:{snapshot_type:string})=>s.snapshot_type==='method_input'));
+  await request(`/api/v2/analysis/runs/detail?${query}&run_id=${randomUUID()}`,undefined,404);
   const frozen = await request(
     "/api/v2/governance/revisions/freeze",
     {
@@ -311,4 +334,73 @@ test("real database: scope → import → edit → saved DPS → replay → stal
     (await request(`/api/v2/system-model/workbench?${query}`)).status,
     "Draft",
   );
+});
+
+test("AMS projection: provenance retained, one path per real channel, prior projections stale in summaries and detail", async () => {
+  const uid = randomUUID();
+  const workspace = await request("/api/v2/governance/workspaces", {
+    actor: "acceptance", command_id: uid,
+    project: { business_id: "ACCEPT-PROP-" + uid, name: "Propagation acceptance" },
+    model: { business_id: "MODEL", name: "AMS", level: "system" },
+    revision: { business_id: "REV-1" },
+    standard_profile: { business_id: "PROFILE", name: "326A/356A", profile_version: "1", standard_references: ["DO-356A"] },
+  }, 201);
+  const scope = { project_id: workspace.project.id, revision_id: workspace.revision.id };
+  projects.push(scope.project_id);
+  const query = new URLSearchParams(scope);
+  const payload = systemModelImportPayloadSchema.parse({
+    contract_version: "system-model.v2",
+    source: { business_id: "SRC", source_type: "test", name: "Legacy AMS fixture", content_hash: "a".repeat(64), parser_name: "test", parser_version: "1" },
+    entities: {
+      assets: [
+        { business_id: "A", name: "Software", category: "Data", analysis: { security_domain: "External", data_classification: "Internal" } },
+        ...["B", "C"].map(id => ({ business_id: id, name: id + " Controller", category: "Terminal", criticality: "High", tags: ["controller"], analysis: { security_domain: "Internal" } })),
+      ],
+      data_flows: ["B", "C"].flatMap(id => [
+        { business_id: "OWNER-" + id, name: "Ownership", description: "Derived data ownership | Software | Controller",
+          producer_asset_business_id: id, consumer_asset_business_id: "A", tags: ["auto_generated", "do356a-ams/v1"], analysis: { direction: "Bidirectional", trust_level: "Trusted" } },
+        { business_id: "LOAD-" + id, name: "Load", description: "Data via | SI.4 | Software",
+          producer_asset_business_id: id, consumer_asset_business_id: "A", tags: ["auto_generated", "do356a-ams/v1"], analysis: { direction: "Bidirectional", trust_level: "Trusted" } },
+      ]),
+      draft_threats: [{ business_id: "T", name: "Auto candidate", threat_type: "Tampering", target_asset_business_id: "A", standard_reference: "DO-356A" }],
+    },
+  });
+  await request("/api/v2/system-model/import/commit", { ...scope, actor: "acceptance", command_id: uid + "-import", expected_revision_version: 1, import: payload }, 201);
+  const service = new WorkbenchService();
+  // Fixture setup emulates already-persisted AMS v1 configuration without a
+  // new public configuration bypass or any writes to the business database.
+  await service.uow.execute({ ...scope, actor: "acceptance", command_id: uid + "-fixture", expected_revision_version: 2,
+    event_type: "ANALYSIS_CONFIGURATION_UPDATED", request_canonicalizer: "test.fixture/v1", payload: {}, summary: "Legacy AMS fixture setup" }, async context => {
+    await service.repository.saveConfiguration(context.transaction, context, { mapping_version: "do356a-ams/v1", threat_overrides: {} });
+    return { configured: true };
+  });
+  const command = { ...scope, actor: "acceptance", command_id: uid + "-run", expected_revision_version: 3,
+    contract_version: "saved-model-analysis.v1", parameters: { max_hops: 1, dps_hop_decay: 0.95 } };
+  const run = await request("/api/v2/analysis/runs", command, 201);
+  const detailPath = `/api/v2/analysis/runs/detail?${query}&run_id=${run.run_id}&include_inputs=true`;
+  const saved = (await request(detailPath)).run;
+  assert.equal(saved.stale, false);
+  const paths = saved.results.filter((r: { result_kind: string }) => r.result_kind === "attack_path_candidate");
+  assert.equal(paths.length, 2, "two controllers each have exactly one real one-hop route");
+  assert.deepEqual(paths.map((r: { payload: { target_asset_id: string } }) => r.payload.target_asset_id).sort(), ["B", "C"]);
+  const input = saved.snapshots.find((s: { snapshot_type: string }) => s.snapshot_type === "method_input").payload;
+  assert.equal(input.propagation.version, amsPropagationVersion);
+  assert.equal(input.propagation.excluded_relations.length, 2);
+  assert.equal(input.asset_edges.length, 2);
+  for (const snapshot of saved.snapshots) assert.equal(snapshot.content_hash, analysisDigest(snapshot.payload));
+  const snapshot = await request(`/api/v2/system-model/workbench?${query}`);
+  assert.equal(snapshot.model.entities.data_flows.length, 4, "ownership records remain stored");
+  await request("/api/v2/analysis/runs/export", { ...scope, run_id: run.run_id, parameters: command.parameters });
+  assert.equal((await request(`/api/v2/analysis/runs/summaries?${query}`)).runs[0].stale, false);
+  const session = getDriver().session();
+  try {
+    await session.run("MATCH(r:AnalysisRun {project_id:$project_id,id:$run_id}) REMOVE r.projection_version", { project_id: scope.project_id, run_id: run.run_id });
+  } finally { await session.close(); }
+  assert.equal((await request(`/api/v2/analysis/runs/summaries?${query}`)).runs[0].stale, true);
+  const historical = (await request(detailPath)).run;
+  assert.equal(historical.stale, true);
+  assert.deepEqual(historical.snapshots, saved.snapshots, "historical snapshots are immutable");
+  await request("/api/v2/analysis/runs/export", { ...scope, run_id: run.run_id, parameters: command.parameters }, 409);
+  const compatibility = (await request(`/api/v2/analysis/runs?${query}`)).runs[0];
+  assert.equal(compatibility.stale, false, "legacy DTO keeps its original semantics");
 });

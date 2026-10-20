@@ -572,6 +572,7 @@ export async function previewFeatureRules(payload: Record<string, unknown>): Pro
   return response.json();
 }
 
+import type { ProjectOverview, ProjectLifecycleCommand, AnalysisHistoryPage } from "@attackgraph/contracts";
 // Production workbench: versioned, revision-scoped commands only.
 import type { WorkbenchScope, WorkspaceChoice, WorkbenchSnapshot, InventoryPreview, InventoryCommit, InventoryPreviewResult, EditCommand, EditPreview, SavedAnalysisCommand, WorkbenchExportRequest } from "@attackgraph/contracts";
 async function workbenchRequest<T>(path: string, payload?: unknown): Promise<T> {
@@ -580,7 +581,11 @@ async function workbenchRequest<T>(path: string, payload?: unknown): Promise<T> 
 }
 const queryScope=(scope:WorkbenchScope)=>new URLSearchParams(scope).toString();
 export const workbenchApi={
-  listWorkspaces:()=>workbenchRequest<{workspaces:WorkspaceChoice[]}>("governance/workspaces"),
+  listWorkspaces:()=>workbenchRequest<{workspaces:WorkspaceChoice[]}>("governance/workspaces?view=management.v1"),
+  projectOverview:(id:string)=>workbenchRequest<ProjectOverview>(`governance/projects/${encodeURIComponent(id)}/overview`),
+  projectLifecycle:(input:ProjectLifecycleCommand)=>workbenchRequest<{project_id:string;state:string;project_version:number}>("governance/projects/lifecycle",input),
+  history:(scope:WorkbenchScope,cursor?:string,runId?:string)=>workbenchRequest<AnalysisHistoryPage>(`analysis/runs/summaries?${queryScope(scope)}&limit=20${cursor?"&cursor="+encodeURIComponent(cursor):""}${runId?"&run_id="+encodeURIComponent(runId):""}`),
+  runDetail:(scope:WorkbenchScope,id:string,inputs=false)=>workbenchRequest<{run:StoredAnalysisRun}>(`analysis/runs/detail?${queryScope(scope)}&run_id=${encodeURIComponent(id)}&include_inputs=${inputs}`),
   createWorkspace:(name:string,businessId:string,commandId:string)=>workbenchRequest<{project:{id:string};revision:{id:string}}>("governance/workspaces",{actor:"workbench-user",command_id:commandId,project:{business_id:businessId,name},model:{business_id:"MODEL-1",name,level:"system"},revision:{business_id:"REV-1"},standard_profile:{business_id:"DO326A-356A",name:"DO-326A / DO-356A",profile_version:"1",standard_references:["DO-326A","DO-356A"]}}),
   read:(scope:WorkbenchScope)=>workbenchRequest<WorkbenchSnapshot>(`system-model/workbench?${queryScope(scope)}`),
   runs:(scope:WorkbenchScope)=>workbenchRequest<{runs:StoredAnalysisRun[]}>(`analysis/runs?${queryScope(scope)}&view=workbench.v1`),

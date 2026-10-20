@@ -26,11 +26,15 @@ npm run dev
 ## 操作文档
 
 * [导入、检查、修改、分析和导出演示](walkthrough.md)
+* [项目归档、回收恢复和分析历史](project-management.md)
+* [AMS 数据归属与攻击传播修正](propagation-policy.md)
+* [23 条归属关系逐项核对与路径覆盖对照](ownership-review.md)
+* [2026-10-20 增量验收与历史加载对比](improvements-2026-10-20.md)
 * [九类 Sheet 填写指南](inventory-template.md)
 * [新增接口及模型映射](../architecture/production-workbench.md)
 * [验收及性能记录](acceptance.md)
 * [构建与实际网络加载对比](performance.md)
-* [交付文件白名单及校验值](delivery-files.tsv)
+* [阶段交付文件白名单及校验值（2026-10-18 历史快照）](delivery-files.tsv)
 * [保留的后端项目专用逻辑](retained-backend-logic.md)
 
 主流程只使用 v2 修订命令。下载填写示例不会写库；必须上传、预览，再明确提交。保存数据以 Neo4j 为准，浏览器中只持久化范围选择、界面选择及带基础版本的草稿。

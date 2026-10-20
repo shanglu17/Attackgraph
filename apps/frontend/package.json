@@ -12,7 +12,8 @@
     "pretest": "npm run build -w @attackgraph/contracts",
     "test": "node scripts/run-tests.mjs",
     "verify:responsive": "node scripts/verify-responsive.mjs",
-    "verify:workbench": "node scripts/verify-workbench.mjs"
+    "verify:workbench": "node scripts/verify-workbench.mjs",
+    "verify:projects": "node scripts/verify-project-management.mjs"
   },
   "dependencies": {
     "@attackgraph/contracts": "0.1.0",

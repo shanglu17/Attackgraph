@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "project_isolation": true,
+  "delayed_response_isolation": true,
+  "concurrent_conflict": true,
+  "frozen_readonly": true,
+  "errors": []
+}

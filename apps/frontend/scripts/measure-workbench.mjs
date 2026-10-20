@@ -16,7 +16,7 @@ try{
  const projects=await(await fetch(root+"/api/v2/governance/workspaces")).json();
  const empty=projects.workspaces.find(p=>p.project_name==="Context isolation"&&p.status==="Draft");assert.ok(empty,"Run context acceptance first to create an empty test project");
  const scenarios=[];
- for(const [name,workspace,selection,action] of [["empty_project","imports",empty,null],["saved_graph","analysis",scope,null],["first_excel_read","imports",empty,"excel"],["first_advanced","reports",scope,"advanced"],["first_document_parse","reports",scope,"document"]]){
+ for(const [name,workspace,selection,action] of [["empty_project","imports",empty,null],["saved_import_workspace","imports",scope,null],["saved_graph","analysis",scope,null],["first_excel_read","imports",empty,"excel"],["first_advanced","reports",scope,"advanced"],["first_document_parse","reports",scope,"document"]]){
   const page=await browser.newPage({viewport:{width:1440,height:900}}),requests=[],pending=new Set();
   page.on("requestfinished",r=>{const operation=(async()=>{const response=await r.response();if(!response)return;const size=await r.sizes();requests.push({url:r.url(),type:r.resourceType(),content_encoding:response.headers()["content-encoding"]??"identity",...size});})().finally(()=>pending.delete(operation));pending.add(operation);});
   await page.addInitScript(({workspace,selection})=>{sessionStorage.setItem("astra.workspace-scope.v1",JSON.stringify({projectId:selection.project_id,revisionId:selection.revision_id,profileId:"",baselineId:""}));sessionStorage.setItem("astra.production.workspace",workspace);},{workspace,selection});

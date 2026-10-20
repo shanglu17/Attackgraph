@@ -7,6 +7,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import type {
+  AnalysisRunSummary,
   EditPreview,
   InventoryPreviewResult,
   InventoryPreview,
@@ -25,6 +26,10 @@ export interface WorkspaceSession {
   documentPreview:ParsedFhaDocument|null;
   snapshot: WorkbenchSnapshot | null;
   runs: StoredAnalysisRun[];
+  history: AnalysisRunSummary[];
+  nextCursor: string | null;
+  historyBusy: boolean;
+  runError: string;
   draft: Draft | null;
   conflict: boolean;
   parameters: SavedAnalysisCommand["parameters"];
@@ -48,6 +53,7 @@ function initial(key?: string): WorkspaceSession {
     documentPreview:null,
     snapshot: null,
     runs: [],
+    history: [], nextCursor:null, historyBusy:false, runError:"",
     draft: null,
     conflict: false,
     parameters: { max_hops: 3, dps_hop_decay: 0.95 },
@@ -101,6 +107,10 @@ interface Value {
   navigate: (w: Workspace) => void;
   choices: WorkspaceChoice[];
   refreshChoices: () => Promise<void>;
+  selectRun: (id:string) => void;
+  loadMoreRuns: () => Promise<void>;
+  loadRun: (inputs?:boolean) => Promise<void>;
+  forgetProject: (id:string) => void;
   patch: (p: Partial<WorkspaceSession>) => void;
   perform: (action: () => Promise<void>) => Promise<void>;
   refresh: () => Promise<void>;
@@ -121,6 +131,7 @@ const Context = createContext<Value | null>(null);
 const draftKey = (key: string) => "astra.production.draft.v1:" + key;
 export function WorkspaceProvider({ children }: PropsWithChildren) {
   const scope = useWorkspaceContext();
+  const activeScope=useRef(scope);activeScope.current=scope;
   const key = scope.projectId + ":" + scope.revisionId;
   const [sessions, setSessions] = useState<Record<string, WorkspaceSession>>(
     {},
@@ -137,6 +148,8 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
   });
   const [choices, setChoices] = useState<WorkspaceChoice[]>([]);
   const reads = useRef<Record<string, number>>({});
+  const detailReads = useRef<Record<string,number>>({});
+  const historyLoading = useRef(new Set<string>());
   const running = useRef(new Set<string>());
   const commands = useRef(new Map<string, string>());
   const state = sessions[key] ?? initial(key);
@@ -173,6 +186,8 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
   const refreshChoices = async () => {
     const response = await workbenchApi.listWorkspaces();
     setChoices(response.workspaces);
+    const selected=response.workspaces.find(p=>p.project_id===activeScope.current.projectId);
+    if(selected?.project_state==="Deleted"&&activeScope.current.revisionId)forgetProject(selected.project_id);
   };
   const navigate = (w: Workspace) => {
     setWorkspace(w);
@@ -183,7 +198,7 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
     }
   };
   async function refresh() {
-    if (!scope.projectId || !scope.revisionId) return;
+    if (!scope.projectId || !scope.revisionId || activeScope.current.projectId!==scope.projectId || activeScope.current.revisionId!==scope.revisionId) return;
     const ticket = (reads.current[key] ?? 0) + 1;
     reads.current[key] = ticket;
     const [snapshot, result] = await Promise.all([
@@ -191,12 +206,17 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
         project_id: scope.projectId,
         revision_id: scope.revisionId,
       }),
-      workbenchApi.runs({
+      workbenchApi.history({
         project_id: scope.projectId,
         revision_id: scope.revisionId,
       }),
     ]);
     if (ticket !== reads.current[key]) return;
+    const wanted=(sessions[key]??initial(key)).selectedRun;
+    if(wanted&&!result.runs.some(r=>r.id===wanted)){
+      const restored=await workbenchApi.history({project_id:scope.projectId,revision_id:scope.revisionId},undefined,wanted);
+      result.runs.push(...restored.runs);
+    }
     let recovered: Draft | null = null;
     try {
       const raw = localStorage.getItem(draftKey(key));
@@ -229,15 +249,46 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
         [key]: {
           ...previous,
           snapshot,
-          runs: result.runs.filter(
-            (r) => r.method.method_id === "dfs-dps-attack-path",
-          ),
+          runs: [],
+          history: result.runs.sort((a,b)=>b.started_at.localeCompare(a.started_at)||b.id.localeCompare(a.id)), nextCursor:result.next_cursor,runError:"",
+          selectedRun: result.runs.some(r=>r.id===previous.selectedRun)?previous.selectedRun:(result.runs[0]?.id??""),
           draft,
           conflict:
             !!draft && draft.base_version !== snapshot.model.revision_version,
         },
       };
     });
+  }
+  const selectRun = (id:string) => patch({selectedRun:id,selectedPath:"",runs:[],runError:""});
+  async function loadRun(inputs=false) {
+    const id=state.selectedRun, version=state.snapshot?.model.revision_version;
+    if(!id || !state.snapshot || !scope.projectId || !scope.revisionId)return;
+    const ticket=(detailReads.current[key]??0)+1;detailReads.current[key]=ticket;
+    patch({historyBusy:true,runError:""});
+    try {
+      const {run}=await workbenchApi.runDetail({project_id:scope.projectId,revision_id:scope.revisionId},id,inputs);
+      if(ticket!==detailReads.current[key])return;
+      setSessions(all=>{const previous=all[key];if(!previous||previous.selectedRun!==id||previous.snapshot?.model.revision_version!==version)return all;return {...all,[key]:{...previous,runs:[run]}};});
+    }catch(e){if(ticket===detailReads.current[key])patch({runError:(e as Error).message});}
+    finally{if(ticket===detailReads.current[key])patch({historyBusy:false});}
+  }
+  useEffect(()=>{
+    if((workspace==="analysis"||workspace==="reports")&&!state.runs.length&&!state.runError)void loadRun();
+  },[key,workspace,state.selectedRun,state.snapshot?.model.revision_version,state.runs.length]);
+  async function loadMoreRuns(){
+    if(!state.nextCursor||historyLoading.current.has(key))return;
+    historyLoading.current.add(key);patch({historyBusy:true,runError:""});
+    const cursor=state.nextCursor;
+    try{const page=await workbenchApi.history({project_id:scope.projectId,revision_id:scope.revisionId},cursor);
+      setSessions(all=>{const previous=all[key];if(!previous||previous.nextCursor!==cursor)return all;return {...all,[key]:{...previous,history:[...previous.history,...page.runs.filter(r=>!previous.history.some(v=>v.id===r.id))].sort((a,b)=>b.started_at.localeCompare(a.started_at)||b.id.localeCompare(a.id)),nextCursor:page.next_cursor}};});
+    }catch(e){patch({runError:(e as Error).message});}finally{historyLoading.current.delete(key);patch({historyBusy:false});}
+  }
+  function forgetProject(id:string){
+    const prefix=id+":";
+    for(const k of Object.keys(reads.current))if(k.startsWith(prefix)){reads.current[k]++;detailReads.current[k]=(detailReads.current[k]??0)+1;}
+    setSessions(all=>Object.fromEntries(Object.entries(all).filter(([k])=>!k.startsWith(prefix))));
+    for(const storage of [localStorage,sessionStorage])for(const k of Object.keys(storage))if(k.startsWith("astra.production.draft.v1:"+prefix)||k.startsWith("astra.production.ui:"+prefix))storage.removeItem(k);
+    if(activeScope.current.projectId===id){const previous=activeScope.current;activeScope.current={...previous,projectId:"",revisionId:"",baselineId:"",profileId:""};previous.update({projectId:"",revisionId:"",baselineId:"",profileId:""});}
   }
   async function perform(action: () => Promise<void>) {
     if (running.current.has(key)) return;
@@ -332,6 +383,7 @@ export function WorkspaceProvider({ children }: PropsWithChildren) {
         navigate,
         choices,
         refreshChoices,
+        selectRun,loadRun,loadMoreRuns,forgetProject,
         patch,
         perform,
         refresh,

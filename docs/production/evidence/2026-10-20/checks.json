@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-20",
+  "database": "independent Neo4j, Bolt 17687",
+  "backend_unit": {
+    "passed": 88,
+    "failed": 0
+  },
+  "frontend_unit": {
+    "passed": 18,
+    "failed": 0
+  },
+  "existing_database": {
+    "passed": 16,
+    "failed": 0
+  },
+  "workbench_and_lifecycle_database": {
+    "passed": 2,
+    "failed": 0
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "logs": "ignored .tmp/improvements-*.log; not part of Git delivery"
+}

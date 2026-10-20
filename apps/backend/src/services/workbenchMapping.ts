@@ -19,6 +19,7 @@ import { assetNodeSchema, assetEdgeSchema } from "../types/api.js";
 import type { AssetNode, AssetEdge, ThreatPoint } from "../types/domain.js";
 import { analysisDigest } from "./analysis/canonicalization.js";
 import { z } from "zod";
+import { isInferredOwnership, propagationProjection } from "./analysis/propagationPolicy.js";
 
 export const scoringDisclaimer =
   "用于相对排序的启发式评分，不代表实际攻击成功概率。";
@@ -76,6 +77,7 @@ export function mapCoreModel(
   ) as AssetNode[];
   const edges = ordered(model.entities.data_flows)
     .filter((f) => f.analysis?.dps_enabled !== false)
+    .filter((f) => !isInferredOwnership(f, configuration))
     .map((f) =>
       mappedEdgeSchema.parse({
         link_type: "DataFlow",
@@ -141,7 +143,9 @@ export function modelDigest(
         ),
     ]),
   );
-  return analysisDigest({ entities, configuration });
+  return analysisDigest({ entities, configuration,
+    ...(configuration.mapping_version === "do356a-ams/v1" ? { propagation: propagationProjection(model, configuration) } : {}),
+  });
 }
 export function analysisTargets(
   graph: ReturnType<typeof mapCoreModel>,
@@ -403,7 +407,9 @@ export function prepareInventory(
           producer_asset_business_id: e.source_asset_id,
           consumer_asset_business_id: e.target_asset_id,
           analysis: Object.fromEntries(
-            Object.entries({ ...e, mapping_order: index }).filter(
+            Object.entries({ ...e, mapping_order: index,
+              relationship_kind: e.description?.startsWith("Derived data ownership | ") ? "data_ownership" : "propagation",
+            }).filter(
               ([, v]) => v !== undefined,
             ),
           ),
@@ -460,9 +466,10 @@ export function prepareInventory(
     warnings: [
       ...prepared.summary.warnings,
       "AMS 规则仅适用于 DO356A-AMS；自动连接、威胁与目标均需人工核对。",
+      "传播规则 do356a-ams-propagation/v2：自动推断的数据归属关系仅保留为来源信息，不单独构成攻击传播通道。",
       ...(coreInterfaces.length || coreSystemFlows.length
         ? [
-            "边界接口与系统数据流保存在核心模型；原 DPS 的连接集合保持不变。这些补充清单记录标记 dps_enabled=false，不能当作已经参与 DPS 的连接。",
+            "边界接口与系统数据流保存在核心模型；这些补充清单记录标记 dps_enabled=false，不能当作已经参与 DPS 的连接。自动推断的数据归属另由传播规则排除。",
           ]
         : []),
     ],

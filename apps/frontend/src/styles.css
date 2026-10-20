@@ -920,3 +920,6 @@ pre.scroll-panel { white-space:pre-wrap; overflow-wrap:anywhere; }
 .field-stack > .input-field { flex:none; flex-basis:auto; width:100%; }
 input.input-field,select.input-field { height:38px; }
 .toolbar.wrap > .field-stack { min-width:0; }
+
+/* Project identity wraps without widening the workspace on mobile. */
+.workbench-identity { overflow-wrap: anywhere; }

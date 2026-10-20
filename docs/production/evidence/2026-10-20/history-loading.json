@@ -1,0 +1,15 @@
+{
+  "measured_at": "2026-10-20T04:53:20.256Z",
+  "project_id": "a800bfa7-1ba3-4b57-9aac-07a6f8c434fc",
+  "revision_id": "c275f474-8281-426c-aea1-479f6e014ba6",
+  "run_count": 2,
+  "same_project_comparison": true,
+  "units": "UTF-8 response body bytes; API is not gzip encoded in this local proxy",
+  "legacy_full_history": 6551171,
+  "paged_summaries": 700,
+  "selected_result": 3215658,
+  "selected_with_inputs": 3275587,
+  "summary_has_no_results_or_snapshots": true,
+  "detail_omits_input": true,
+  "explicit_inputs_present": true
+}

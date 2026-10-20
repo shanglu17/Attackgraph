@@ -1,6 +1,6 @@
 import { Router, type NextFunction, type Response } from "express";
 import {
-  analysisQuerySchema,
+  analysisQuerySchema, analysisHistoryQuerySchema, analysisDetailQuerySchema,
   analysisRunCommandSchema,
   derivedResultReviewCommandSchema,
   promotionCommandSchema,
@@ -56,6 +56,9 @@ router.post("/runs", async (req, res, next) => {
     return forward(error, res, next);
   }
 });
+
+router.get("/runs/summaries",async(req,res,next)=>{try{const q=analysisHistoryQuerySchema.parse(req.query);res.json(await repository.readSummaries(q.project_id,q.revision_id,q.limit,q.cursor,q.run_id));}catch(e){forward(e,res,next);}});
+router.get("/runs/detail",async(req,res,next)=>{try{const q=analysisDetailQuerySchema.parse(req.query);await repository.resolveProjectRevisionScope(q.project_id,q.revision_id);const run=(await repository.readRuns(q.project_id,q.revision_id,q.run_id,true,q.include_inputs==="true"))[0];if(!run)return res.status(404).json({code:"ANALYSIS_RUN_NOT_FOUND",message:"所选修订中不存在该运行"});res.json({run});}catch(e){forward(e,res,next);}});
 
 router.get("/runs", async (req, res, next) => {
   try {

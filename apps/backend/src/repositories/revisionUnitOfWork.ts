@@ -151,6 +151,14 @@ async function diagnoseReservationFailure(
   );
 }
 
+/** Project lock precedes revision locks, serializing lifecycle changes with all v2 writes. */
+export async function lockWritableProject(tx: ManagedTransaction, projectId: string): Promise<void> {
+  const r=await tx.run("MATCH(p:Project {id:$id}) SET p._project_write_lock=coalesce(p._project_write_lock,0)+1 WITH p REMOVE p._project_write_lock RETURN p.status AS status,p.deleted_at AS deleted",{id:projectId});
+  if (!r.records.length) throw new RevisionWriteScopeError(projectId, "project");
+  const row=r.records[0];
+  if (row.get("deleted") || row.get("status")==="Archived") throw new RevisionNotWritableError(projectId,"项目已归档或已删除");
+}
+
 /**
  * The transaction boundary for all new revision-scoped business writes.
  * Legacy GraphVersion repositories remain compatibility-only until P1.5/P1.6.
@@ -195,6 +203,7 @@ export class RevisionUnitOfWork {
           return readReplay<TResult>(envelope.command_id, priorReceipt);
         }
 
+        await lockWritableProject(transaction, envelope.project_id);
         const reserved = await transaction.run(
           `MATCH (project:Project {id: $project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(revision:Revision {id: $revision_id})
            WHERE revision.project_id = $project_id

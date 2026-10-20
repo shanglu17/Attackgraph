@@ -1,3 +1,4 @@
+import { int as neo4jInteger } from "neo4j-driver";
 import { randomUUID } from "node:crypto";
 import type { ManagedTransaction } from "neo4j-driver";
 import type {
@@ -11,6 +12,7 @@ import { analysisContractVersion } from "@attackgraph/contracts";
 import { getDriver } from "../db/neo4j.js";
 import type { ExecutedResult } from "../services/analysis/methodExecutor.js";
 import type { ProjectRevisionScope } from "./compatibilityScopeRepository.js";
+import { amsPropagationVersion, obsoleteSavedProjection } from "../services/analysis/propagationPolicy.js";
 
 function numeric(value: unknown): number {
   if (typeof value === "number") return value;
@@ -49,6 +51,7 @@ export interface CreateAnalysisRunInput {
   method: AnalysisMethodDefinition;
   method_config_version: string;
   rule_pack_version?: string;
+  projection_version?: string;
   execution_limits: Record<string, unknown>;
   input_snapshot: { payload: unknown; content_hash: string };
   config_snapshot: { payload: unknown; content_hash: string };
@@ -58,12 +61,35 @@ export interface CreateAnalysisRunInput {
 }
 
 export class AnalysisRepository {
+  async readSummaries(projectId: string, revisionId: string, limit = 20, cursor?: string, runId?: string): Promise<import("@attackgraph/contracts").AnalysisHistoryPage> {
+    await this.resolveProjectRevisionScope(projectId, revisionId);
+    const s = getDriver().session();
+    try {
+      return await s.executeRead(async tx => {
+        const params={project_id:projectId,revision_id:revisionId,cursor:cursor??null,run_id:runId??null,limit:neo4jInteger(limit+1),projection_version:amsPropagationVersion};
+        if(cursor){const anchor=await tx.run("MATCH(r:AnalysisRun {project_id:$project_id,revision_id:$revision_id,id:$cursor,method_id:'dfs-dps-attack-path'}) RETURN r.id",params);if(!anchor.records.length)throw new AnalysisScopeError("History cursor is outside the current project/revision");}
+        const r=await tx.run(`OPTIONAL MATCH(anchor:AnalysisRun {id:$cursor,project_id:$project_id,revision_id:$revision_id})
+          WITH anchor MATCH(run:AnalysisRun {project_id:$project_id,revision_id:$revision_id,method_id:'dfs-dps-attack-path'})
+          WHERE ($run_id IS NULL OR run.id=$run_id) AND ($cursor IS NULL OR run.started_at<anchor.started_at OR (run.started_at=anchor.started_at AND run.id<anchor.id))
+          OPTIONAL MATCH(audit:AuditEvent {command_id:run.command_id})
+          RETURN run.id AS id,run.input_revision_version AS input_revision_version,run.started_at AS started_at,run.completed_at AS completed_at,run.status AS status,
+            CASE WHEN audit.request_canonicalizer='workbench.saved-analysis/v1' THEN 'saved-model' ELSE 'caller-provided' END AS input_origin,
+            ((audit.request_canonicalizer='workbench.saved-analysis/v1' AND run.rule_pack_version='do356a-ams/v1' AND coalesce(run.projection_version,'')<>$projection_version) OR EXISTS { MATCH(e:AuditEvent {project_id:$project_id,subject_id:$revision_id})
+              WHERE e.subject_version_after>run.revision_version AND e.event_type IN ['SYSTEM_MODEL_IMPORTED','SYSTEM_MODEL_EDITED','ANALYSIS_CONFIGURATION_UPDATED','ENGINEERING_CASE_COMMITTED'] }) AS stale
+          ORDER BY run.started_at DESC,run.id DESC LIMIT $limit`,params);
+        const rows=r.records.slice(0,limit).map(row=>({id:String(row.get("id")),project_id:projectId,revision_id:revisionId,
+          input_revision_version:numeric(row.get("input_revision_version")),started_at:dateText(row.get("started_at")),completed_at:dateText(row.get("completed_at")),
+          status:row.get("status") as "Completed"|"Failed",stale:row.get("stale")===true,input_origin:row.get("input_origin") as "saved-model"|"caller-provided"}));
+        return {runs:rows,next_cursor:r.records.length>limit?rows[rows.length-1].id:null};
+      });
+    } finally {await s.close();}
+  }
   async resolveProjectRevisionScope(projectId: string, revisionId: string): Promise<ProjectRevisionScope> {
     const session = getDriver().session();
     try {
       const result = await session.executeRead((tx) => tx.run(
         "MATCH (project:Project {id: $project_id})-[:HAS_MODEL]->(model:Model)-[:HAS_REVISION]->(revision:Revision {id: $revision_id}) " +
-        "RETURN model.id AS model_id",
+        "WHERE project.deleted_at IS NULL RETURN model.id AS model_id",
         { project_id: projectId, revision_id: revisionId },
       ));
       if (result.records.length !== 1) throw new AnalysisScopeError("Project/revision scope was not found or is ambiguous");
@@ -112,6 +138,7 @@ export class AnalysisRepository {
       "CREATE (run:CoreEntity:AnalysisRun {id: $run_id, business_id: $run_business_id, entity_type: 'AnalysisRun', project_id: $project_id, " +
       "revision_id: $revision_id, input_revision_version: $input_revision_version, revision_version: $revision_version, contract_version: $contract_version, " +
       "method_id: $method_id, method_version: $method_version, method_config_version: $method_config_version, rule_pack_version: $rule_pack_version, " +
+      "projection_version: $projection_version, " +
       "implementation_artifact_digest: $implementation_artifact_digest, canonicalizer_id: $canonicalizer_id, canonicalizer_version: $canonicalizer_version, " +
       "execution_limits_json: $execution_limits_json, command_id: $command_id, actor: $actor, status: $status, replayability: $replayability, " +
       "result_summary_hash: $result_summary_hash, started_at: datetime($started_at), completed_at: datetime($completed_at), created_at: datetime($completed_at)}) " +
@@ -123,6 +150,7 @@ export class AnalysisRepository {
         input_revision_version: input.input_revision_version, revision_version: input.revision_version,
         contract_version: analysisContractVersion, method_config_version: input.method_config_version,
         rule_pack_version: input.rule_pack_version ?? null,
+        projection_version: input.projection_version ?? null,
         implementation_artifact_digest: input.method.implementation_artifact_digest,
         canonicalizer_id: input.method.canonicalizer_id, canonicalizer_version: input.method.canonicalizer_version,
         execution_limits_json: JSON.stringify(input.execution_limits), command_id: input.command_id,
@@ -264,7 +292,7 @@ export class AnalysisRepository {
     return { promotion_id: promotionId, core_entity_id: coreId, target_type: input.promotion.target_type, target_business_id: input.promotion.target_business_id, status: "Draft" as const };
   }
 
-  async readRuns(projectId: string, revisionId: string, runId?: string, withInputOrigin=false): Promise<StoredAnalysisRun[]> {
+  async readRuns(projectId: string, revisionId: string, runId?: string, withInputOrigin=false, includeInputs=true): Promise<StoredAnalysisRun[]> {
     const session = getDriver().session();
     try {
       return await session.executeRead(async (tx) => {
@@ -284,7 +312,7 @@ export class AnalysisRepository {
           const source = props(record, "source");
           const auditNode = record.get("audit");
           const audit = typeof auditNode === "object" && auditNode !== null && "properties" in auditNode ? (auditNode as { properties: Record<string, unknown> }).properties : {};
-          const snapshotsResult = await tx.run("MATCH (:AnalysisRun {id: $id})-[:HAS_INPUT_SNAPSHOT]->(snapshot:AnalysisInputSnapshot) RETURN snapshot ORDER BY snapshot.snapshot_type", { id: run.id });
+          const snapshotsResult = await tx.run("MATCH (:AnalysisRun {id: $id})-[:HAS_INPUT_SNAPSHOT]->(snapshot:AnalysisInputSnapshot) WHERE $include_inputs OR snapshot.snapshot_type='method_config' RETURN snapshot ORDER BY snapshot.snapshot_type", { id: run.id, include_inputs:includeInputs });
           const resultsResult = await tx.run("MATCH (:AnalysisRun {id: $id})-[:PRODUCED]->(result:DerivedResult) RETURN result ORDER BY result.business_id", { id: run.id });
           const staleResult = await tx.run(
             "MATCH (event:AuditEvent {project_id: $project_id, subject_id: $revision_id}) " +
@@ -328,7 +356,7 @@ export class AnalysisRepository {
             completed_at: dateText(run.completed_at), actor: String(run.actor), status: run.status as "Completed" | "Failed",
             replayability: run.replayability as "reproducible" | "verifiable_only", result_summary_hash: String(run.result_summary_hash),
             execution_limits: JSON.parse(String(run.execution_limits_json)), snapshots, results,
-            stale: numeric(staleResult.records[0].get("count")) > 0,
+            stale: numeric(staleResult.records[0].get("count")) > 0 || (withInputOrigin && obsoleteSavedProjection(audit.request_canonicalizer, run.rule_pack_version, run.projection_version)),
           });
         }
         return output;

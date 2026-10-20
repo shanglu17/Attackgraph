@@ -1,3 +1,4 @@
+import { RunLoadStatus } from "../../shared/components/RunLoadStatus";
 import { lazy, Suspense, useState } from "react";
 import { useWorkbench } from "../../app/WorkspaceProvider";
 import { workbenchApi } from "../../api";
@@ -9,8 +10,9 @@ import {
 import { exportResult } from "./resultExport";
 const Advanced = lazy(() => import("../advanced/AdvancedTools"));
 export default function ResultWorkspace() {
-  const { state, patch, perform, navigate } = useWorkbench();
+  const { state, patch, perform, navigate, selectRun, loadMoreRuns, loadRun } = useWorkbench();
   const [advanced, setAdvanced] = useState(false);
+  const [inspect,setInspect]=useState(false);
   const run =
     state.runs.find((r) => r.id === state.selectedRun) ??
     state.runs.slice(-1)[0];
@@ -29,13 +31,14 @@ export default function ResultWorkspace() {
   }
   return (
     <section className="panel">
+      <RunLoadStatus/>
       <span className="tag">04 / 解释与导出</span>
       <h2>报告中心</h2>
       <p>
         当前模型事务版本：{state.snapshot?.model.revision_version ?? "未加载"} ·
         分析状态：
         {!run
-          ? "尚未分析"
+          ? (state.history.length?"正在加载所选结果":"尚未分析")
           : run.status === "Failed"
             ? "分析失败 / 已保存诊断"
             : current
@@ -83,31 +86,35 @@ export default function ResultWorkspace() {
           只有匹配当前模型、分析配置和参数的结果才能导出为当前成果。
         </p>
       )}
-      {state.runs.length > 0 && (
+      {state.history.length > 0 && (
         <>
           <h3>分析历史</h3>
           <label className="field-stack">
             查看运行
             <select
+              aria-label="查看运行"
               className="input-field"
-              value={run?.id ?? ""}
+              value={state.selectedRun}
               onChange={(e) =>
-                patch({ selectedRun: e.target.value, selectedPath: "" })
+                selectRun(e.target.value)
               }
             >
-              {[...state.runs].reverse().map((r) => (
+              {state.history.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.completed_at} · 输入 v{r.input_revision_version} ·{" "}
-                  {currentRun(r, state.snapshot, state.parameters)
-                    ? "当前"
-                    : "历史 / 已过期"}
+                  {r.status==="Failed"?"失败":r.input_origin==="caller-provided"?"兼容输入":r.id===run?.id&&current?"当前":r.stale?"已过期":"待查看"}
                 </option>
               ))}
             </select>
           </label>
-          <details>
+          {state.nextCursor&&<button className="button" disabled={state.historyBusy} onClick={()=>void loadMoreRuns()}>加载更多历史运行</button>}
+          <p>历史列表按页读取；选择运行后才加载结果，输入快照另外按需读取。</p>
+          <details onToggle={e=>setInspect(e.currentTarget.open)}>
             <summary>查看此运行的输入快照、评分和诊断（历史保留）</summary>
-            <pre className="scroll-panel">{JSON.stringify(run, null, 2)}</pre>
+            {inspect&&<>
+              {run&&!run.snapshots.some(s=>s.snapshot_type==="method_input")&&<button className="button" disabled={state.historyBusy} onClick={()=>void loadRun(true)}>加载完整输入快照</button>}
+              <pre className="scroll-panel">{run?JSON.stringify(run,null,2):"选择运行后读取详情。"}</pre>
+            </>}
           </details>
         </>
       )}

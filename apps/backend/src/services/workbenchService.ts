@@ -42,6 +42,7 @@ import { getAnalysisMethod } from "./analysis/methodRegistry.js";
 import type { AnalysisInput } from "./analysisService.js";
 import type { AttackPath } from "../types/domain.js";
 import type { ExecutedResult } from "./analysis/methodExecutor.js";
+import { propagationProjection } from "./analysis/propagationPolicy.js";
 
 function candidate(entities: unknown): SystemModelImportPayload {
   return systemModelImportPayloadSchema.parse({
@@ -416,9 +417,13 @@ export class WorkbenchService {
         }
         const calculation_ms = Math.round(performance.now() - start),
           completed_at = new Date().toISOString();
+        const propagation = propagationProjection(model, configuration);
+        const inputPayload = { ...graph, mapping_version: configuration.mapping_version, propagation };
+        const mappingPayload = { configuration, sources: model.sources, propagation };
         const metadata = {
           model_hash: modelDigest(model, configuration),
           mapping_version: configuration.mapping_version,
+          propagation,
           parameters: input.parameters,
           calculation_ms,
           disclaimer: scoringDisclaimer,
@@ -478,16 +483,14 @@ export class WorkbenchService {
             method: getAnalysisMethod("dfs-dps-attack-path", "1.0.0"),
             method_config_version: "saved-model-analysis.v1",
             rule_pack_version: configuration.mapping_version,
+            projection_version: propagation.version,
             execution_limits: {
               max_hops: input.parameters.max_hops,
               timeout_ms: 10000,
             },
             input_snapshot: {
-              payload: {
-                ...graph,
-                mapping_version: configuration.mapping_version,
-              },
-              content_hash: analysisDigest(graph),
+              payload: inputPayload,
+              content_hash: analysisDigest(inputPayload),
             },
             config_snapshot: {
               payload: metadata,
@@ -496,8 +499,8 @@ export class WorkbenchService {
             extra_snapshots: [
               {
                 snapshot_type: "mapping",
-                payload: { configuration, sources: model.sources },
-                content_hash: analysisDigest(configuration),
+                payload: mappingPayload,
+                content_hash: analysisDigest(mappingPayload),
               },
             ],
             results,

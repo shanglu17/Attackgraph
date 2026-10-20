@@ -13,6 +13,8 @@ import {
 import { AnalysisService } from "./analysisService.js";
 import { executeSavedDps, WorkbenchService } from "./workbenchService.js";
 import type { StoredSystemModel } from "@attackgraph/contracts";
+import { amsPropagationVersion, obsoleteSavedProjection, propagationProjection } from "./analysis/propagationPolicy.js";
+import { analysisDigest } from "./analysis/canonicalization.js";
 const config = analysisConfigurationSchema.parse({});
 const model = () =>
   systemModelImportPayloadSchema.parse({
@@ -239,4 +241,52 @@ test("connection modifications preserve baseline scores and timeout is an explic
   await assert.rejects(executeSavedDps(input, 1), (error: Error) =>
     error.message.includes("超时"),
   );
+});
+
+test("AMS ownership is retained as provenance, but only real channels propagate (including persisted v1 imports)", () => {
+  const core = model();
+  const ams = analysisConfigurationSchema.parse({ mapping_version: "do356a-ams/v1" });
+  const channel = { ...core.entities.data_flows[0], business_id: "CHANNEL", description: "Data via | SI.4 | Software",
+    analysis: { direction: "Bidirectional", trust_level: "Trusted", relationship_kind: "propagation" },
+    tags: ["auto_generated", "do356a-ams/v1"] };
+  const ownership = { ...channel, business_id: "OWNER", description: "Derived data ownership | Software | AMS controller",
+    analysis: { direction: "Bidirectional", trust_level: "Trusted" } };
+  core.entities.data_flows = [ownership, channel];
+  const before = structuredClone(core);
+  const graph = mapCoreModel(core, ams);
+  assert.deepEqual(core, before, "projection must not mutate persisted provenance");
+  assert.deepEqual(graph.asset_edges.map(e => e.edge_id), ["CHANNEL"]);
+  assert.deepEqual(propagationProjection(core, ams), { version: amsPropagationVersion,
+    excluded_relations: [{ business_id: "OWNER", reason: "inferred_ownership_is_not_a_propagation_channel" }] });
+  const run = (edges: typeof graph.asset_edges) => new AnalysisService().run({ ...graph, asset_edges: edges,
+    analysis_batch_id: "regression", generated_by: "test", max_hops: 1, dps_hop_decay: 0.95 });
+  const legacy = run(mapCoreModel(core, config).asset_edges);
+  const fixed = run(graph.asset_edges);
+  assert.equal(legacy.length, 2);
+  assert.equal(fixed.length, 1);
+  assert.equal(fixed[0].hop_sequence, legacy[0].hop_sequence);
+  assert.equal(fixed[0].raw_score, legacy[0].raw_score, "scoring formula stays unchanged");
+  assert.equal(fixed[0].traverses[0].edge_id, "CHANNEL");
+
+  core.entities.data_flows = [{ ...ownership, analysis: { ...ownership.analysis, relationship_kind: "data_ownership" }, description: "Localized ownership" }];
+  assert.equal(mapCoreModel(core, ams).asset_edges.length, 0, "new imports use explicit semantics");
+  core.entities.data_flows = [channel, { ...channel, business_id: "CHANNEL-2", description: "Data via | SI.5 | Software" }];
+  assert.equal(mapCoreModel(core, ams).asset_edges.length, 2, "independent parallel channels must survive");
+  core.entities.data_flows = [{ ...ownership, tags: [] }];
+  assert.equal(mapCoreModel(core, ams).asset_edges.length, 1, "manual records are never classified by label alone");
+  core.entities.data_flows = [{ ...ownership, tags: ["auto_generated"] }];
+  assert.equal(mapCoreModel(core, ams).asset_edges.length, 1, "unrelated import rules remain unchanged");
+  core.entities.data_flows = [{ ...channel, analysis: { ...channel.analysis, dps_enabled: false } }];
+  assert.equal(mapCoreModel(core, ams).asset_edges.length, 0);
+});
+
+test("propagation upgrades invalidate AMS current results without changing core mapping or legacy caller inputs", () => {
+  const core = model(), ams = { ...config, mapping_version: "do356a-ams/v1" as const };
+  const oldHash = analysisDigest({ entities: core.entities, configuration: ams });
+  assert.notEqual(modelDigest(core, ams), oldHash);
+  assert.equal(modelDigest(core, config), analysisDigest({ entities: core.entities, configuration: config }));
+  assert.equal(obsoleteSavedProjection("workbench.saved-analysis/v1", ams.mapping_version, undefined), true);
+  assert.equal(obsoleteSavedProjection("workbench.saved-analysis/v1", ams.mapping_version, amsPropagationVersion), false);
+  assert.equal(obsoleteSavedProjection("workbench.saved-analysis/v1", "core-dps/v1", undefined), false);
+  assert.equal(obsoleteSavedProjection("analysis.execute/v1", ams.mapping_version, undefined), false);
 });

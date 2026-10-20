@@ -51,3 +51,18 @@ test("current reports require saved model digest, parameters, status and stale f
     false,
   );
 });
+
+
+test("project filtering distinguishes active business projects, examples, archives and recycle bin",async()=>{
+  const {matchesProjectFilter,projectLabel}=await import("../src/shared/model/projectChoices");
+  const base={project_id:"11111111-a",project_name:"Same name",project_business_id:"A",model_id:"m",model_name:"Model",revision_id:"r",revision_business_id:"REV",revision_version:1,status:"Draft"};
+  assert.equal(matchesProjectFilter(base,"user"),true);
+  assert.equal(matchesProjectFilter({...base,project_kind:"example"},"user"),false);
+  assert.equal(matchesProjectFilter({...base,project_kind:"example"},"example"),true);
+  assert.equal(matchesProjectFilter({...base,project_state:"Archived"},"user"),false);
+  assert.equal(matchesProjectFilter({...base,project_state:"Archived"},"archived"),true);
+  assert.equal(matchesProjectFilter({...base,project_state:"Deleted"},"deleted"),true);
+  assert.equal(matchesProjectFilter({...base,project_state:"Deleted"},"all"),true);
+  assert.notEqual(projectLabel(base),projectLabel({...base,project_business_id:"B",project_id:"22222222-b"}));
+  assert.match(projectLabel(base),/A.*11111111/);
+});

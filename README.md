@@ -26,6 +26,8 @@ npm run dev:frontend
 ## 文档
 
 - [正式版本交付、启动和数据库配置](docs/production/README.md)
+- [项目归档、回收恢复与历史分页](docs/production/project-management.md)
+- [项目管理增量验收与加载对比](docs/production/improvements-2026-10-20.md)
 - [导入 → 检查 → 修改 → 分析 → 导出演示](docs/production/walkthrough.md)
 - [九类 Sheet 模板填写指南](docs/production/inventory-template.md)
 - [正式接口及模型映射契约](docs/architecture/production-workbench.md)

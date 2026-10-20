@@ -1,0 +1,779 @@
+{
+  "scenarios": [
+    {
+      "name": "empty_project",
+      "requests": [
+        {
+          "url": "http://127.0.0.1:15177/",
+          "type": "document",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 681,
+          "responseBodySize": 380,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-ChNlQkwx.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 6151,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-C4CXsbgy.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9100,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/InventoryWorkspace-DoUGUPJS.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 593,
+          "responseBodySize": 3188,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/governance/workspaces?view=management.v1",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 551,
+          "responseBodySize": 24730,
+          "responseHeadersSize": 301
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/summaries?project_id=70544347-fe2f-409c-bd3e-9cbab9894d10&revision_id=bd14b8ea-c4bc-4026-acf3-df9748fccb8d&limit=20",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 553,
+          "responseBodySize": 30,
+          "responseHeadersSize": 296
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/workbench?project_id=70544347-fe2f-409c-bd3e-9cbab9894d10&revision_id=bd14b8ea-c4bc-4026-acf3-df9748fccb8d",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 552,
+          "responseBodySize": 613,
+          "responseHeadersSize": 298
+        }
+      ],
+      "script_wire_bytes": 76182,
+      "static_wire_bytes": 82713,
+      "api_wire_bytes": 25373,
+      "script_modules": [
+        "/assets/index-C4CXsbgy.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/InventoryWorkspace-DoUGUPJS.js",
+        "/assets/index-D4t6L2dp.js"
+      ]
+    },
+    {
+      "name": "saved_import_workspace",
+      "requests": [
+        {
+          "url": "http://127.0.0.1:15177/",
+          "type": "document",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 681,
+          "responseBodySize": 380,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-ChNlQkwx.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 6151,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-C4CXsbgy.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9100,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/InventoryWorkspace-DoUGUPJS.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 593,
+          "responseBodySize": 3188,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/governance/workspaces?view=management.v1",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 551,
+          "responseBodySize": 24730,
+          "responseHeadersSize": 301
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/summaries?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&limit=20",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 553,
+          "responseBodySize": 700,
+          "responseHeadersSize": 298
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/workbench?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 552,
+          "responseBodySize": 190996,
+          "responseHeadersSize": 303
+        }
+      ],
+      "script_wire_bytes": 76182,
+      "static_wire_bytes": 82713,
+      "api_wire_bytes": 216426,
+      "script_modules": [
+        "/assets/index-C4CXsbgy.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/InventoryWorkspace-DoUGUPJS.js",
+        "/assets/index-D4t6L2dp.js"
+      ]
+    },
+    {
+      "name": "saved_graph",
+      "requests": [
+        {
+          "url": "http://127.0.0.1:15177/",
+          "type": "document",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 681,
+          "responseBodySize": 380,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-C4CXsbgy.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9100,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-ChNlQkwx.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 6151,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-Fd0xVSp_.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 599,
+          "responseBodySize": 1576,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/GraphWorkspace-Bp6u5XnT.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 3966,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-Bgq-woZv.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/reactflow-tAowGTmu.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 47198,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/governance/workspaces?view=management.v1",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 551,
+          "responseBodySize": 24730,
+          "responseHeadersSize": 301
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/summaries?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&limit=20",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 553,
+          "responseBodySize": 700,
+          "responseHeadersSize": 298
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/workbench?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 552,
+          "responseBodySize": 190996,
+          "responseHeadersSize": 303
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/detail?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&run_id=411ec06e-6610-408d-9ba8-0ff0a7b825d8&include_inputs=false",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 550,
+          "responseBodySize": 3215658,
+          "responseHeadersSize": 305
+        }
+      ],
+      "script_wire_bytes": 107060,
+      "static_wire_bytes": 115167,
+      "api_wire_bytes": 3432084,
+      "script_modules": [
+        "/assets/index-C4CXsbgy.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/GraphWorkspace-Bp6u5XnT.js",
+        "/assets/workbench-Bgq-woZv.js",
+        "/assets/reactflow-tAowGTmu.js"
+      ]
+    },
+    {
+      "name": "first_excel_read",
+      "requests": [
+        {
+          "url": "http://127.0.0.1:15177/",
+          "type": "document",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 681,
+          "responseBodySize": 380,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-C4CXsbgy.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9100,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-ChNlQkwx.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 6151,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/InventoryWorkspace-DoUGUPJS.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 593,
+          "responseBodySize": 3188,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-D4t6L2dp.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 17919,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/governance/workspaces?view=management.v1",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 551,
+          "responseBodySize": 24730,
+          "responseHeadersSize": 301
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/summaries?project_id=70544347-fe2f-409c-bd3e-9cbab9894d10&revision_id=bd14b8ea-c4bc-4026-acf3-df9748fccb8d&limit=20",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 553,
+          "responseBodySize": 30,
+          "responseHeadersSize": 296
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/workbench?project_id=70544347-fe2f-409c-bd3e-9cbab9894d10&revision_id=bd14b8ea-c4bc-4026-acf3-df9748fccb8d",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 552,
+          "responseBodySize": 613,
+          "responseHeadersSize": 298
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 585,
+          "responseBodySize": 243,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/cxfWorkbook-D-FXpFeG.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 586,
+          "responseBodySize": 3147,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/xlsx-CkFp8p6R.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 609,
+          "responseBodySize": 143078,
+          "responseHeadersSize": 245
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/import/preview",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 16331,
+          "requestHeadersSize": 645,
+          "responseBodySize": 117025,
+          "responseHeadersSize": 303
+        }
+      ],
+      "script_wire_bytes": 222650,
+      "static_wire_bytes": 229181,
+      "api_wire_bytes": 142398,
+      "script_modules": [
+        "/assets/index-C4CXsbgy.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/InventoryWorkspace-DoUGUPJS.js",
+        "/assets/index-D4t6L2dp.js",
+        "/assets/fileSafety-CgpeM1GG.js",
+        "/assets/cxfWorkbook-D-FXpFeG.js",
+        "/assets/xlsx-CkFp8p6R.js"
+      ]
+    },
+    {
+      "name": "first_advanced",
+      "requests": [
+        {
+          "url": "http://127.0.0.1:15177/",
+          "type": "document",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 681,
+          "responseBodySize": 380,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-ChNlQkwx.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 6151,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-C4CXsbgy.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9100,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ResultWorkspace-L8dwEFsK.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 2942,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-Bgq-woZv.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/governance/workspaces?view=management.v1",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 551,
+          "responseBodySize": 24730,
+          "responseHeadersSize": 301
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/summaries?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&limit=20",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 553,
+          "responseBodySize": 700,
+          "responseHeadersSize": 298
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/workbench?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 552,
+          "responseBodySize": 190996,
+          "responseHeadersSize": 303
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/detail?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&run_id=411ec06e-6610-408d-9ba8-0ff0a7b825d8&include_inputs=false",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 550,
+          "responseBodySize": 3215658,
+          "responseHeadersSize": 305
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AdvancedTools-CGPD8SM4.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 588,
+          "responseBodySize": 1117,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-DiZ8Wzzh.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 599,
+          "responseBodySize": 900,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-DEQpWmbW.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 2147,
+          "responseHeadersSize": 243
+        }
+      ],
+      "script_wire_bytes": 63002,
+      "static_wire_bytes": 69533,
+      "api_wire_bytes": 3432084,
+      "script_modules": [
+        "/assets/index-C4CXsbgy.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/ResultWorkspace-L8dwEFsK.js",
+        "/assets/workbench-Bgq-woZv.js",
+        "/assets/AdvancedTools-CGPD8SM4.js",
+        "/assets/AssuranceReviewWorkspace-DiZ8Wzzh.js",
+        "/assets/Vg1TraceabilityPanel-DEQpWmbW.js"
+      ]
+    },
+    {
+      "name": "first_document_parse",
+      "requests": [
+        {
+          "url": "http://127.0.0.1:15177/",
+          "type": "document",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 681,
+          "responseBodySize": 380,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-C4CXsbgy.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 580,
+          "responseBodySize": 9100,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/index-ChNlQkwx.css",
+          "type": "stylesheet",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 6151,
+          "responseHeadersSize": 236
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/react-vendor-BYfZc3_7.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 587,
+          "responseBodySize": 45975,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/ResultWorkspace-L8dwEFsK.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 2942,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/workbench-Bgq-woZv.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 584,
+          "responseBodySize": 821,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/governance/workspaces?view=management.v1",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 551,
+          "responseBodySize": 24730,
+          "responseHeadersSize": 301
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/summaries?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&limit=20",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 553,
+          "responseBodySize": 700,
+          "responseHeadersSize": 298
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/system-model/workbench?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 552,
+          "responseBodySize": 190996,
+          "responseHeadersSize": 303
+        },
+        {
+          "url": "http://127.0.0.1:15177/api/v2/analysis/runs/detail?project_id=a800bfa7-1ba3-4b57-9aac-07a6f8c434fc&revision_id=c275f474-8281-426c-aea1-479f6e014ba6&run_id=411ec06e-6610-408d-9ba8-0ff0a7b825d8&include_inputs=false",
+          "type": "fetch",
+          "content_encoding": "identity",
+          "requestBodySize": 0,
+          "requestHeadersSize": 550,
+          "responseBodySize": 3215658,
+          "responseHeadersSize": 305
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AdvancedTools-CGPD8SM4.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 588,
+          "responseBodySize": 1117,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/AssuranceReviewWorkspace-DiZ8Wzzh.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 599,
+          "responseBodySize": 900,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/Vg1TraceabilityPanel-DEQpWmbW.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 595,
+          "responseBodySize": 2147,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/DocumentPreviewTool-Wa6H7Dau.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 594,
+          "responseBodySize": 1158,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fhaDocument-BYzWt_H5.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 586,
+          "responseBodySize": 1241,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/fileSafety-CgpeM1GG.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 585,
+          "responseBodySize": 243,
+          "responseHeadersSize": 242
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/utility-vendor-DOKVf8cg.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 7634,
+          "responseHeadersSize": 243
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/document-import-BDfiFpRl.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 590,
+          "responseBodySize": 70941,
+          "responseHeadersSize": 244
+        },
+        {
+          "url": "http://127.0.0.1:15177/assets/archive-vendor-lirTm3G4.js",
+          "type": "script",
+          "content_encoding": "gzip",
+          "requestBodySize": 0,
+          "requestHeadersSize": 589,
+          "responseBodySize": 30109,
+          "responseHeadersSize": 244
+        }
+      ],
+      "script_wire_bytes": 174328,
+      "static_wire_bytes": 180859,
+      "api_wire_bytes": 3432084,
+      "script_modules": [
+        "/assets/index-C4CXsbgy.js",
+        "/assets/react-vendor-BYfZc3_7.js",
+        "/assets/ResultWorkspace-L8dwEFsK.js",
+        "/assets/workbench-Bgq-woZv.js",
+        "/assets/AdvancedTools-CGPD8SM4.js",
+        "/assets/AssuranceReviewWorkspace-DiZ8Wzzh.js",
+        "/assets/Vg1TraceabilityPanel-DEQpWmbW.js",
+        "/assets/DocumentPreviewTool-Wa6H7Dau.js",
+        "/assets/fhaDocument-BYzWt_H5.js",
+        "/assets/fileSafety-CgpeM1GG.js",
+        "/assets/utility-vendor-DOKVf8cg.js",
+        "/assets/document-import-BDfiFpRl.js",
+        "/assets/archive-vendor-lirTm3G4.js"
+      ]
+    }
+  ]
+}

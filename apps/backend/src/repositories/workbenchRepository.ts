@@ -21,21 +21,25 @@ const collections = {
   trace_links: "TraceLink",
 } as const;
 export class WorkbenchRepository {
-  async list(): Promise<WorkspaceChoice[]> {
+  async list(includeDeleted = false): Promise<WorkspaceChoice[]> {
     const session = getDriver().session();
     try {
       const result = await session.executeRead((tx) =>
         tx.run(`MATCH (p:Project)-[:HAS_MODEL]->(m:Model)-[:HAS_REVISION]->(r:Revision)
-        RETURN p.id AS project_id, p.name AS project_name, p.business_id AS project_business_id,
+        WHERE $include_deleted OR p.deleted_at IS NULL
+        RETURN p.version AS project_version, CASE WHEN p.deleted_at IS NOT NULL THEN 'Deleted' WHEN p.status='Archived' THEN 'Archived' ELSE 'Active' END AS project_state,
+          CASE WHEN p.project_kind IS NOT NULL THEN p.project_kind
+          WHEN p.business_id IN ['PHASE3-APPENDIX-D-DEMO','PHASE3-APPENDIX-D-DEMO-V2','PHASE4-ANALYSIS-DEMO','VG1-DEMO-PROJECT','legacy-do356a-appendix-d'] OR p.business_id STARTS WITH 'PHASE5-IMPACT-DEMO-' OR p.business_id =~ 'P5-[0-9a-f-]{36}' OR p.business_id =~ 'UI-[0-9]+-.*' THEN 'example' ELSE 'user' END AS project_kind,
+          p.id AS project_id, p.name AS project_name, p.business_id AS project_business_id,
           m.id AS model_id, m.name AS model_name, r.id AS revision_id, r.business_id AS revision_business_id,
-          r.version AS revision_version, r.status AS status ORDER BY p.name, r.business_id`),
+          r.version AS revision_version, r.status AS status ORDER BY p.name, p.business_id, r.business_id`, { include_deleted: includeDeleted }),
       );
       return result.records.map(
         (r) =>
           Object.fromEntries(
             r.keys.map((k) => [
               k,
-              k === "revision_version" ? Number(r.get(k)) : String(r.get(k)),
+              ["revision_version","project_version"].includes(String(k)) ? Number(r.get(k)) : String(r.get(k)),
             ]),
           ) as unknown as WorkspaceChoice,
       );
@@ -82,7 +86,7 @@ export class WorkbenchRepository {
       }
     }
     const result = await tx.run(
-      "MATCH (:Project {id:$project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(r:Revision {id:$revision_id}) RETURN r.status AS status",
+      "MATCH (p:Project {id:$project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(r:Revision {id:$revision_id}) RETURN CASE WHEN p.deleted_at IS NOT NULL THEN 'Deleted' WHEN p.status='Archived' THEN 'Archived' ELSE r.status END AS status",
       { project_id, revision_id },
     );
     return String(result.records[0]?.get("status") ?? "Missing");

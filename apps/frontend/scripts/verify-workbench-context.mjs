@@ -17,6 +17,7 @@ try{
   await page.addInitScript(scope=>{sessionStorage.setItem("astra.workspace-scope.v1",JSON.stringify({projectId:scope.project_id,revisionId:scope.revision_id,profileId:"",baselineId:""}));sessionStorage.setItem("astra.production.workspace","changes");},scope);
   const api=async(endpoint,data)=>{const response=await page.request[ data?"post":"get"](root+"/api/v2/"+endpoint,data?{data}:undefined);const payload=await response.json();assert.ok(response.ok(),JSON.stringify(payload));return payload;};
   const query=new URLSearchParams({project_id:scope.project_id,revision_id:scope.revision_id});
+  await page.addInitScript(()=>sessionStorage.setItem("astra.production.project-filter","all"));
   await page.goto(root,{waitUntil:"networkidle"});await page.getByRole("button",{name:"开始编辑",exact:true}).click();
   await page.getByLabel("编辑类型",{exact:true}).selectOption("assets");await page.getByLabel("名称",{exact:true}).fill("Local pending draft");
   const uid=crypto.randomUUID();const created=await api("governance/workspaces",{actor:"context-acceptance",command_id:uid,project:{business_id:"CONTEXT-"+uid,name:"Context isolation"},model:{business_id:"MODEL",name:"Empty",level:"system"},revision:{business_id:"REV-1"},standard_profile:{business_id:"PROFILE",name:"DO-356A",profile_version:"1",standard_references:["DO-356A"]}});
@@ -32,7 +33,7 @@ try{
   await page.getByLabel("项目",{exact:true}).selectOption(created.project.id);await page.getByText("请先导入模型并保存。",{exact:true}).waitFor();release();await page.waitForLoadState("networkidle");assert.equal(await page.getByText("请先导入模型并保存。",{exact:true}).isVisible(),true);
   await page.unroute("**/api/v2/system-model/workbench?*");await page.getByLabel("项目",{exact:true}).selectOption(scope.project_id);await page.getByRole("button",{name:"放弃草稿",exact:true}).click();
   const latest=await api("system-model/workbench?"+query);await api("governance/revisions/freeze",{project_id:scope.project_id,revision_id:scope.revision_id,actor:"context-acceptance",command_id:crypto.randomUUID(),expected_revision_version:latest.model.revision_version,baseline:{business_id:"CONTEXT-BASE",content_hash:"a".repeat(64)}});
-  await page.getByRole("button",{name:"刷新服务端数据",exact:true}).click();await page.getByText("当前修订已冻结，只能查看。",{exact:true}).waitFor();assert.equal(await page.getByRole("button",{name:"开始编辑",exact:true}).isDisabled(),true);
+  await page.getByRole("button",{name:"刷新服务端数据",exact:true}).click();await page.getByText("当前项目已归档或修订已冻结，只能查看。",{exact:true}).waitFor();assert.equal(await page.getByRole("button",{name:"开始编辑",exact:true}).isDisabled(),true);
   await page.getByRole("tab",{name:/图谱分析/}).click();assert.equal(await page.getByRole("button",{name:"运行 DPS 分析",exact:true}).isDisabled(),true);
   await page.screenshot({path:path.join(output,"frozen-context-1440.png"),fullPage:false});assert.deepEqual(errors,[]);
   const result={ok:true,project_isolation:true,delayed_response_isolation:true,concurrent_conflict:true,frozen_readonly:true,errors};await writeFile(path.join(output,"context-verification.json"),JSON.stringify(result,null,2));console.log(JSON.stringify(result));

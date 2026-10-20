@@ -90,6 +90,9 @@ export type EditCommand = Omit<
   "entities"
 > & { entities: SystemModelImportPayload["entities"] };
 export interface WorkspaceChoice {
+  project_version?: number;
+  project_state?: "Active" | "Archived" | "Deleted";
+  project_kind?: "user" | "example";
   project_id: string;
   project_name: string;
   project_business_id: string;
@@ -100,6 +103,51 @@ export interface WorkspaceChoice {
   revision_version: number;
   status: string;
 }
+
+export const projectLifecycleCommandSchema = z.object({
+  project_id: z.string().uuid(),
+  expected_project_version: z.number().int().positive(),
+  actor: z.string().trim().min(1).max(200),
+  command_id: z.string().trim().min(1).max(200),
+  action: z.enum(["archive", "delete", "restore"]),
+  confirmation: z.string().trim().min(1).max(200),
+  reason: z.string().trim().min(3).max(2000),
+}).strict();
+export type ProjectLifecycleCommand = z.infer<typeof projectLifecycleCommandSchema>;
+export interface ProjectOverview {
+  project_id: string;
+  business_id: string;
+  name: string;
+  version: number;
+  state: "Active" | "Archived" | "Deleted";
+  revisions: number;
+  assets: number;
+  runs: number;
+}
+export interface AnalysisRunSummary {
+  id: string;
+  project_id: string;
+  revision_id: string;
+  input_revision_version: number;
+  started_at: string;
+  completed_at: string;
+  status: "Completed" | "Failed";
+  stale: boolean;
+  input_origin: "saved-model" | "caller-provided";
+}
+export interface AnalysisHistoryPage {
+  runs: AnalysisRunSummary[];
+  next_cursor: string | null;
+}
+export const analysisHistoryQuerySchema = workbenchScopeSchema.extend({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  cursor: z.string().uuid().optional(),
+  run_id: z.string().uuid().optional(),
+}).strict();
+export const analysisDetailQuerySchema = workbenchScopeSchema.extend({
+  run_id: z.string().uuid(),
+  include_inputs: z.enum(["true", "false"]).optional(),
+}).strict();
 export interface FieldDifference {
   collection: string;
   business_id: string;

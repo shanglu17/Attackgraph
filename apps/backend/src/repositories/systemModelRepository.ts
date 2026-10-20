@@ -401,7 +401,7 @@ export class SystemModelRepository {
   }
   private async readInTransaction(transaction: ManagedTransaction, projectId: string, revisionId: string): Promise<StoredSystemModel> {
         const revisionResult = await transaction.run(
-          `MATCH (:Project {id: $project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(revision:Revision {id: $revision_id})
+          `MATCH (p:Project {id: $project_id})-[:HAS_MODEL]->(:Model)-[:HAS_REVISION]->(revision:Revision {id: $revision_id}) WHERE p.deleted_at IS NULL
            RETURN revision.version AS version`,
           { project_id: projectId, revision_id: revisionId },
         );

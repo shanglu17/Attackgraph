@@ -27,7 +27,7 @@
     "phase7:acceptance": "tsx src/scripts/runPhase7Acceptance.ts",
     "pretest:integration": "npm run build -w @attackgraph/contracts",
     "test:integration": "tsx --test src/repositories/writeSystemDataFlows.integration.test.ts src/repositories/governanceRepository.integration.test.ts src/repositories/revisionUnitOfWork.integration.test.ts src/repositories/legacyIdentityRepository.integration.test.ts src/repositories/compatibilityScopeRepository.integration.test.ts src/repositories/scopedCompatibilityReads.integration.test.ts src/repositories/systemModelRepository.integration.test.ts src/repositories/engineeringCase.integration.test.ts src/repositories/analysisFramework.integration.test.ts src/repositories/impactAssessment.integration.test.ts src/routes/compatibilityScope.integration.test.ts src/routes/vg1Traceability.integration.test.ts src/routes/reviewWorkspace.integration.test.ts",
-    "test:workbench:integration": "tsx --test src/repositories/workbench.integration.test.ts"
+    "test:workbench:integration": "tsx --test src/repositories/workbench.integration.test.ts src/repositories/projectLifecycle.integration.test.ts"
   },
   "dependencies": {
     "@attackgraph/contracts": "0.1.0",

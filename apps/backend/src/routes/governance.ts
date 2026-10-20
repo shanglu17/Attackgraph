@@ -1,3 +1,7 @@
+import { z } from "zod";
+import { projectLifecycleCommandSchema } from "@attackgraph/contracts";
+import { ProjectLifecycleRepository, ProjectLifecycleError } from "../repositories/projectLifecycleRepository.js";
+import { RevisionNotWritableError } from "../repositories/revisionUnitOfWork.js";
 import { Router } from "express";
 import { freezeRevisionCommandSchema } from "@attackgraph/contracts";
 import {
@@ -13,7 +17,7 @@ import { WorkbenchRepository } from "../repositories/workbenchRepository.js";
 
 const router = Router();
 const service = new GovernanceService();
-router.get("/workspaces", async (_req,res,next)=>{try {res.json({workspaces:await new WorkbenchRepository().list()});} catch(error){next(error);} });
+router.get("/workspaces", async (_req,res,next)=>{try {res.json({workspaces:await new WorkbenchRepository().list(_req.query.view==="management.v1")});} catch(error){next(error);} });
 
 function invalid(issues: Array<{ path: Array<string | number>; message: string }>) {
   return {
@@ -23,6 +27,7 @@ function invalid(issues: Array<{ path: Array<string | number>; message: string }
 }
 
 function conflict(error: unknown) {
+  if(error instanceof RevisionNotWritableError) return "PROJECT_READ_ONLY";
   if (error instanceof CommandPayloadMismatchError) return "COMMAND_PAYLOAD_MISMATCH";
   if (error instanceof CommandReuseError) return "COMMAND_REUSE_CONFLICT";
   if (error instanceof CommandReceiptUnverifiableError) return "COMMAND_RECEIPT_UNVERIFIABLE";
@@ -58,3 +63,6 @@ router.post("/revisions/freeze", async (req, res, next) => {
 });
 
 export default router;
+
+router.get("/projects/:id/overview",async(req,res,next)=>{try{const id=z.string().uuid().parse(req.params.id);res.json(await new ProjectLifecycleRepository().overview(id));}catch(e){if(e instanceof z.ZodError)return res.status(400).json(invalid(e.issues));if(e instanceof ProjectLifecycleError)return res.status(e.statusCode).json({code:"PROJECT_LIFECYCLE_ERROR",message:e.message});next(e);}});
+router.post("/projects/lifecycle",async(req,res,next)=>{try{const input=projectLifecycleCommandSchema.parse(req.body);res.json(await new ProjectLifecycleRepository().execute(input));}catch(e){if(e instanceof z.ZodError)return res.status(400).json(invalid(e.issues));if(e instanceof ProjectLifecycleError)return res.status(e.statusCode).json({code:"PROJECT_LIFECYCLE_ERROR",message:e.message});const code=conflict(e);if(code)return res.status(409).json({code,message:(e as Error).message});next(e);}});

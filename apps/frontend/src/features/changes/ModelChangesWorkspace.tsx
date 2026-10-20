@@ -71,7 +71,7 @@ export default function ModelChangesWorkspace() {
       <h2>变更管理</h2>
       <p>编辑 → 查看差异 → 服务端校验 → 保存 → 重新分析</p>
       {readonly && (
-        <p className="workbench-warning">当前修订已冻结，只能查看。</p>
+        <p className="workbench-warning">当前项目已归档或修订已冻结，只能查看。</p>
       )}
       {!draft ? (
         <button

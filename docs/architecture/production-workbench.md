@@ -35,7 +35,7 @@ AnalysisConfiguration 节点位于项目/修订内：保存转换版本、原始
 | DraftThreat | 候选 ThreatPoint | ID、名称和关联资产来自核心；参数来自分析配置，未配置时使用明确的 Medium/Medium/external/Tampering/Network 默认候选 |
 | 原始功能/边界/主体/接口/系统流 | v2 Function / SecurityBoundary / ExternalEntity / Interface / DataFlow | 原始清单还保存在修订配置来源记录中；未知或不唯一的端点阻止转换 |
 
-AMS 包装层保持原 CxfImportService 产生的资产、连接及威胁集合和顺序。mapping_order 保留转换顺序；补充边界接口与独立系统流不会默默变成额外的 DPS 边，标记 dps_enabled=false 并在预览告知。原始 Sheet、行号和字段坐标随记录保存，包括旧格式的原列坐标。
+AMS 包装层在核心模型中保留原始关系及顺序，传播投影单独采用 `do356a-ams-propagation/v2`：自动推断的数据归属仅保留为来源信息，不生成 DPS 边。实际加载连接及独立平行通道继续参与遍历。mapping_order 保留转换顺序；补充边界接口与独立系统流标记 dps_enabled=false。原始 Sheet、行号和字段坐标随记录保存。规则与历史结果处理见 [传播投影修正](../production/propagation-policy.md)。
 
 编辑提交使用候选核心实体及完整配置。事务内重新检查重复身份、全部核心引用、配置威胁引用及其他工程实体的删除引用，再更新实体和语义关系。AuditEvent 的 result_json 保存逐字段 before/after 差异及变更数；来源节点保留，新增实体继续关联来源。相同 command_id 与内容重放返回原结果，内容变化拒绝复用。
 
@@ -47,3 +47,9 @@ AMS 包装层保持原 CxfImportService 产生的资产、连接及威胁集合�
 工作线程限制 10 秒及 256 MB 老生代内存。超时或执行错误保存 Failed 运行、输入与配置快照、耗时、错误诊断，termination_reason 为 execution_error；不创建攻击路径候选，也不能导出为当前成果。正常零路径运行仍保存 search_summary，明确说明只在配置范围内未发现路径。本轮只提供历史查看，不提供历史文件导出。
 
 “已保存模型输入”由审计回执中的 request_canonicalizer=workbench.saved-analysis/v1 核验，而不是由调用方可填写的 method_config_version 或 model_hash 自行声明。兼容 API 即使伪造相同配置标记，input_origin 仍为 caller-provided，前端及导出均不得认作当前正式成果。默认旧读取不增加这个派生字段，历史 TraceabilityReport 摘要保持兼容。
+
+## 项目生命周期与历史分页（2026-10-20）
+
+新增项目范围预览、带项目版本/幂等命令的归档与回收恢复，以及 DPS 历史摘要和单次运行详情接口，完整契约见 [项目管理与历史接口](../production/project-management.md)。回收仅标记项目，不物理删除模型、来源、分析或审计。项目锁先于修订锁，所有 v2 RevisionUnitOfWork 写入及冻结命令都检查活动状态。
+
+主流程不再调用旧完整历史查询。新摘要查询使用 `started_at DESC, id DESC` 和范围内游标，每次最多 100 条，不访问快照及结果 payload；前端每页 20 条。默认单次详情只读取配置快照，完整输入快照单独请求。旧完整 DTO、评分、版本及快照哈希规则保持兼容。

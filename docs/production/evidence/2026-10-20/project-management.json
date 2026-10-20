@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "external_deletion_refresh": true,
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "archive_readonly": true,
+      "recycle_restore": true,
+      "local_draft_removed": true,
+      "data_retained": true,
+      "duplicate_labels_distinguished": true,
+      "examples_filtered": true,
+      "input_snapshot_on_demand": true,
+      "run_selection_resets_path": true,
+      "horizontal_scroll": false,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "archive_readonly": true,
+      "recycle_restore": true,
+      "local_draft_removed": true,
+      "data_retained": true,
+      "duplicate_labels_distinguished": true,
+      "examples_filtered": true,
+      "input_snapshot_on_demand": true,
+      "run_selection_resets_path": true,
+      "horizontal_scroll": false,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "archive_readonly": true,
+      "recycle_restore": true,
+      "local_draft_removed": true,
+      "data_retained": true,
+      "duplicate_labels_distinguished": true,
+      "examples_filtered": true,
+      "input_snapshot_on_demand": true,
+      "run_selection_resets_path": true,
+      "horizontal_scroll": false,
+      "errors": []
+    }
+  ]
+}
